@@ -25,7 +25,7 @@ export default function AppLayout() {
                   <button
                     key={page}
                     onClick={() => setActivePage(page)}
-                    className={\`text-left px-3 py-1.5 rounded-md transition font-medium \${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}\`}
+                    className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
                   >
                     {page}
                   </button>
