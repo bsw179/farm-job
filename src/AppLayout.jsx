@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Fields from './pages/Fields';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -48,9 +49,15 @@ export default function AppLayout() {
             <button className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
-          📄 {activePage} page content will appear here.
-        </div>
+
+        {/* Page Rendering */}
+        {activePage === 'Fields' ? (
+          <Fields />
+        ) : (
+          <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
+            📄 {activePage} page content will appear here.
+          </div>
+        )}
       </main>
 
       {/* Mobile nav */}
