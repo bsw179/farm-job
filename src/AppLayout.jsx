@@ -3,6 +3,7 @@ import Fields from './pages/Fields';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
+  const [cropYear, setCropYear] = useState(2025);
   const [mobileMenu, setMobileMenu] = useState(null);
 
   const pages = {
