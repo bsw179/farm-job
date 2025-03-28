@@ -3,8 +3,8 @@ import Fields from './pages/Fields';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
-  const [cropYear, setCropYear] = useState(2025);
   const [mobileMenu, setMobileMenu] = useState(null);
+  const [cropYear, setCropYear] = useState(2025); // 🆕 crop year state
 
   const pages = {
     Overview: ['Dashboard', 'Fields', 'Jobs', 'Products'],
@@ -45,15 +45,15 @@ export default function AppLayout() {
             <h1 className="text-2xl font-extrabold text-blue-800 tracking-tight">🌾 Farm Job</h1>
           </div>
           <div className="flex gap-2 items-center">
-            <button className="text-blue-600 hover:text-blue-800 font-bold">⬅</button>
-            <span className="text-lg font-semibold text-gray-700">2025</span>
-            <button className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
+            <button onClick={() => setCropYear((y) => y - 1)} className="text-blue-600 hover:text-blue-800 font-bold">⬅</button>
+            <span className="text-lg font-semibold text-gray-700">{cropYear}</span>
+            <button onClick={() => setCropYear((y) => y + 1)} className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
           </div>
         </div>
 
         {/* Page Rendering */}
         {activePage === 'Fields' ? (
-          <Fields />
+          <Fields cropYear={cropYear} />
         ) : (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
