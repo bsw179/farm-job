@@ -30,32 +30,34 @@ export default function AppLayout() {
   return (
     <div className="flex min-h-screen font-sans text-gray-800">
       {/* Sidebar */}
-      <aside className="hidden md:block w-64 bg-white shadow-xl p-6 border-r border-gray-200">
-        <h2 className="text-2xl font-extrabold text-blue-800 mb-8 tracking-tight">🌾 Farm Job</h2>
-        <nav className="flex flex-col gap-4 text-sm">
-          <button
-            onClick={() => setActivePage('Dashboard')}
-            className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === 'Dashboard' ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
-          >
-            Dashboard
-          </button>
-          {Object.entries(pages).map(([label, pageList]) => (
-            <details key={label} className="group">
-              <summary className="cursor-pointer text-xs uppercase font-bold text-gray-600 group-open:text-blue-700">{label}</summary>
-              <div className="flex flex-col mt-1 ml-2 gap-1">
-                {pageList.map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setActivePage(page)}
-                    className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-            </details>
-          ))}
-        </nav>
+      <aside className="hidden md:flex flex-col w-64 bg-white shadow-xl border-r border-gray-200 overflow-y-auto max-h-screen sticky top-0">
+        <div className="p-6">
+          <h2 className="text-2xl font-extrabold text-blue-800 mb-8 tracking-tight">🌾 Farm Job</h2>
+          <nav className="flex flex-col gap-4 text-sm">
+            <button
+              onClick={() => setActivePage('Dashboard')}
+              className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === 'Dashboard' ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
+            >
+              Dashboard
+            </button>
+            {Object.entries(pages).map(([label, pageList]) => (
+              <details key={label} className="group">
+                <summary className="cursor-pointer text-xs uppercase font-bold text-gray-600 group-open:text-blue-700">{label}</summary>
+                <div className="flex flex-col mt-1 ml-2 gap-1">
+                  {pageList.map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setActivePage(page)}
+                      className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </nav>
+        </div>
       </aside>
 
       {/* Main content */}
@@ -102,7 +104,8 @@ export default function AppLayout() {
         {activePage === 'Fields' && <Fields cropYear={cropYear} />}
         {activePage === 'Import Fields' && <ImportFields />}
         {activePage === 'Map Viewer' && <MapViewer />}
-        {activePage !== 'Fields' && activePage !== 'Import Fields' && activePage !== 'Map Viewer' && (
+        {activePage === 'Boundary Import' && <BoundaryImport />}
+        {activePage !== 'Fields' && activePage !== 'Import Fields' && activePage !== 'Map Viewer' && activePage !== 'Boundary Import' && (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
           </div>
