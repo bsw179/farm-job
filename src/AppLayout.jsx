@@ -8,6 +8,8 @@ import BoundaryImport from './pages/BoundaryImport';
 import ImportSeeds from './pages/ImportSeeds';
 import ImportFertilizers from './pages/ImportFertilizers';
 import ImportChemicals from './pages/ImportChemicals';
+import ImportRiceSeeds from './pages/ImportRiceSeeds';
+import AddSoybeanVariety from './pages/AddSoybeanVariety';
 import Reports from './pages/Reports';
 
 export default function AppLayout() {
@@ -98,13 +100,15 @@ export default function AppLayout() {
                   <button onClick={() => handlePageChange('Manage Users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
                   <button onClick={() => setShowProfileMenu(false)} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
                   <div className="px-4 py-2 border-t font-semibold">Setup</div>
-                  <button onClick={() => handlePageChange('Import Seeds')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Seeds</button>
-                  <button onClick={() => handlePageChange('Import Fertilizers')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Fertilizers</button>
-                  <button onClick={() => handlePageChange('Import Chemicals')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Chemicals</button>
-                  <button onClick={() => handlePageChange('Import Fields')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
-                  <button onClick={() => handlePageChange('Boundary Import')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
-                  <button onClick={() => handlePageChange('Manage Job Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
-                  <button onClick={() => handlePageChange('Audit Log')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
+                  <button onClick={() => handlePageChange('Import Seeds')}>Import Seeds</button>
+                  <button onClick={() => handlePageChange('Import Rice Seeds')}>Import Rice Seeds</button>
+                  <button onClick={() => handlePageChange('Import Fertilizers')}>Import Fertilizers</button>
+                  <button onClick={() => handlePageChange('Import Chemicals')}>Import Chemicals</button>
+                  <button onClick={() => handlePageChange('Add Soybean Variety')}>Add Soybean Variety</button>
+                  <button onClick={() => handlePageChange('Import Fields')}>Field Import</button>
+                  <button onClick={() => handlePageChange('Boundary Import')}>Boundary Import</button>
+                  <button onClick={() => handlePageChange('Manage Job Types')}>Manage Job Types</button>
+                  <button onClick={() => handlePageChange('Audit Log')}>Audit Log</button>
                 </div>
               )}
             </div>
@@ -119,8 +123,10 @@ export default function AppLayout() {
               {activePage === 'Map Viewer' && <MapViewer />}
               {activePage === 'Boundary Import' && <BoundaryImport />}
               {activePage === 'Import Seeds' && <ImportSeeds />}
+              {activePage === 'Import Rice Seeds' && <ImportRiceSeeds />}
               {activePage === 'Import Fertilizers' && <ImportFertilizers />}
               {activePage === 'Import Chemicals' && <ImportChemicals />}
+              {activePage === 'Add Soybean Variety' && <AddSoybeanVariety />}
               {activePage === 'Reports' && <Reports />}
               {[
                 'Fields',
@@ -128,8 +134,10 @@ export default function AppLayout() {
                 'Map Viewer',
                 'Boundary Import',
                 'Import Seeds',
+                'Import Rice Seeds',
                 'Import Fertilizers',
                 'Import Chemicals',
+                'Add Soybean Variety',
                 'Reports'
               ].indexOf(activePage) === -1 && (
                 <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
