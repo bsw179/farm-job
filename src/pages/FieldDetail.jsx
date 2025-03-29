@@ -53,6 +53,29 @@ export default function FieldDetail() {
         ))}
       </div>
 
+      {/* Crop Assignment */}
+      <div className="bg-white p-4 rounded shadow col-span-2 mb-6">
+        <h3 className="text-sm font-semibold mb-2 text-gray-700">🌱 Crop Assignment – {new Date().getFullYear()}</h3>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <select
+            value={updatedField.crop || ''}
+            onChange={(e) => setUpdatedField({ ...updatedField, crop: e.target.value })}
+            className="border p-2 rounded"
+          >
+            <option value="">Select Crop</option>
+            <option value="Rice">Rice</option>
+            <option value="Soybeans">Soybeans</option>
+            <option value="Corn">Corn</option>
+          </select>
+          <input
+            placeholder="Variety (e.g. CLL18, DG563)"
+            value={updatedField.variety || ''}
+            onChange={(e) => setUpdatedField({ ...updatedField, variety: e.target.value })}
+            className="border p-2 rounded"
+          />
+        </div>
+      </div>
+
       <div className="mb-6">
         {editMode ? (
           <button onClick={handleUpdate} className="bg-green-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
@@ -68,12 +91,10 @@ export default function FieldDetail() {
         </button>
       </div>
 
-      {/* Placeholder blocks */}
       <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-        <div className="bg-white p-3 rounded shadow">🌱 Crop + Variety (Current Crop Year)</div>
-        <div className="bg-white p-3 rounded shadow">🗺️ Boundary Thumbnail</div>
-        <div className="bg-white p-3 rounded shadow col-span-2">🧾 Job History</div>
-        <div className="bg-white p-3 rounded shadow col-span-2">📝 Notes</div>
+        <div className="bg-white p-3 rounded shadow">🗺️ Map Thumbnail (boundary)</div>
+        <div className="bg-white p-3 rounded shadow">🧾 Job History (placeholder)</div>
+        <div className="bg-white p-3 rounded shadow col-span-2">📝 Notes & Observations</div>
       </div>
     </div>
   );
