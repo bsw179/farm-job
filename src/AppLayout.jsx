@@ -67,14 +67,11 @@ export default function AppLayout() {
             <h1 className="text-2xl font-extrabold text-blue-800 tracking-tight">🌾 Farm Job</h1>
           </div>
           <div className="flex items-center gap-4">
-            {/* Crop year selector */}
             <div className="flex gap-2 items-center">
               <button onClick={() => setCropYear((y) => y - 1)} className="text-blue-600 hover:text-blue-800 font-bold">⬅</button>
               <span className="text-lg font-semibold text-gray-700">{cropYear}</span>
               <button onClick={() => setCropYear((y) => y + 1)} className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
             </div>
-
-            {/* Profile menu */}
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
