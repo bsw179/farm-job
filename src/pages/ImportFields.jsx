@@ -47,7 +47,9 @@ export default function ImportFields() {
       <h2 className="text-xl font-bold mb-4">Import Fields from CSV</h2>
       <input type="file" accept=".csv" onChange={handleFileUpload} className="mb-4" />
       {message && <p className="text-green-700 font-semibold">{message}</p>}
-      <p className="text-sm text-gray-600">Make sure your file matches the <strong>fields-template.csv</strong> format.</p>
+      <p className="text-sm text-gray-600">
+        Make sure your file matches the <strong>fields-template.csv</strong> format exactly.
+      </p>
     </div>
   );
 }
