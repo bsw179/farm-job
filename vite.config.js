@@ -17,7 +17,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      buffer: 'buffer',
+      buffer: require.resolve('buffer/')
       './window': path.resolve(__dirname, 'src/shims/empty.js'),
     },
   },
