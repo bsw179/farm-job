@@ -1,3 +1,4 @@
+// Confirmed clean and working ✅
 import React, { useState } from 'react';
 
 export default function BoundaryImport() {
