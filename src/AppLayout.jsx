@@ -113,9 +113,18 @@ export default function AppLayout() {
         </div>
 
         {/* ⛳️ TEMP TEST ROUTE ONLY */}
-        <Routes>
-          <Route path="/" element={<div className="text-xl text-green-700">✅ App is working!</div>} />
-        </Routes>
+       <Routes>
+  <Route path="/" element={
+    <>
+      {activePage === 'Fields' && <Fields cropYear={cropYear} />}
+      {activePage !== 'Fields' && (
+        <div className="text-xl text-green-700">
+          ✅ App is working, but "{activePage}" is not loaded yet.
+        </div>
+      )}
+    </>
+  } />
+</Routes>
       </main>
     </div>
   );
