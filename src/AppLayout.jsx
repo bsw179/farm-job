@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Fields from './pages/Fields';
+import FieldDetail from './pages/FieldDetail';
 import ImportFields from './pages/ImportFields';
 import MapViewer from './pages/MapViewer';
 import BoundaryImport from './pages/BoundaryImport';
@@ -14,6 +16,7 @@ export default function AppLayout() {
   const [cropYear, setCropYear] = useState(2025);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef(null);
+  const navigate = useNavigate();
 
   const pages = {
     Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders', 'Reports'],
@@ -31,6 +34,11 @@ export default function AppLayout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handlePageChange = (page) => {
+    setActivePage(page);
+    navigate('/');
+  };
+
   return (
     <div className="flex min-h-screen font-sans text-gray-800">
       {/* Sidebar */}
@@ -39,7 +47,7 @@ export default function AppLayout() {
           <h2 className="text-2xl font-extrabold text-blue-800 mb-8 tracking-tight">🌾 Farm Job</h2>
           <nav className="flex flex-col gap-4 text-sm">
             <button
-              onClick={() => setActivePage('Dashboard')}
+              onClick={() => handlePageChange('Dashboard')}
               className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === 'Dashboard' ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
             >
               Dashboard
@@ -51,7 +59,7 @@ export default function AppLayout() {
                   {pageList.map((page) => (
                     <button
                       key={page}
-                      onClick={() => setActivePage(page)}
+                      onClick={() => handlePageChange(page)}
                       className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
                     >
                       {page}
@@ -86,87 +94,53 @@ export default function AppLayout() {
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50">
                   <div className="px-4 py-2 border-b font-semibold">User Profile</div>
-                  <button onClick={() => { setActivePage('Profile Settings'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
-                  <button onClick={() => { setActivePage('Manage Users'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
-                  <button onClick={() => { setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+                  <button onClick={() => handlePageChange('Profile Settings')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
+                  <button onClick={() => handlePageChange('Manage Users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
+                  <button onClick={() => setShowProfileMenu(false)} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
                   <div className="px-4 py-2 border-t font-semibold">Setup</div>
-                  <button onClick={() => { setActivePage('Import Seeds'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Seeds</button>
-                  <button onClick={() => { setActivePage('Import Fertilizers'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Fertilizers</button>
-                  <button onClick={() => { setActivePage('Import Chemicals'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Chemicals</button>
-                  <button onClick={() => { setActivePage('Import Fields'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
-                  <button onClick={() => { setActivePage('Boundary Import'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
-                  <button onClick={() => { setActivePage('Manage Job Types'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
-                  <button onClick={() => { setActivePage('Audit Log'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
+                  <button onClick={() => handlePageChange('Import Seeds')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Seeds</button>
+                  <button onClick={() => handlePageChange('Import Fertilizers')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Fertilizers</button>
+                  <button onClick={() => handlePageChange('Import Chemicals')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Chemicals</button>
+                  <button onClick={() => handlePageChange('Import Fields')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
+                  <button onClick={() => handlePageChange('Boundary Import')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
+                  <button onClick={() => handlePageChange('Manage Job Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
+                  <button onClick={() => handlePageChange('Audit Log')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Page rendering */}
-        {activePage === 'Fields' && <Fields cropYear={cropYear} />}
-        {activePage === 'Import Fields' && <ImportFields />}
-        {activePage === 'Map Viewer' && <MapViewer />}
-        {activePage === 'Boundary Import' && <BoundaryImport />}
-        {activePage === 'Import Seeds' && <ImportSeeds />}
-        {activePage === 'Import Fertilizers' && <ImportFertilizers />}
-        {activePage === 'Import Chemicals' && <ImportChemicals />}
-        {activePage === 'Reports' && <Reports />}
-        {[
-          'Fields',
-          'Import Fields',
-          'Map Viewer',
-          'Boundary Import',
-          'Import Seeds',
-          'Import Fertilizers',
-          'Import Chemicals',
-          'Reports'
-        ].indexOf(activePage) === -1 && (
-          <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
-            📄 {activePage} page content will appear here.
-          </div>
-        )}
+        <Routes>
+          <Route path="/" element={
+            <>
+              {activePage === 'Fields' && <Fields cropYear={cropYear} />}
+              {activePage === 'Import Fields' && <ImportFields />}
+              {activePage === 'Map Viewer' && <MapViewer />}
+              {activePage === 'Boundary Import' && <BoundaryImport />}
+              {activePage === 'Import Seeds' && <ImportSeeds />}
+              {activePage === 'Import Fertilizers' && <ImportFertilizers />}
+              {activePage === 'Import Chemicals' && <ImportChemicals />}
+              {activePage === 'Reports' && <Reports />}
+              {[
+                'Fields',
+                'Import Fields',
+                'Map Viewer',
+                'Boundary Import',
+                'Import Seeds',
+                'Import Fertilizers',
+                'Import Chemicals',
+                'Reports'
+              ].indexOf(activePage) === -1 && (
+                <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
+                  📄 {activePage} page content will appear here.
+                </div>
+              )}
+            </>
+          } />
+          <Route path="/fields/:fieldId" element={<FieldDetail />} />
+        </Routes>
       </main>
-
-      {/* Mobile nav */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-inner flex justify-around items-center py-2 text-sm md:hidden z-50">
-        {['Dashboard', 'Farm', 'Mapping', 'Records'].map((section) => (
-          <button
-            key={section}
-            onClick={() => {
-              if (section === 'Dashboard') setActivePage('Dashboard');
-              else setMobileMenu(section);
-            }}
-            className="flex flex-col items-center text-gray-700 hover:text-blue-700 px-2"
-          >
-            <span className="text-xs font-semibold">{section}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Mobile submenu overlay */}
-      {mobileMenu && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col p-6 text-sm md:hidden">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-blue-800">{mobileMenu}</h2>
-            <button onClick={() => setMobileMenu(null)} className="text-gray-500 hover:text-blue-700 text-xl">×</button>
-          </div>
-          <div className="flex flex-col gap-3">
-            {pages[mobileMenu].map((page) => (
-              <button
-                key={page}
-                onClick={() => {
-                  setActivePage(page);
-                  setMobileMenu(null);
-                }}
-                className="text-left px-4 py-2 rounded-lg transition font-medium bg-gray-100 hover:bg-blue-100"
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
