@@ -100,15 +100,25 @@ export default function AppLayout() {
                   <button onClick={() => handlePageChange('Manage Users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
                   <button onClick={() => setShowProfileMenu(false)} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
                   <div className="px-4 py-2 border-t font-semibold">Setup</div>
-                  <button onClick={() => handlePageChange('Import Seeds')}>Import Seeds</button>
-                  <button onClick={() => handlePageChange('Import Rice Seeds')}>Import Rice Seeds</button>
-                  <button onClick={() => handlePageChange('Import Fertilizers')}>Import Fertilizers</button>
-                  <button onClick={() => handlePageChange('Import Chemicals')}>Import Chemicals</button>
-                  <button onClick={() => handlePageChange('Add Soybean Variety')}>Add Soybean Variety</button>
-                  <button onClick={() => handlePageChange('Import Fields')}>Field Import</button>
-                  <button onClick={() => handlePageChange('Boundary Import')}>Boundary Import</button>
-                  <button onClick={() => handlePageChange('Manage Job Types')}>Manage Job Types</button>
-                  <button onClick={() => handlePageChange('Audit Log')}>Audit Log</button>
+                  {[
+                    'Import Seeds',
+                    'Import Rice Seeds',
+                    'Import Fertilizers',
+                    'Import Chemicals',
+                    'Add Soybean Variety',
+                    'Import Fields',
+                    'Boundary Import',
+                    'Manage Job Types',
+                    'Audit Log'
+                  ].map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    >
+                      {page}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
