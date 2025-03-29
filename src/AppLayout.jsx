@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Fields from './pages/Fields';
 import ImportFields from './pages/ImportFields';
 import MapViewer from './pages/MapViewer';
+import BoundaryImport from './pages/BoundaryImport';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
