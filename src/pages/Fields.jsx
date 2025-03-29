@@ -17,7 +17,7 @@ export default function Fields({ cropYear }) {
   }, []);
 
   const filteredFields = fields
-    .filter(f => f.cropYear === cropYear)
+    .filter(f => f.cropYear === cropYear || f.crops?.[cropYear])
     .filter(f => !filterFarm || f.farmName === filterFarm)
     .sort((a, b) => {
       if (!a[sortKey] || !b[sortKey]) return 0;
@@ -68,21 +68,34 @@ export default function Fields({ cropYear }) {
           </tr>
         </thead>
         <tbody>
-          {filteredFields.map((field) => (
-            <tr key={field.id} className="hover:bg-blue-50">
-              <td className="p-2">
-                <Link to={`/fields/${field.id}`} className="text-blue-700 hover:underline font-semibold">
-                  {field.fieldName}
-                </Link>
-              </td>
-              <td className="p-2">{field.farmName}</td>
-              <td className="p-2">{field.gpsAcres}</td>
-              <td className="p-2">{field.fsaAcres}</td>
-              <td className="p-2">{field.county}</td>
-              <td className="p-2 text-green-700">Assigned</td> {/* Placeholder */}
-              <td className="p-2 text-green-700">🟢</td> {/* Placeholder */}
-            </tr>
-          ))}
+          {filteredFields.map((field) => {
+            const cropAssigned = field.crops?.[cropYear]?.crop;
+            const hasBoundary = !!field.boundary; // or use .geojson if applicable
+
+            return (
+              <tr key={field.id} className="hover:bg-blue-50">
+                <td className="p-2">
+                  <Link to={`/fields/${field.id}`} className="text-blue-700 hover:underline font-semibold">
+                    {field.fieldName}
+                  </Link>
+                </td>
+                <td className="p-2">{field.farmName}</td>
+                <td className="p-2">{field.gpsAcres}</td>
+                <td className="p-2">{field.fsaAcres}</td>
+                <td className="p-2">{field.county}</td>
+                <td className="p-2">
+                  {cropAssigned ? (
+                    <span className="text-green-700 font-semibold">Assigned</span>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
+                <td className="p-2 text-center">
+                  {hasBoundary ? <span className="text-green-600 text-lg">🟢</span> : <span className="text-gray-300">⚪️</span>}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
