@@ -6,6 +6,7 @@ import BoundaryImport from './pages/BoundaryImport';
 import ImportSeeds from './pages/ImportSeeds';
 import ImportFertilizers from './pages/ImportFertilizers';
 import ImportChemicals from './pages/ImportChemicals';
+import Reports from './pages/Reports';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -15,7 +16,7 @@ export default function AppLayout() {
   const profileMenuRef = useRef(null);
 
   const pages = {
-    Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders'],
+    Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders', 'Reports'],
     Mapping: ['Map Viewer', 'Map Creator'],
     Records: ['Field History', 'Crop History', 'Calendar', 'Documents', 'Field Metrics', 'Inventory']
   };
@@ -110,6 +111,7 @@ export default function AppLayout() {
         {activePage === 'Import Seeds' && <ImportSeeds />}
         {activePage === 'Import Fertilizers' && <ImportFertilizers />}
         {activePage === 'Import Chemicals' && <ImportChemicals />}
+        {activePage === 'Reports' && <Reports />}
         {[
           'Fields',
           'Import Fields',
@@ -117,7 +119,8 @@ export default function AppLayout() {
           'Boundary Import',
           'Import Seeds',
           'Import Fertilizers',
-          'Import Chemicals'
+          'Import Chemicals',
+          'Reports'
         ].indexOf(activePage) === -1 && (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
