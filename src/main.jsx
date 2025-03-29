@@ -1,12 +1,13 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import AppLayout from './AppLayout.jsx';
 import './index.css';
-import AppLayout from './AppLayout';
-import './firebase';
+import { BrowserRouter } from 'react-router-dom';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AppLayout />
+    <BrowserRouter>
+      <AppLayout />
+    </BrowserRouter>
   </React.StrictMode>
 );
