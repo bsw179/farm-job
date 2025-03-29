@@ -1,7 +1,6 @@
-// src/context/CropYearContext.jsx
 import React, { createContext, useContext, useState } from 'react';
 
-const CropYearContext = createContext();
+export const CropYearContext = createContext();
 
 export function CropYearProvider({ children }) {
   const [cropYear, setCropYear] = useState(new Date().getFullYear());
@@ -13,6 +12,7 @@ export function CropYearProvider({ children }) {
   );
 }
 
+// Optional helper hook if you want to use it
 export function useCropYear() {
   return useContext(CropYearContext);
 }
