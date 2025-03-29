@@ -22,12 +22,6 @@ export default function AppLayout() {
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
 
-  const pages = {
-    Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders', 'Reports'],
-    Mapping: ['Map Viewer', 'Map Creator'],
-    Records: ['Field History', 'Crop History', 'Calendar', 'Documents', 'Field Metrics', 'Inventory']
-  };
-
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
@@ -70,15 +64,13 @@ export default function AppLayout() {
                   {activePage === 'Import Chemicals' && <ImportChemicals />}
                   {activePage === 'Add Soybean Variety' && <AddSoybeanVariety />}
                   {activePage === 'Reports' && <Reports />}
-                  {[
-                    'Fields', 'Import Fields', 'Map Viewer', 'Boundary Upload',
+                  {[ 'Fields', 'Import Fields', 'Map Viewer', 'Boundary Upload',
                     'Import Seeds', 'Import Rice Seeds', 'Import Fertilizers',
-                    'Import Chemicals', 'Add Soybean Variety', 'Reports'
-                  ].indexOf(activePage) === -1 && (
-                    <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
-                      📄 {activePage} page content will appear here.
-                    </div>
-                  )}
+                    'Import Chemicals', 'Add Soybean Variety', 'Reports' ].indexOf(activePage) === -1 && (
+                      <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
+                        📄 {activePage} page content will appear here.
+                      </div>
+                    )}
                 </>
               } />
               <Route path="/fields/:fieldId" element={<FieldDetail />} />
