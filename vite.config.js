@@ -16,7 +16,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      buffer: 'buffer/', // <-- this fixes the named import issue
+      buffer: require.resolve('buffer/'), // ✅ resolves the actual module path
       './window': path.resolve(__dirname, 'src/shims/empty.js'),
     },
   },
