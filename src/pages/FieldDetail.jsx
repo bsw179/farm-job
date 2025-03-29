@@ -1,20 +1,22 @@
-import React, { useEffect, useState } from 'react';
+// src/pages/FieldDetail.jsx
+import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
+import { CropYearContext } from '../context/CropYearContext';
+import db from '../firebase';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { EditControl } from 'react-leaflet-draw';
 
 export default function FieldDetail() {
   const { fieldId } = useParams();
   const navigate = useNavigate();
+  const { cropYear } = useContext(CropYearContext);
   const [field, setField] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [showDraw, setShowDraw] = useState(false);
   const [updatedField, setUpdatedField] = useState({});
-  const [cropYear, setCropYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,14 +71,7 @@ export default function FieldDetail() {
 
   return (
     <div>
-      <div className="flex justify-between mb-6">
-        <h2 className="text-xl font-bold">{field.fieldName} – Field Details</h2>
-        <div className="flex items-center gap-2 text-sm">
-          <button onClick={() => setCropYear(c => c - 1)} className="text-blue-600 font-bold">⭠</button>
-          <span className="font-semibold text-gray-700">{cropYear}</span>
-          <button onClick={() => setCropYear(c => c + 1)} className="text-blue-600 font-bold">➡</button>
-        </div>
-      </div>
+      <h2 className="text-xl font-bold mb-6">{field.fieldName} – Field Details</h2>
 
       <div className="grid grid-cols-2 gap-4 text-sm mb-6">
         {editableFields.map((key) => (
@@ -152,7 +147,7 @@ export default function FieldDetail() {
 
       <div className="bg-white p-3 rounded shadow col-span-2 mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-semibold text-gray-700">🗘️ Boundary Map</h3>
+          <h3 className="text-sm font-semibold text-gray-700">🗺️ Boundary Map</h3>
           <button onClick={() => setShowDraw(true)} className="text-sm text-blue-700 hover:underline">✏️ Edit Boundary</button>
         </div>
 
