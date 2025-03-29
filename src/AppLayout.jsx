@@ -1,11 +1,9 @@
-// Top imports
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import Fields from './pages/Fields';
 import FieldDetail from './pages/FieldDetail';
 import ImportFields from './pages/ImportFields';
 import MapViewer from './pages/MapViewer';
-import BoundaryImport from './pages/BoundaryImport';
 import BoundaryUpload from './pages/BoundaryUpload';
 import ImportSeeds from './pages/ImportSeeds';
 import ImportFertilizers from './pages/ImportFertilizers';
@@ -45,7 +43,35 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-screen font-sans text-gray-800">
-      {/* Sidebar and Main Layout Same as Before... */}
+      <aside className="hidden md:flex flex-col w-64 bg-white shadow-xl border-r border-gray-200 overflow-y-auto max-h-screen sticky top-0">
+        <div className="p-6">
+          <h2 className="text-2xl font-extrabold text-blue-800 mb-8 tracking-tight">🌾 Farm Job</h2>
+          <nav className="flex flex-col gap-4 text-sm">
+            <button
+              onClick={() => handlePageChange('Dashboard')}
+              className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === 'Dashboard' ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
+            >
+              Dashboard
+            </button>
+            {Object.entries(pages).map(([label, pageList]) => (
+              <details key={label} className="group">
+                <summary className="cursor-pointer text-xs uppercase font-bold text-gray-600 group-open:text-blue-700">{label}</summary>
+                <div className="flex flex-col mt-1 ml-2 gap-1">
+                  {pageList.map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </nav>
+        </div>
+      </aside>
 
       <main className="flex-1 bg-gradient-to-br from-gray-50 to-white p-8 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
@@ -79,7 +105,6 @@ export default function AppLayout() {
                     'Import Chemicals',
                     'Add Soybean Variety',
                     'Import Fields',
-                    'Boundary Import',
                     'Boundary Upload',
                     'Manage Job Types',
                     'Audit Log'
@@ -98,14 +123,12 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* Routes */}
         <Routes>
           <Route path="/" element={
             <>
               {activePage === 'Fields' && <Fields cropYear={cropYear} />}
               {activePage === 'Import Fields' && <ImportFields />}
               {activePage === 'Map Viewer' && <MapViewer />}
-              {activePage === 'Boundary Import' && <BoundaryImport />}
               {activePage === 'Boundary Upload' && <BoundaryUpload />}
               {activePage === 'Import Seeds' && <ImportSeeds />}
               {activePage === 'Import Rice Seeds' && <ImportRiceSeeds />}
@@ -114,9 +137,9 @@ export default function AppLayout() {
               {activePage === 'Add Soybean Variety' && <AddSoybeanVariety />}
               {activePage === 'Reports' && <Reports />}
               {[
-                'Fields', 'Import Fields', 'Map Viewer', 'Boundary Import', 'Boundary Upload',
-                'Import Seeds', 'Import Rice Seeds', 'Import Fertilizers', 'Import Chemicals',
-                'Add Soybean Variety', 'Reports'
+                'Fields', 'Import Fields', 'Map Viewer', 'Boundary Upload',
+                'Import Seeds', 'Import Rice Seeds', 'Import Fertilizers',
+                'Import Chemicals', 'Add Soybean Variety', 'Reports'
               ].indexOf(activePage) === -1 && (
                 <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
                   📄 {activePage} page content will appear here.
