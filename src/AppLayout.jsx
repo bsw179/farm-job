@@ -1,3 +1,4 @@
+// src/AppLayout.jsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -11,7 +12,7 @@ export default function AppLayout() {
     <CropYearProvider>
       <div className="flex min-h-screen font-sans text-gray-800">
         <Sidebar />
-        <main className="flex-1 bg-gradient-to-br from-gray-50 to-white p-8 overflow-y-auto">
+        <main className="flex-1 bg-gradient-to-br from-gray-50 to-white">
           <TopBar />
           <Routes>
             <Route path="/" element={<Fields />} />
