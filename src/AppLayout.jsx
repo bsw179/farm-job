@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import Fields from './pages/Fields';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
