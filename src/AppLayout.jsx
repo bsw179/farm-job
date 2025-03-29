@@ -1,16 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import Fields from './pages/Fields';
-import FieldDetail from './pages/FieldDetail';
-import ImportFields from './pages/ImportFields';
-import MapViewer from './pages/MapViewer';
-import BoundaryUpload from './pages/BoundaryUpload';
-import ImportSeeds from './pages/ImportSeeds';
-import ImportFertilizers from './pages/ImportFertilizers';
-import ImportChemicals from './pages/ImportChemicals';
-import ImportRiceSeeds from './pages/ImportRiceSeeds';
-import AddSoybeanVariety from './pages/AddSoybeanVariety';
-import Reports from './pages/Reports';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -123,31 +112,9 @@ export default function AppLayout() {
           </div>
         </div>
 
+        {/* ⛳️ TEMP TEST ROUTE ONLY */}
         <Routes>
-          <Route path="/" element={
-            <>
-              {activePage === 'Fields' && <Fields cropYear={cropYear} />}
-              {activePage === 'Import Fields' && <ImportFields />}
-              {activePage === 'Map Viewer' && <MapViewer />}
-              {activePage === 'Boundary Upload' && <BoundaryUpload />}
-              {activePage === 'Import Seeds' && <ImportSeeds />}
-              {activePage === 'Import Rice Seeds' && <ImportRiceSeeds />}
-              {activePage === 'Import Fertilizers' && <ImportFertilizers />}
-              {activePage === 'Import Chemicals' && <ImportChemicals />}
-              {activePage === 'Add Soybean Variety' && <AddSoybeanVariety />}
-              {activePage === 'Reports' && <Reports />}
-              {[
-                'Fields', 'Import Fields', 'Map Viewer', 'Boundary Upload',
-                'Import Seeds', 'Import Rice Seeds', 'Import Fertilizers',
-                'Import Chemicals', 'Add Soybean Variety', 'Reports'
-              ].indexOf(activePage) === -1 && (
-                <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
-                  📄 {activePage} page content will appear here.
-                </div>
-              )}
-            </>
-          } />
-          <Route path="/fields/:fieldId" element={<FieldDetail />} />
+          <Route path="/" element={<div className="text-xl text-green-700">✅ App is working!</div>} />
         </Routes>
       </main>
     </div>
