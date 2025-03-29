@@ -63,7 +63,8 @@ export default function Fields({ cropYear }) {
             <th className="p-2">GPS Acres</th>
             <th className="p-2">FSA Acres</th>
             <th className="p-2">County</th>
-            <th className="p-2">Crop Year</th>
+            <th className="p-2">Crop</th>
+            <th className="p-2">Boundary</th>
           </tr>
         </thead>
         <tbody>
@@ -78,7 +79,8 @@ export default function Fields({ cropYear }) {
               <td className="p-2">{field.gpsAcres}</td>
               <td className="p-2">{field.fsaAcres}</td>
               <td className="p-2">{field.county}</td>
-              <td className="p-2">{field.cropYear}</td>
+              <td className="p-2 text-green-700">Assigned</td> {/* Placeholder */}
+              <td className="p-2 text-green-700">🟢</td> {/* Placeholder */}
             </tr>
           ))}
         </tbody>
