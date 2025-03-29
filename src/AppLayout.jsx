@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Fields from './pages/Fields';
 import ImportFields from './pages/ImportFields';
+import MapViewer from './pages/MapViewer';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -99,7 +100,8 @@ export default function AppLayout() {
         {/* Page rendering */}
         {activePage === 'Fields' && <Fields cropYear={cropYear} />}
         {activePage === 'Import Fields' && <ImportFields />}
-        {activePage !== 'Fields' && activePage !== 'Import Fields' && (
+        {activePage === 'Map Viewer' && <MapViewer />}
+        {activePage !== 'Fields' && activePage !== 'Import Fields' && activePage !== 'Map Viewer' && (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
           </div>
