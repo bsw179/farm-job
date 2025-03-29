@@ -3,6 +3,9 @@ import Fields from './pages/Fields';
 import ImportFields from './pages/ImportFields';
 import MapViewer from './pages/MapViewer';
 import BoundaryImport from './pages/BoundaryImport';
+import ImportSeeds from './pages/ImportSeeds';
+import ImportFertilizers from './pages/ImportFertilizers';
+import ImportChemicals from './pages/ImportChemicals';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -86,7 +89,9 @@ export default function AppLayout() {
                   <button onClick={() => { setActivePage('Manage Users'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
                   <button onClick={() => { setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
                   <div className="px-4 py-2 border-t font-semibold">Setup</div>
-                  <button onClick={() => { setActivePage('Product Import'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Product Import</button>
+                  <button onClick={() => { setActivePage('Import Seeds'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Seeds</button>
+                  <button onClick={() => { setActivePage('Import Fertilizers'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Fertilizers</button>
+                  <button onClick={() => { setActivePage('Import Chemicals'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Chemicals</button>
                   <button onClick={() => { setActivePage('Import Fields'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
                   <button onClick={() => { setActivePage('Boundary Import'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
                   <button onClick={() => { setActivePage('Manage Job Types'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
@@ -102,7 +107,18 @@ export default function AppLayout() {
         {activePage === 'Import Fields' && <ImportFields />}
         {activePage === 'Map Viewer' && <MapViewer />}
         {activePage === 'Boundary Import' && <BoundaryImport />}
-        {['Fields', 'Import Fields', 'Map Viewer', 'Boundary Import', 'Product Import'].indexOf(activePage) === -1 && (
+        {activePage === 'Import Seeds' && <ImportSeeds />}
+        {activePage === 'Import Fertilizers' && <ImportFertilizers />}
+        {activePage === 'Import Chemicals' && <ImportChemicals />}
+        {[
+          'Fields',
+          'Import Fields',
+          'Map Viewer',
+          'Boundary Import',
+          'Import Seeds',
+          'Import Fertilizers',
+          'Import Chemicals'
+        ].indexOf(activePage) === -1 && (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
           </div>
