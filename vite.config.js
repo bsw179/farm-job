@@ -16,12 +16,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      buffer: require.resolve('buffer/'), // ✅ resolves the actual module path
+      buffer: require.resolve('buffer/'), // ✅ final fix
       './window': path.resolve(__dirname, 'src/shims/empty.js'),
     },
   },
   optimizeDeps: {
-    include: ['buffer'], // <-- ensure it's bundled
+    include: ['buffer'],
     esbuildOptions: {
       define: {
         global: 'globalThis',
@@ -30,4 +30,8 @@ export default defineConfig({
         NodeGlobalsPolyfillPlugin({
           buffer: true,
         }),
-        NodeModulesPolyfillPlugin
+        NodeModulesPolyfillPlugin(), // ✅ this was missing a closing }
+      ],
+    },
+  },
+});
