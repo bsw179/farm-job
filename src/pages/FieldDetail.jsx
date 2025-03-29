@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import db from '../firebase';
+import { db } from '../firebase';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -72,7 +72,7 @@ export default function FieldDetail() {
       <div className="flex justify-between mb-6">
         <h2 className="text-xl font-bold">{field.fieldName} – Field Details</h2>
         <div className="flex items-center gap-2 text-sm">
-          <button onClick={() => setCropYear(c => c - 1)} className="text-blue-600 font-bold">⬅</button>
+          <button onClick={() => setCropYear(c => c - 1)} className="text-blue-600 font-bold">⭠</button>
           <span className="font-semibold text-gray-700">{cropYear}</span>
           <button onClick={() => setCropYear(c => c + 1)} className="text-blue-600 font-bold">➡</button>
         </div>
@@ -95,7 +95,6 @@ export default function FieldDetail() {
         ))}
       </div>
 
-      {/* Crop Assignment */}
       <div className="bg-white p-4 rounded shadow col-span-2 mb-6">
         <h3 className="text-sm font-semibold mb-2 text-gray-700">🌱 Crop Assignment – {cropYear}</h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -151,10 +150,9 @@ export default function FieldDetail() {
         </button>
       </div>
 
-      {/* Boundary View and Edit */}
       <div className="bg-white p-3 rounded shadow col-span-2 mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-semibold text-gray-700">🗺️ Boundary Map</h3>
+          <h3 className="text-sm font-semibold text-gray-700">🗘️ Boundary Map</h3>
           <button onClick={() => setShowDraw(true)} className="text-sm text-blue-700 hover:underline">✏️ Edit Boundary</button>
         </div>
 
@@ -168,7 +166,6 @@ export default function FieldDetail() {
         )}
       </div>
 
-      {/* Leaflet Draw Editor */}
       {showDraw && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
           <div className="flex justify-between items-center p-4 bg-blue-700 text-white">
