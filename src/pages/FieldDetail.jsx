@@ -4,7 +4,6 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import db from '../firebase';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { EditControl } from 'react-leaflet-draw';
 
