@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, addDoc, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import db from '../firebase';
-import Papa from 'papaparse';
 
 export default function Fields({ cropYear }) {
   const [fields, setFields] = useState([]);
@@ -21,7 +20,6 @@ export default function Fields({ cropYear }) {
     landownerRentShare: '',
     landownerExpenseShare: ''
   });
-  const [importMessage, setImportMessage] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'fields'), (snapshot) => {
@@ -70,48 +68,9 @@ export default function Fields({ cropYear }) {
     await deleteDoc(doc(db, 'fields', id));
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async function (results) {
-        const data = results.data;
-        let success = 0;
-        let failed = 0;
-
-        for (const row of data) {
-          try {
-            await addDoc(collection(db, 'fields'), {
-              ...row,
-              cropYear,
-              gpsAcres: parseFloat(row.gpsAcres),
-              fsaAcres: parseFloat(row.fsaAcres),
-              operatorRentShare: parseFloat(row.operatorRentShare),
-              operatorExpenseShare: parseFloat(row.operatorExpenseShare),
-              landownerRentShare: parseFloat(row.landownerRentShare),
-              landownerExpenseShare: parseFloat(row.landownerExpenseShare)
-            });
-            success++;
-          } catch (err) {
-            console.error('Import failed for row:', row, err);
-            failed++;
-          }
-        }
-
-        setImportMessage(`Imported ${success} fields. ${failed} failed.`);
-      }
-    });
-  };
-
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Fields – Crop Year: {cropYear}</h2>
-
-      <input type="file" accept=".csv" onChange={handleFileUpload} className="mb-4" />
-      {importMessage && <p className="text-green-700 font-semibold mb-4">{importMessage}</p>}
 
       <form onSubmit={handleSubmit} className="bg-white shadow p-4 rounded grid grid-cols-2 gap-4 text-sm">
         {Object.keys(newField).map((key) => (
@@ -147,4 +106,3 @@ export default function Fields({ cropYear }) {
     </div>
   );
 }
-   
