@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import db from '../firebase';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 export default function FieldDetail() {
   const { fieldId } = useParams();
@@ -38,7 +40,6 @@ export default function FieldDetail() {
 
   if (!field) return <div>Loading field...</div>;
 
-  // Pull crop and variety for the selected year
   const crop = field.crops?.[cropYear]?.crop || '';
   const variety = field.crops?.[cropYear]?.variety || '';
 
@@ -77,7 +78,6 @@ export default function FieldDetail() {
         ))}
       </div>
 
-      {/* Crop assignment for current year */}
       <div className="bg-white p-4 rounded shadow col-span-2 mb-6">
         <h3 className="text-sm font-semibold mb-2 text-gray-700">🌱 Crop Assignment – {cropYear}</h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -133,9 +133,28 @@ export default function FieldDetail() {
         </button>
       </div>
 
+      {/* Boundary Preview Map */}
+      <div className="bg-white p-3 rounded shadow col-span-2 mb-6">
+        <h3 className="text-sm font-semibold mb-2 text-gray-700">🗺️ Boundary Map</h3>
+        {field.boundary?.geojson ? (
+          <MapContainer
+            style={{ height: '300px', borderRadius: '0.5rem' }}
+            bounds={[[0, 0], [0, 0]]}
+            scrollWheelZoom={false}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap"
+            />
+            <GeoJSON data={field.boundary.geojson} />
+          </MapContainer>
+        ) : (
+          <p className="text-gray-500 italic">No boundary assigned to this field yet.</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-        <div className="bg-white p-3 rounded shadow">🗺️ Map Thumbnail (boundary)</div>
-        <div className="bg-white p-3 rounded shadow">🧾 Job History</div>
+        <div className="bg-white p-3 rounded shadow col-span-2">🧾 Job History</div>
         <div className="bg-white p-3 rounded shadow col-span-2">📝 Notes + Observations</div>
       </div>
     </div>
