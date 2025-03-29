@@ -6,14 +6,12 @@ export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
   const [mobileMenu, setMobileMenu] = useState(null);
   const [cropYear, setCropYear] = useState(2025);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const pages = {
-    Dashboard: ['Dashboard'],
-    Farm: ['Fields', 'Import Fields'],
-    Jobs: ['Jobs', 'Job Templates', 'Job Comments'],
-    Mapping: ['Map Viewer', 'Map Creator', 'Field Status'],
-    Records: ['Reports', 'Calendar', 'Reminders', 'Documents', 'Field Notes', 'Crop History', 'Field Metrics', 'Crop Budget'],
-    Tools: ['Setup', 'Inventory', 'Audit Log']
+    Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders'],
+    Mapping: ['Map Viewer', 'Map Creator'],
+    Records: ['Field History', 'Crop History', 'Calendar', 'Documents', 'Field Metrics', 'Inventory']
   };
 
   return (
@@ -22,6 +20,12 @@ export default function AppLayout() {
       <aside className="hidden md:block w-64 bg-white shadow-xl p-6 border-r border-gray-200">
         <h2 className="text-2xl font-extrabold text-blue-800 mb-8 tracking-tight">🌾 Farm Job</h2>
         <nav className="flex flex-col gap-4 text-sm">
+          <button
+            onClick={() => setActivePage('Dashboard')}
+            className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === 'Dashboard' ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
+          >
+            Dashboard
+          </button>
           {Object.entries(pages).map(([label, pageList]) => (
             <details key={label} className="group">
               <summary className="cursor-pointer text-xs uppercase font-bold text-gray-600 group-open:text-blue-700">{label}</summary>
@@ -47,10 +51,34 @@ export default function AppLayout() {
           <div className="flex gap-3 items-center">
             <h1 className="text-2xl font-extrabold text-blue-800 tracking-tight">🌾 Farm Job</h1>
           </div>
-          <div className="flex gap-2 items-center">
-            <button onClick={() => setCropYear((y) => y - 1)} className="text-blue-600 hover:text-blue-800 font-bold">⬅</button>
-            <span className="text-lg font-semibold text-gray-700">{cropYear}</span>
-            <button onClick={() => setCropYear((y) => y + 1)} className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2 items-center">
+              <button onClick={() => setCropYear((y) => y - 1)} className="text-blue-600 hover:text-blue-800 font-bold">⬅</button>
+              <span className="text-lg font-semibold text-gray-700">{cropYear}</span>
+              <button onClick={() => setCropYear((y) => y + 1)} className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="w-9 h-9 rounded-full bg-blue-800 text-white font-bold"
+              >
+                BW
+              </button>
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50">
+                  <div className="px-4 py-2 border-b font-semibold">User Profile</div>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+                  <div className="px-4 py-2 border-t font-semibold">Setup</div>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Product Import</button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -66,10 +94,13 @@ export default function AppLayout() {
 
       {/* Mobile nav */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-inner flex justify-around items-center py-2 text-sm md:hidden z-50">
-        {Object.keys(pages).map((section) => (
+        {['Dashboard', 'Farm', 'Mapping', 'Records'].map((section) => (
           <button
             key={section}
-            onClick={() => setMobileMenu(section)}
+            onClick={() => {
+              if (section === 'Dashboard') setActivePage('Dashboard');
+              else setMobileMenu(section);
+            }}
             className="flex flex-col items-center text-gray-700 hover:text-blue-700 px-2"
           >
             <span className="text-xs font-semibold">{section}</span>
