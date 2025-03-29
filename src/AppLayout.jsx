@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Fields from './pages/Fields';
 import ImportFields from './pages/ImportFields';
 
@@ -7,12 +7,23 @@ export default function AppLayout() {
   const [mobileMenu, setMobileMenu] = useState(null);
   const [cropYear, setCropYear] = useState(2025);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef(null);
 
   const pages = {
     Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders'],
     Mapping: ['Map Viewer', 'Map Creator'],
     Records: ['Field History', 'Crop History', 'Calendar', 'Documents', 'Field Metrics', 'Inventory']
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="flex min-h-screen font-sans text-gray-800">
@@ -52,12 +63,15 @@ export default function AppLayout() {
             <h1 className="text-2xl font-extrabold text-blue-800 tracking-tight">🌾 Farm Job</h1>
           </div>
           <div className="flex items-center gap-4">
+            {/* Crop year selector */}
             <div className="flex gap-2 items-center">
               <button onClick={() => setCropYear((y) => y - 1)} className="text-blue-600 hover:text-blue-800 font-bold">⬅</button>
               <span className="text-lg font-semibold text-gray-700">{cropYear}</span>
               <button onClick={() => setCropYear((y) => y + 1)} className="text-blue-600 hover:text-blue-800 font-bold">➡</button>
             </div>
-            <div className="relative">
+
+            {/* Profile menu */}
+            <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className="w-9 h-9 rounded-full bg-blue-800 text-white font-bold"
@@ -67,15 +81,15 @@ export default function AppLayout() {
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50">
                   <div className="px-4 py-2 border-b font-semibold">User Profile</div>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+                  <button onClick={() => { setActivePage('Profile Settings'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
+                  <button onClick={() => { setActivePage('Manage Users'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
+                  <button onClick={() => { setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
                   <div className="px-4 py-2 border-t font-semibold">Setup</div>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Product Import</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
+                  <button onClick={() => { setActivePage('Product Import'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Product Import</button>
+                  <button onClick={() => { setActivePage('Import Fields'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
+                  <button onClick={() => { setActivePage('Boundary Import'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Import</button>
+                  <button onClick={() => { setActivePage('Manage Job Types'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
+                  <button onClick={() => { setActivePage('Audit Log'); setShowProfileMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
                 </div>
               )}
             </div>
