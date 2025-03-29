@@ -5,7 +5,6 @@ import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfil
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Fix for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,11 +16,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      buffer: require.resolve('buffer/')
+      buffer: 'buffer/', // <-- this fixes the named import issue
       './window': path.resolve(__dirname, 'src/shims/empty.js'),
     },
   },
   optimizeDeps: {
+    include: ['buffer'], // <-- ensure it's bundled
     esbuildOptions: {
       define: {
         global: 'globalThis',
@@ -30,9 +30,4 @@ export default defineConfig({
         NodeGlobalsPolyfillPlugin({
           buffer: true,
         }),
-        NodeModulesPolyfillPlugin(),
-      ],
-    },
-  },
-});
-
+        NodeModulesPolyfillPlugin
