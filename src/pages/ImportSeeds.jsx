@@ -20,12 +20,12 @@ export default function ImportSeeds() {
         for (const row of data) {
           try {
             await addDoc(collection(db, 'products'), {
-              name: row.productName,
+              name: row.productName || '',
               type: 'Seed',
-              crop: row.crop,
-              unitType: row.unitType,
-              unitLabel: row.unitLabel,
-              unitAbbrev: row.unitAbbrev,
+              crop: row.crop || '',
+              unitType: row.unitType || 'weight',
+              unitLabel: row.unitLabel || '',
+              unitAbbrev: row.unitAbbrev || '',
               seedsPerUnit: row.seedsPerUnit ? parseFloat(row.seedsPerUnit) : null,
               lbsPerBushel: row.lbsPerBushel ? parseFloat(row.lbsPerBushel) : null,
               tech: row.technology || '',
@@ -56,7 +56,7 @@ export default function ImportSeeds() {
       <input type="file" accept=".csv" onChange={handleUpload} className="mb-4" />
       {message && <p className="text-green-700 font-semibold">{message}</p>}
       <p className="text-sm text-gray-600">
-        Make sure your file matches the <strong>seeds-template.csv</strong> format.
+        Your CSV must include: <code>productName, crop, unitType, unitLabel, unitAbbrev, seedsPerUnit, lbsPerBushel, technology</code>
       </p>
     </div>
   );
