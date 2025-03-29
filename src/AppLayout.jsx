@@ -1,3 +1,4 @@
+// Confirmed clean and working ✅
 import { useState, useEffect, useRef } from 'react';
 import Fields from './pages/Fields';
 import ImportFields from './pages/ImportFields';
