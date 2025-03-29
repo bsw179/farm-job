@@ -5,34 +5,84 @@ import { Link } from 'react-router-dom';
 
 export default function Fields({ cropYear }) {
   const [fields, setFields] = useState([]);
+  const [filterFarm, setFilterFarm] = useState('');
+  const [sortKey, setSortKey] = useState('fieldName');
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'fields'), (snapshot) => {
       const fieldData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setFields(fieldData);
     });
-
     return () => unsubscribe();
   }, []);
+
+  const filteredFields = fields
+    .filter(f => f.cropYear === cropYear)
+    .filter(f => !filterFarm || f.farmName === filterFarm)
+    .sort((a, b) => {
+      if (!a[sortKey] || !b[sortKey]) return 0;
+      return a[sortKey].toString().localeCompare(b[sortKey].toString());
+    });
+
+  const uniqueFarms = [...new Set(fields.map(f => f.farmName))];
 
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Fields – Crop Year: {cropYear}</h2>
 
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold mb-2">Saved Fields</h3>
-        <ul className="space-y-2 text-sm">
-          {fields
-            .filter((field) => field.cropYear === cropYear)
-            .map((field) => (
-              <li key={field.id} className="p-3 bg-gray-100 rounded shadow-sm flex justify-between items-center">
-                <Link to={`/fields/${field.id}`} className="text-blue-800 hover:underline">
-                  <strong>{field.fieldName}</strong> – {field.farmName} – {field.county} – {field.gpsAcres} acres
-                </Link>
-              </li>
+      <div className="flex items-center mb-4 gap-4">
+        <label className="text-sm">Filter by Farm:</label>
+        <select
+          value={filterFarm}
+          onChange={(e) => setFilterFarm(e.target.value)}
+          className="border p-2 text-sm rounded"
+        >
+          <option value="">All Farms</option>
+          {uniqueFarms.map(farm => (
+            <option key={farm} value={farm}>{farm}</option>
           ))}
-        </ul>
+        </select>
+
+        <label className="text-sm ml-4">Sort by:</label>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value)}
+          className="border p-2 text-sm rounded"
+        >
+          <option value="fieldName">Field Name</option>
+          <option value="farmName">Farm Name</option>
+          <option value="gpsAcres">GPS Acres</option>
+        </select>
       </div>
+
+      <table className="w-full table-auto text-sm border rounded overflow-hidden bg-white shadow">
+        <thead className="bg-blue-100 text-left">
+          <tr>
+            <th className="p-2">Field</th>
+            <th className="p-2">Farm</th>
+            <th className="p-2">GPS Acres</th>
+            <th className="p-2">FSA Acres</th>
+            <th className="p-2">County</th>
+            <th className="p-2">Crop Year</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredFields.map((field) => (
+            <tr key={field.id} className="hover:bg-blue-50">
+              <td className="p-2">
+                <Link to={`/fields/${field.id}`} className="text-blue-700 hover:underline font-semibold">
+                  {field.fieldName}
+                </Link>
+              </td>
+              <td className="p-2">{field.farmName}</td>
+              <td className="p-2">{field.gpsAcres}</td>
+              <td className="p-2">{field.fsaAcres}</td>
+              <td className="p-2">{field.county}</td>
+              <td className="p-2">{field.cropYear}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
