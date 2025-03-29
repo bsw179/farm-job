@@ -1,11 +1,13 @@
 // src/components/TopBar.jsx
 import React, { useContext, useRef, useState, useEffect } from 'react';
 import { CropYearContext } from '../context/CropYearContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function TopBar() {
   const { cropYear, setCropYear } = useContext(CropYearContext);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -16,6 +18,13 @@ export default function TopBar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleNavigate = (page) => {
+    setShowMenu(false);
+    if (page === 'Logout') return; // Hook up auth later
+    if (page === 'Dashboard') return navigate('/');
+    navigate(`/${page.replace(/\s+/g, '-').toLowerCase()}`);
+  };
 
   return (
     <div className="flex justify-between items-center px-6 py-4 border-b bg-white shadow-sm">
@@ -44,15 +53,15 @@ export default function TopBar() {
           {showMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50">
               <div className="px-4 py-2 border-b font-semibold">User Profile</div>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile</button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Settings</button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+              <button onClick={() => handleNavigate('Profile')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile</button>
+              <button onClick={() => handleNavigate('Settings')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Settings</button>
+              <button onClick={() => handleNavigate('Logout')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
               <div className="px-4 py-2 border-t font-semibold">Setup</div>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Products</button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Upload</button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
+              <button onClick={() => handleNavigate('Import Products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Products</button>
+              <button onClick={() => handleNavigate('Field Import')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
+              <button onClick={() => handleNavigate('Boundary Upload')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Upload</button>
+              <button onClick={() => handleNavigate('Manage Job Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
+              <button onClick={() => handleNavigate('Audit Log')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
             </div>
           )}
         </div>
