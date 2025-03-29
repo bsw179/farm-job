@@ -1,9 +1,9 @@
-// Confirmed clean and working ✅
 import { useState, useEffect, useRef } from 'react';
 import Fields from './pages/Fields';
 import ImportFields from './pages/ImportFields';
 import MapViewer from './pages/MapViewer';
 import BoundaryImport from './pages/BoundaryImport';
+import ProductImport from './pages/ProductImport';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
@@ -103,7 +103,8 @@ export default function AppLayout() {
         {activePage === 'Import Fields' && <ImportFields />}
         {activePage === 'Map Viewer' && <MapViewer />}
         {activePage === 'Boundary Import' && <BoundaryImport />}
-        {activePage !== 'Fields' && activePage !== 'Import Fields' && activePage !== 'Map Viewer' && activePage !== 'Boundary Import' && (
+        {activePage === 'Product Import' && <ProductImport />}
+        {['Fields', 'Import Fields', 'Map Viewer', 'Boundary Import', 'Product Import'].indexOf(activePage) === -1 && (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
           </div>
