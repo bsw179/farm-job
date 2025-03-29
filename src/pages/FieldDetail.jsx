@@ -5,7 +5,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import { CropYearContext } from '../context/CropYearContext';
-import db from '../firebase';
+import { db } from '../firebase';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
