@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import Fields from './pages/Fields';
+import ImportFields from './pages/ImportFields';
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState('Dashboard');
   const [mobileMenu, setMobileMenu] = useState(null);
-  const [cropYear, setCropYear] = useState(2025); // 🆕 crop year state
+  const [cropYear, setCropYear] = useState(2025);
 
   const pages = {
-    Overview: ['Dashboard', 'Fields', 'Jobs', 'Products'],
+    Dashboard: ['Dashboard'],
+    Farm: ['Fields', 'Import Fields'],
+    Jobs: ['Jobs', 'Job Templates', 'Job Comments'],
     Mapping: ['Map Viewer', 'Map Creator', 'Field Status'],
     Records: ['Reports', 'Calendar', 'Reminders', 'Documents', 'Field Notes', 'Crop History', 'Field Metrics', 'Crop Budget'],
-    'Tools & Admin': ['Setup', 'Inventory', 'Job Templates', 'Job Comments', 'Audit Log']
+    Tools: ['Setup', 'Inventory', 'Audit Log']
   };
 
   return (
@@ -51,10 +54,10 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* Page Rendering */}
-        {activePage === 'Fields' ? (
-          <Fields cropYear={cropYear} />
-        ) : (
+        {/* Page rendering */}
+        {activePage === 'Fields' && <Fields cropYear={cropYear} />}
+        {activePage === 'Import Fields' && <ImportFields />}
+        {activePage !== 'Fields' && activePage !== 'Import Fields' && (
           <div className="bg-white p-6 rounded-xl shadow text-gray-500 italic">
             📄 {activePage} page content will appear here.
           </div>
