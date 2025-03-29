@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Buffer } from 'buffer';
+window.Buffer = Buffer;
+
 import shp from 'shpjs';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import db from '../firebase';
