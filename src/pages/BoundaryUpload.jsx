@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Buffer } from 'buffer';
-window.Buffer = Buffer;
+// import { Buffer } from 'buffer';
+// window.Buffer = Buffer;
 
 import shp from 'shpjs';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -15,27 +15,28 @@ export default function BoundaryUpload() {
     const file = e.target.files[0];
     if (!file) return;
 
-    setMessage('Processing shapefile...');
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const geojson = await shp(arrayBuffer);
-      const fieldsSnap = await getDocs(collection(db, 'fields'));
-      const allFields = fieldsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setMessage('Shapefile upload temporarily disabled for testing.');
 
-      setFeatures(
-        geojson.features.map((feat) => {
-          const name = feat.properties?.name || '';
-          const match = allFields.find(f => f.fieldName.trim().toLowerCase() === name.trim().toLowerCase());
-          return { geometry: feat.geometry, fieldId: match?.id || '', fieldNameGuess: name };
-        })
-      );
+    // try {
+    //   const arrayBuffer = await file.arrayBuffer();
+    //   const geojson = await shp(arrayBuffer);
+    //   const fieldsSnap = await getDocs(collection(db, 'fields'));
+    //   const allFields = fieldsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      setFieldOptions(allFields);
-      setMessage(`Loaded ${geojson.features.length} boundaries.`);
-    } catch (err) {
-      console.error(err);
-      setMessage('Error reading shapefile.');
-    }
+    //   setFeatures(
+    //     geojson.features.map((feat) => {
+    //       const name = feat.properties?.name || '';
+    //       const match = allFields.find(f => f.fieldName.trim().toLowerCase() === name.trim().toLowerCase());
+    //       return { geometry: feat.geometry, fieldId: match?.id || '', fieldNameGuess: name };
+    //     })
+    //   );
+
+    //   setFieldOptions(allFields);
+    //   setMessage(`Loaded ${geojson.features.length} boundaries.`);
+    // } catch (err) {
+    //   console.error(err);
+    //   setMessage('Error reading shapefile.');
+    // }
   };
 
   const handleSave = async () => {
