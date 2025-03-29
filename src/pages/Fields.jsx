@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import db from '../firebase';
+import { Link } from 'react-router-dom';
 
 export default function Fields({ cropYear }) {
   const [fields, setFields] = useState([]);
@@ -14,10 +15,6 @@ export default function Fields({ cropYear }) {
     return () => unsubscribe();
   }, []);
 
-  const handleDelete = async (id) => {
-    await deleteDoc(doc(db, 'fields', id));
-  };
-
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Fields – Crop Year: {cropYear}</h2>
@@ -29,10 +26,9 @@ export default function Fields({ cropYear }) {
             .filter((field) => field.cropYear === cropYear)
             .map((field) => (
               <li key={field.id} className="p-3 bg-gray-100 rounded shadow-sm flex justify-between items-center">
-                <span>
+                <Link to={`/fields/${field.id}`} className="text-blue-800 hover:underline">
                   <strong>{field.fieldName}</strong> – {field.farmName} – {field.county} – {field.gpsAcres} acres
-                </span>
-                <button onClick={() => handleDelete(field.id)} className="text-red-600 hover:underline ml-4">🗑 Delete</button>
+                </Link>
               </li>
           ))}
         </ul>
