@@ -1,48 +1,59 @@
+// src/pages/BoundaryUpload.jsx
 import React, { useState } from 'react';
-// import { Buffer } from 'buffer';
-// window.Buffer = Buffer;
-
 import shp from 'shpjs';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import db from '../firebase';
+import 'leaflet/dist/leaflet.css';
 
 export default function BoundaryUpload() {
-  const [message, setMessage] = useState('');
-  const [features, setFeatures] = useState([]);
-  const [fieldOptions, setFieldOptions] = useState([]);
+  const [uploadedFields, setUploadedFields] = useState([]);
+  const [existingFields, setExistingFields] = useState([]);
+  const [matchedFields, setMatchedFields] = useState([]);
+  const [status, setStatus] = useState('');
 
-  const handleFile = async (e) => {
+  const handleShapefileUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file || !file.name.endsWith('.zip')) return;
 
-    setMessage('Shapefile upload temporarily disabled for testing.');
+    setStatus('Reading shapefile...');
+    const arrayBuffer = await file.arrayBuffer();
+    const geojson = await shp(arrayBuffer);
 
-    // try {
-    //   const arrayBuffer = await file.arrayBuffer();
-    //   const geojson = await shp(arrayBuffer);
-    //   const fieldsSnap = await getDocs(collection(db, 'fields'));
-    //   const allFields = fieldsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const uploaded = geojson.features.map((feature) => {
+      const name = feature.properties.name || feature.properties.Name || feature.properties.NAME;
+      return {
+        name,
+        geometry: feature.geometry
+      };
+    });
+    setUploadedFields(uploaded);
 
-    //   setFeatures(
-    //     geojson.features.map((feat) => {
-    //       const name = feat.properties?.name || '';
-    //       const match = allFields.find(f => f.fieldName.trim().toLowerCase() === name.trim().toLowerCase());
-    //       return { geometry: feat.geometry, fieldId: match?.id || '', fieldNameGuess: name };
-    //     })
-    //   );
+    setStatus('Fetching existing fields...');
+    const snapshot = await getDocs(collection(db, 'fields'));
+    const existing = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setExistingFields(existing);
 
-    //   setFieldOptions(allFields);
-    //   setMessage(`Loaded ${geojson.features.length} boundaries.`);
-    // } catch (err) {
-    //   console.error(err);
-    //   setMessage('Error reading shapefile.');
-    // }
+    const matches = uploaded.map((shape) => {
+      const match = existing.find((field) =>
+        field.fieldName.toLowerCase().includes(shape.name.toLowerCase()) ||
+        shape.name.toLowerCase().includes(field.fieldName.toLowerCase())
+      );
+      return {
+        name: shape.name,
+        geometry: shape.geometry,
+        match: match || null
+      };
+    });
+
+    setMatchedFields(matches);
+    setStatus('Matching complete. Ready to save.');
   };
 
   const handleSave = async () => {
-    const valid = features.filter(f => f.fieldId);
-    for (const item of valid) {
-      const ref = doc(db, 'fields', item.fieldId);
+    for (const item of matchedFields) {
+      if (!item.match) continue;
+      const ref = doc(db, 'fields', item.match.id);
       await updateDoc(ref, {
         boundary: {
           geojson: item.geometry,
@@ -50,45 +61,42 @@ export default function BoundaryUpload() {
         }
       });
     }
-    setMessage(`Saved ${valid.length} boundaries.`);
-  };
-
-  const updateMatch = (index, fieldId) => {
-    setFeatures(prev => {
-      const copy = [...prev];
-      copy[index].fieldId = fieldId;
-      return copy;
-    });
+    setStatus('Boundaries saved!');
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Upload Field Boundaries (Shapefile)</h2>
-      <input type="file" accept=".zip" onChange={handleFile} className="mb-4" />
-      {message && <p className="text-sm text-blue-700">{message}</p>}
+    <div className="p-6 max-w-4xl mx-auto">
+      <h2 className="text-xl font-bold mb-4">Upload Field Boundaries (Shapefile .zip)</h2>
+      <input type="file" accept=".zip" onChange={handleShapefileUpload} className="mb-4" />
+      {status && <p className="mb-4 text-sm text-gray-700">{status}</p>}
 
-      {features.length > 0 && (
-        <div className="bg-white p-4 rounded shadow mt-4 text-sm">
-          <h3 className="font-semibold mb-2">Boundary Matches</h3>
-          {features.map((f, i) => (
-            <div key={i} className="mb-2 flex gap-3 items-center">
-              <div className="w-48 truncate">🗂 {f.fieldNameGuess}</div>
-              <select
-                value={f.fieldId}
-                onChange={(e) => updateMatch(i, e.target.value)}
-                className="border p-1 rounded w-full"
-              >
-                <option value="">Select Field</option>
-                {fieldOptions.map((fld) => (
-                  <option key={fld.id} value={fld.id}>
-                    {fld.fieldName} – {fld.farmName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-          <button onClick={handleSave} className="mt-4 bg-blue-700 text-white px-4 py-2 rounded">Save Boundaries</button>
-        </div>
+      {matchedFields.length > 0 && (
+        <>
+          <div className="mb-4">
+            <button
+              onClick={handleSave}
+              className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+            >
+              Save Matched Boundaries
+            </button>
+          </div>
+          <div className="space-y-6">
+            {matchedFields.map((item, idx) => (
+              <div key={idx} className="border rounded p-4 bg-white shadow">
+                <p className="text-sm font-medium mb-2">
+                  <strong>Uploaded Name:</strong> {item.name} <br />
+                  <strong>Matched Field:</strong> {item.match?.fieldName || '— No Match —'}
+                </p>
+                {item.geometry && (
+                  <MapContainer style={{ height: 200 }} bounds={[[0, 0], [0, 0]]} scrollWheelZoom={false}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <GeoJSON data={item.geometry} />
+                  </MapContainer>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
