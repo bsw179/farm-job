@@ -19,6 +19,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
       '../internals/define-window-property': path.resolve(__dirname, 'src/shims/empty.js'),
       '../internals/window-this': path.resolve(__dirname, 'src/shims/empty.js'),
+      globals: path.resolve(__dirname, 'src/shims/empty.js'), // ✅ this is correct
     },
   },
   optimizeDeps: {
@@ -31,6 +32,6 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: true, // ✅ Enables source maps for easier debugging
+    sourcemap: true,
   },
 });
