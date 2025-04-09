@@ -1,13 +1,11 @@
 // src/components/TopBar.jsx
-import React, { useContext, useRef, useState, useEffect } from 'react';
+import React, { useContext, useRef, useEffect, useState } from 'react';
 import { CropYearContext } from '../context/CropYearContext';
-import { useNavigate } from 'react-router-dom';
 
-export default function TopBar() {
+export default function TopBar({ onNavigate }) {
   const { cropYear, setCropYear } = useContext(CropYearContext);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -19,49 +17,47 @@ export default function TopBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleNavigate = (page) => {
+  const handlePageChange = (page) => {
     setShowMenu(false);
-    if (page === 'Logout') return; // Hook up auth later
-    if (page === 'Dashboard') return navigate('/');
-    navigate(`/${page.replace(/\s+/g, '-').toLowerCase()}`);
+    if (onNavigate) onNavigate(page);
   };
 
   return (
-    <div className="flex justify-between items-center px-6 py-4 border-b bg-white shadow-sm">
-      <h1 className="text-xl font-extrabold text-blue-800 tracking-tight">🌾 Farm Job</h1>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setCropYear((y) => y - 1)}
-          className="text-blue-600 hover:text-blue-800 text-lg font-bold"
-        >
-          ⬅
-        </button>
-        <span className="text-lg font-semibold text-gray-700">{cropYear}</span>
-        <button
-          onClick={() => setCropYear((y) => y + 1)}
-          className="text-blue-600 hover:text-blue-800 text-lg font-bold"
-        >
-          ➡
-        </button>
+    <div className="flex items-center justify-between px-4 py-3 bg-blue-900 text-white shadow-md rounded-b-md mb-4">
+      <div className="font-extrabold text-xl tracking-wide">Farm Job</div>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCropYear((y) => y - 1)}
+            className="text-white hover:text-blue-300 text-lg font-bold"
+          >⬅</button>
+          <span className="text-white font-semibold text-lg">{cropYear}</span>
+          <button
+            onClick={() => setCropYear((y) => y + 1)}
+            className="text-white hover:text-blue-300 text-lg font-bold"
+          >➡</button>
+        </div>
+
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowMenu((prev) => !prev)}
-            className="w-9 h-9 rounded-full bg-blue-800 text-white font-bold flex items-center justify-center"
-          >
-            BW
-          </button>
+            className="w-9 h-9 rounded-full bg-white text-blue-900 font-bold flex items-center justify-center"
+          >BW</button>
+
           {showMenu && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50">
+            <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50 text-gray-800">
               <div className="px-4 py-2 border-b font-semibold">User Profile</div>
-              <button onClick={() => handleNavigate('Profile')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile</button>
-              <button onClick={() => handleNavigate('Settings')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Settings</button>
-              <button onClick={() => handleNavigate('Logout')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+              <button onClick={() => handlePageChange('Profile Settings')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
+              <button onClick={() => handlePageChange('Manage Users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
+              <button onClick={() => setShowMenu(false)} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+
               <div className="px-4 py-2 border-t font-semibold">Setup</div>
-              <button onClick={() => handleNavigate('Import Products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Products</button>
-              <button onClick={() => handleNavigate('Field Import')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Field Import</button>
-              <button onClick={() => handleNavigate('Boundary Upload')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Boundary Upload</button>
-              <button onClick={() => handleNavigate('Manage Job Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
-              <button onClick={() => handleNavigate('Audit Log')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Audit Log</button>
+              <button onClick={() => handlePageChange('Products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Products</button>
+              <button onClick={() => handlePageChange('Manage Partners')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Partners</button>
+              <button onClick={() => handlePageChange('Manage Crop Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Crop Types</button>
+              <button onClick={() => handlePageChange('Import Boundaries')}className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Boundaries</button>
+              <button onClick={() => handlePageChange('Manage Job Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Job Types</button>
+
             </div>
           )}
         </div>

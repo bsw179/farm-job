@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+// src/context/CropYearContext.jsx
+import { createContext, useContext, useState } from 'react';
 
 export const CropYearContext = createContext();
 
@@ -12,7 +13,7 @@ export function CropYearProvider({ children }) {
   );
 }
 
-// Optional helper hook if you want to use it
+// Optional helper hook
 export function useCropYear() {
   return useContext(CropYearContext);
 }

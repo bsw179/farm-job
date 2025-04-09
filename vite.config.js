@@ -16,8 +16,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      buffer: require.resolve('buffer/'), // ✅ final fix
+      buffer: require.resolve('buffer/'),
       './window': path.resolve(__dirname, 'src/shims/empty.js'),
+      '@': path.resolve(__dirname, 'src'), // 👈 add this line
     },
   },
   optimizeDeps: {
@@ -30,7 +31,7 @@ export default defineConfig({
         NodeGlobalsPolyfillPlugin({
           buffer: true,
         }),
-        NodeModulesPolyfillPlugin(), // ✅ this was missing a closing }
+        NodeModulesPolyfillPlugin(),
       ],
     },
   },

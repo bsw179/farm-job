@@ -1,47 +1,87 @@
+// src/components/Sidebar.jsx
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Map,
+  ClipboardList,
+  Layers3,
+  FileText
+} from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-const pages = {
-  Farm: ['Fields', 'Jobs', 'Crop Budget', 'Reminders', 'Reports'],
-  Mapping: ['Map Viewer', 'Map Creator'],
-  Records: ['Field History', 'Crop History', 'Calendar', 'Documents', 'Field Metrics', 'Inventory']
-};
+const sections = [
+  {
+    title: 'Farm',
+    links: [
+      { label: 'Dashboard', icon: LayoutDashboard },
+      { label: 'Fields', icon: Layers3 },
+      { label: 'Jobs', icon: ClipboardList },
+      { label: 'Reports', icon: FileText },
+      { label: 'Field Metrics', icon: FileText },
+    ],
+  },
+  {
+    title: 'Mapping',
+    links: [
+      { label: 'Map Viewer', icon: Map },
+    ],
+  },
+];
 
-export default function Sidebar({ activePage, onPageChange }) {
-  const navigate = useNavigate();
+export default function Sidebar({ onNavigate }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const handlePageClick = (page) => {
-    onPageChange(page);
-    if (page === 'Fields') navigate('/');
+  const getPathLabel = (path) => {
+    if (path.includes('/fields')) return 'Fields';
+    if (path.includes('/jobs')) return 'Jobs';
+    if (path.includes('/reports')) return 'Reports';
+    if (path.includes('/metrics')) return 'Field Metrics';
+    if (path.includes('/map-viewer')) return 'Map Viewer';
+    return 'Dashboard';
   };
 
+  const getPathFromLabel = (label) => {
+    switch (label) {
+      case 'Dashboard': return '/';
+      case 'Fields': return '/fields';
+      case 'Jobs': return '/jobs';
+      case 'Reports': return '/reports';
+      case 'Map Viewer': return '/map-viewer';
+      case 'Field Metrics': return '/metrics';
+      default: return '/';
+    }
+  };
+
+  const activePage = getPathLabel(location.pathname);
+
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-white shadow-xl border-r border-gray-200 overflow-y-auto max-h-screen sticky top-0">
+    <aside className="flex flex-col w-64 bg-blue-900 text-blue-100 shadow-xl border-r border-blue-800 overflow-y-auto max-h-screen sticky top-0">
       <div className="p-6">
-        <h2 className="text-2xl font-extrabold text-blue-800 mb-8 tracking-tight">🌾 Farm Job</h2>
-        <nav className="flex flex-col gap-4 text-sm">
-          <button
-            onClick={() => handlePageClick('Dashboard')}
-            className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === 'Dashboard' ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
-          >
-            Dashboard
-          </button>
-          {Object.entries(pages).map(([group, list]) => (
-            <details key={group} className="group">
-              <summary className="cursor-pointer text-xs uppercase font-bold text-gray-600 group-open:text-blue-700">{group}</summary>
-              <div className="flex flex-col mt-1 ml-2 gap-1">
-                {list.map((page) => (
+        <h2 className="text-2xl font-extrabold text-white mb-8 tracking-tight">🌾 Farm Job</h2>
+        <nav className="flex flex-col gap-8 text-sm">
+          {sections.map(({ title, links }) => (
+            <div key={title}>
+              <div className="px-3 text-base uppercase font-extrabold text-blue-300 tracking-wide mb-2">{title}</div>
+              <div className="flex flex-col gap-1">
+                {links.map(({ label, icon: Icon }) => (
                   <button
-                    key={page}
-                    onClick={() => handlePageClick(page)}
-                    className={`text-left px-3 py-1.5 rounded-md transition font-medium ${activePage === page ? 'bg-blue-100 text-blue-800' : 'hover:bg-blue-50'}`}
+                    key={label}
+                    onClick={() => {
+                      navigate(getPathFromLabel(label));
+                      if (window.innerWidth < 768 && onNavigate) {
+                        onNavigate();
+                      }
+                    }}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left transition font-medium ${
+                      activePage === label ? 'bg-blue-700 text-white' : 'hover:bg-blue-800 text-blue-100'
+                    }`}
                   >
-                    {page}
+                    <Icon size={18} /> {label}
                   </button>
                 ))}
               </div>
-            </details>
+            </div>
           ))}
         </nav>
       </div>
