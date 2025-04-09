@@ -1,7 +1,5 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -23,17 +21,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['buffer'],
-    exclude: ['proj4'], // 👈 added this line to fix Vercel build error
+    exclude: [], // proj4 exclusion not needed anymore
     esbuildOptions: {
       define: {
-        global: 'globalThis',
+        global: 'window',
       },
-      plugins: [
-        NodeGlobalsPolyfillPlugin({
-          buffer: true,
-        }),
-        NodeModulesPolyfillPlugin(),
-      ],
     },
   },
 });
