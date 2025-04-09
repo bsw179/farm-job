@@ -1,10 +1,10 @@
 import { pdf } from '@react-pdf/renderer';
-import { generatePDF } from './generatePDF';
+import { generatePDFBlob } from './generatePDF';
 
 export const downloadJobPDF = async (job) => {
   try {
     console.log('🧾 Generating PDF for job:', job); // 👈 Logs job to console
-    const blob = await pdf(generatePDF({ job })).toBlob();
+const blob = await generatePDFBlob(job);
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
