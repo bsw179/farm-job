@@ -18,11 +18,12 @@ export default defineConfig({
     alias: {
       buffer: require.resolve('buffer/'),
       './window': path.resolve(__dirname, 'src/shims/empty.js'),
-      '@': path.resolve(__dirname, 'src'), // 👈 add this line
+      '@': path.resolve(__dirname, 'src'),
     },
   },
   optimizeDeps: {
     include: ['buffer'],
+    exclude: ['proj4'], // 👈 added this line to fix Vercel build error
     esbuildOptions: {
       define: {
         global: 'globalThis',
