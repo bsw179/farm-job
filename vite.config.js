@@ -13,23 +13,24 @@ export default defineConfig({
     global: 'window',
   },
   resolve: {
-  alias: {
-    buffer: require.resolve('buffer/'),
-    './window': path.resolve(__dirname, 'src/shims/empty.js'),
-    '@': path.resolve(__dirname, 'src'),
-    '../internals/define-window-property': path.resolve(__dirname, 'src/shims/empty.js'), // 👈 ADD THIS
-  '../internals/window-this': path.resolve(__dirname, 'src/shims/empty.js'),
-
+    alias: {
+      buffer: require.resolve('buffer/'),
+      './window': path.resolve(__dirname, 'src/shims/empty.js'),
+      '@': path.resolve(__dirname, 'src'),
+      '../internals/define-window-property': path.resolve(__dirname, 'src/shims/empty.js'),
+      '../internals/window-this': path.resolve(__dirname, 'src/shims/empty.js'),
+    },
   },
-},
-
   optimizeDeps: {
     include: ['buffer'],
-    exclude: [], // proj4 exclusion not needed anymore
+    exclude: [],
     esbuildOptions: {
       define: {
         global: 'window',
       },
     },
+  },
+  build: {
+    sourcemap: true, // ✅ Enables source maps for easier debugging
   },
 });
