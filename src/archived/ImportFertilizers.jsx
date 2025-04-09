@@ -1,46 +1,59 @@
-// src/pages/ImportFertilizers.jsx
 import React, { useState } from 'react';
 import Papa from 'papaparse';
-import { db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import db from '../firebase';
 
 export default function ImportFertilizers() {
-  const [csvText, setCsvText] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleImport = async () => {
-    Papa.parse(csvText, {
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
-        const fertilizerData = results.data.map((row) => ({
-          ...row,
-          type: 'Fertilizer',
-        }));
-        for (let fert of fertilizerData) {
-          await addDoc(collection(db, 'products'), fert);
+      complete: async ({ data }) => {
+        let success = 0;
+        let failed = 0;
+
+        for (const row of data) {
+          try {
+            await addDoc(collection(db, 'products'), {
+              name: row.productName,
+              type: 'Fertilizer',
+              unitLabel: row.unitLabel,
+              unitAbbrev: row.unitAbbrev,
+              defaultRate: row.defaultRate ? parseFloat(row.defaultRate) : null,
+              rateType: row.rateType || 'per acre'
+            });
+            success++;
+          } catch (err) {
+            console.error('Import failed:', row, err);
+            failed++;
+          }
         }
-        alert('Fertilizers imported!');
-        setCsvText('');
-      },
+
+        setMessage(`Imported ${success} fertilizers. ${failed} failed.`);
+      }
     });
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Import Fertilizers (Paste CSV)</h2>
-      <textarea
-        value={csvText}
-        onChange={(e) => setCsvText(e.target.value)}
-        rows={10}
-        className="w-full border p-3 text-sm font-mono rounded mb-4"
-        placeholder="Paste CSV data here"
-      />
-      <button
-        onClick={handleImport}
-        className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700"
+    <div>
+      <h2 className="text-xl font-bold mb-4">Import Fertilizers</h2>
+      <a
+        href="/fertilizers-template.csv"
+        download
+        className="inline-block mb-4 text-blue-600 hover:underline text-sm"
       >
-        Import Fertilizers
-      </button>
+        📥 Download blank fertilizers-template.csv
+      </a>
+      <input type="file" accept=".csv" onChange={handleUpload} className="mb-4" />
+      {message && <p className="text-green-700 font-semibold">{message}</p>}
+      <p className="text-sm text-gray-600">
+        Your CSV must include: <code>productName, unitLabel, unitAbbrev, defaultRate, rateType</code>
+      </p>
     </div>
   );
 }

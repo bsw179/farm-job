@@ -1,47 +1,64 @@
-// src/pages/ImportRiceSeeds.jsx
 import React, { useState } from 'react';
 import Papa from 'papaparse';
-import { db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import db from '../firebase';
 
 export default function ImportRiceSeeds() {
-  const [csvText, setCsvText] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleImport = async () => {
-    Papa.parse(csvText, {
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
-        const riceSeedData = results.data.map((row) => ({
-          ...row,
-          type: 'Seed',
-          crop: 'Rice',
-        }));
-        for (let seed of riceSeedData) {
-          await addDoc(collection(db, 'products'), seed);
+      complete: async ({ data }) => {
+        let success = 0;
+        let failed = 0;
+
+        for (const row of data) {
+          try {
+            await addDoc(collection(db, 'products'), {
+              name: row.productName || '',
+              type: 'Seed',
+              crop: 'Rice',
+              unitType: row.unitType || '',
+              unitLabel: row.unitLabel || '',
+              unitAbbrev: row.unitAbbrev || '',
+              seedsPerUnit: row.seedsPerUnit ? parseFloat(row.seedsPerUnit) : null,
+              lbsPerBushel: row.lbsPerBushel ? parseFloat(row.lbsPerBushel) : null,
+              tech: row.technology || '',
+              manufacturer: row.manufacturer || '',
+              rateMode: row.unitType === 'population' ? 'population' : 'weight'
+            });
+            success++;
+          } catch (err) {
+            console.error('Import failed:', row, err);
+            failed++;
+          }
         }
-        alert('Rice seeds imported!');
-        setCsvText('');
-      },
+
+        setMessage(`Imported ${success} rice varieties. ${failed} failed.`);
+      }
     });
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Import Rice Seeds (Paste CSV)</h2>
-      <textarea
-        value={csvText}
-        onChange={(e) => setCsvText(e.target.value)}
-        rows={10}
-        className="w-full border p-3 text-sm font-mono rounded mb-4"
-        placeholder="Paste CSV data here"
-      />
-      <button
-        onClick={handleImport}
-        className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700"
+    <div>
+      <h2 className="text-xl font-bold mb-4">Import Rice Seed Varieties</h2>
+      <a
+        href="/rice-seeds-template.csv"
+        download
+        className="inline-block mb-4 text-blue-600 hover:underline text-sm"
       >
-        Import Rice Seeds
-      </button>
+        📥 Download blank rice-seeds-template.csv
+      </a>
+      <input type="file" accept=".csv" onChange={handleUpload} className="mb-4" />
+      {message && <p className="text-green-700 font-semibold">{message}</p>}
+      <p className="text-sm text-gray-600">
+        This uploader is built for rice varieties only. Format must match your updated CSV.
+      </p>
     </div>
   );
 }
