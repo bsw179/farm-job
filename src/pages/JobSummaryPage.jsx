@@ -35,7 +35,7 @@ function JobSummaryPage() {
   const [jobDate, setJobDate] = useState('');
   const [jobStatus, setJobStatus] = useState('Planned');
   const [saving, setSaving] = useState(false);
-  const [generatePdf, setGeneratePdf] = useState(true);
+  const [shouldGeneratePDF, setShouldGeneratePDF] = useState(true);
   const [vendor, setVendor] = useState(location.state?.vendor || '');
   const [applicator, setApplicator] = useState(location.state?.applicator || '');
   const [vendors, setVendors] = useState([]);
@@ -303,7 +303,7 @@ const jobObj = {
 };
 
 
-    if (generatePdf) {
+    if (shouldGeneratePDF) {
       const { generatePDFBlob } = await import('../utils/generatePDF');
       const blob = await generatePDFBlob(jobObj);
       const url = URL.createObjectURL(blob);
@@ -550,7 +550,7 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
 
       <div className="flex justify-between items-center">
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={generatePdf} onChange={() => setGeneratePdf(!generatePdf)} />
+          <input type="checkbox" checked={shouldGeneratePDF} onChange={() => setShouldGeneratePDF(!shouldGeneratePDF)} />
           <span>Generate PDF after saving</span>
         </label>
         <button
