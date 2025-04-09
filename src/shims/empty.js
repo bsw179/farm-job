@@ -1,2 +1,4 @@
 // src/shims/empty.js
-export default {};
+const empty = {};
+export default empty;
+
