@@ -6,6 +6,7 @@ import TopBar from '@/components/TopBar';
 import { CropYearProvider } from '@/context/CropYearContext';
 
 // Page imports
+import Dashboard from '@pages/Dashboard';
 import Fields from '@/pages/Fields';
 import FieldDetail from '@/pages/FieldDetail';
 import FieldBoundaryEditor from '@/pages/FieldBoundaryEditor';
@@ -90,7 +91,7 @@ export default function AppLayout() {
             <TopBar onNavigate={(page) => (window.location.href = getPathFromPage(page))} />
 
             <Routes>
-              <Route path="/" element={<Fields />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/fields" element={<Fields />} />
               <Route path="/fields/:fieldId" element={<FieldDetail />} />
               <Route path="/fields/:fieldId/boundary-editor" element={<FieldBoundaryEditor />} />

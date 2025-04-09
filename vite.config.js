@@ -13,15 +13,16 @@ export default defineConfig({
     global: 'window',
   },
   resolve: {
-    alias: {
-      buffer: require.resolve('buffer/'),
-      './window': path.resolve(__dirname, 'src/shims/empty.js'),
-      '@': path.resolve(__dirname, 'src'),
-      '../internals/define-window-property': path.resolve(__dirname, 'src/shims/empty.js'),
-      '../internals/window-this': path.resolve(__dirname, 'src/shims/empty.js'),
-      globals: path.resolve(__dirname, 'src/shims/empty.js'), // ✅ this is correct
-    },
+  alias: {
+    buffer: require.resolve('buffer/'),
+    './window': path.resolve(__dirname, 'src/shims/empty.js'),
+    '@': path.resolve(__dirname, 'src'),
+    '@pages': path.resolve(__dirname, 'src/pages'), // ✅ add this
+    '../internals/define-window-property': path.resolve(__dirname, 'src/shims/empty.js'),
+    '../internals/window-this': path.resolve(__dirname, 'src/shims/empty.js'),
+    globals: path.resolve(__dirname, 'src/shims/empty.js'),
   },
+},
   optimizeDeps: {
     include: ['buffer'],
     exclude: [],
