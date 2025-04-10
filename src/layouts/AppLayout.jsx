@@ -26,6 +26,7 @@ import CreateJobPage from '@/pages/CreateJobPage'; // 👈 This import should be
 import EditJobPolygon from "../pages/EditJobPolygon";
 import FieldJobSummaryPage from "../pages/FieldJobSummaryPage";
 import SeedingReport from '../pages/Reports/SeedingReport'; // adjust if path is different
+import AdminCleanupTools from '../pages/AdminCleanupTools';
 
 
 
@@ -111,7 +112,9 @@ export default function AppLayout() {
               <Route path="/jobs/create" element={<CreateJobPage />} /> // 👈 Add this route
               <Route path="/jobs/edit-area/:fieldId" element={<EditJobPolygon />} />
               <Route path="/jobs/field/:jobId" element={<FieldJobSummaryPage />} />
-<Route path="/reports/seeding" element={<SeedingReport />} />
+              <Route path="/reports/seeding" element={<SeedingReport />} />
+             <Route path="/admin-tools" element={<AdminCleanupTools />} />
+
 
 
             </Routes>

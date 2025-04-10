@@ -27,15 +27,7 @@ export default function FieldBoundaryEditor() {
   let parsedGeoJSON = null;
   try {
     const raw = fieldData.boundary?.geojson;
-let result = raw;
-if (typeof raw === 'string') {
-  try {
-    result = JSON.parse(raw);
-  } catch (err) {
-    console.warn('❌ Failed to parse raw:', raw);
-    result = null;
-  }
-}
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
     parsedGeoJSON = parsed?.type === 'Feature' && parsed.geometry ? parsed.geometry : parsed;
   } catch (err) {
     console.warn('Failed to parse geojson:', err);
@@ -86,14 +78,7 @@ if (typeof raw === 'string') {
   others.forEach((f) => {
     let geo = f.boundary.geojson;
     try {
-if (typeof geo === 'string') {
-  try {
-    geo = JSON.parse(geo);
-  } catch (err) {
-    console.warn('❌ Invalid geo JSON:', geo);
-    geo = null;
-  }
-}
+      if (typeof geo === 'string') geo = JSON.parse(geo);
       if (geo.type === 'Feature') geo = geo.geometry;
     } catch {
       return;
@@ -208,13 +193,7 @@ if (typeof geo === 'string') {
         geometry = feature.geometry;
       } else {
         const text = await file.text();
-let parsed = null;
-try {
-  parsed = JSON.parse(text);
-} catch (err) {
-  console.warn('❌ Failed to parse text:', text);
-  // Leave parsed as null — your app logic can decide how to handle it
-}
+        const parsed = JSON.parse(text);
         const feature = Array.isArray(parsed.features) ? parsed.features[0] : parsed;
         geometry = feature.geometry || parsed.geometry;
       }

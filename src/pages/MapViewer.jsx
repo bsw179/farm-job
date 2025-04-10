@@ -349,13 +349,19 @@ setVarietyMap(varietyMap);
               </LayersControl>
               {filteredFields.map(field => {
                 let geo = field.boundary?.geojson;
-                if (typeof geo === 'string') {
-                  try {
-                    geo = JSON.parse(geo);
-                  } catch {
-                    return null;
-                  }
-                }
+if (typeof geo === 'string') {
+  try {
+    const parsed = JSON.parse(geo);
+    if (!parsed || typeof parsed !== 'object' || !parsed.type || !parsed.coordinates) {
+      throw new Error('Invalid geojson structure');
+    }
+    geo = parsed;
+  } catch {
+    console.warn(`⚠️ Skipping bad geojson in field ${field.id}`);
+    return null;
+  }
+}
+
                 const coords = geo?.coordinates?.[0];
                 if (!coords || coords.length === 0) return null;
                 const latlngs = coords.map(([lng, lat]) => [lat, lng]);
