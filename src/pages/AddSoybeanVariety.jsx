@@ -1,6 +1,6 @@
 // src/pages/BoundaryUpload.jsx
 import React, { useState } from 'react';
-import shp from 'shpjs';
+
 import JSZip from 'jszip';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';

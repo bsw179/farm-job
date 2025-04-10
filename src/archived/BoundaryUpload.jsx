@@ -1,6 +1,6 @@
 // src/pages/BoundaryUpload.jsx
 import React, { useState } from 'react';
-import shp from 'shpjs';
+
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import db from '../firebase';
