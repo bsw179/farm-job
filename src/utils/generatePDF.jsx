@@ -63,12 +63,13 @@ console.log('📏 totalAcres:', totalAcres);
 const crop = String(product.crop || '').toLowerCase();
 const totalAmount = rate * totalAcres;
 
-if (['seeds/acre', 'population'].some(u => unit.includes(u))) {
+if (['seeds/acre', 'population'].includes(unit)) {
   const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-  console.log('🌱 Seed logic hit:', totalAmount, seedsPerUnit);
-  const units = totalAmount / seedsPerUnit;
-  return `${units.toFixed(1)} units`;
+  const totalSeeds = rate * totalAcres;
+  const units = totalSeeds / seedsPerUnit;
+  display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
 }
+
 
 if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].some(u => unit.includes(u))) {
   console.log('🧪 crop string:', JSON.stringify(crop));

@@ -20,6 +20,7 @@ import {
 import Select from 'react-select';
 import html2canvas from 'html2canvas';
 import { query, where } from 'firebase/firestore'; 
+import ProductComboBox from '../components/ProductComboBox';
 
 function JobSummaryPage() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ function JobSummaryPage() {
     selectedFields = []
   } = location.state || {};
 
-  const [jobType, setJobType] = useState(initialJobType || '');
+  const [jobType, setJobType] = useState('');
   const [fields, setFields] = useState([]);
   const [jobDate, setJobDate] = useState('');
   const [jobStatus, setJobStatus] = useState('Planned');
@@ -44,17 +45,31 @@ function JobSummaryPage() {
   const [productsList, setProductsList] = useState([]);
   const [jobTypesList, setJobTypesList] = useState([]);
   const [waterVolume, setWaterVolume] = useState('');
+  const [isEditing, setIsEditing] = useState(location.state?.isEditing || false);
+  const [jobId, setJobId] = useState(location.state?.jobId || doc(collection(db, 'jobs')).id);
 
-  const totalJobAcres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
+const baseButton = "inline-flex items-center px-4 py-2 rounded shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1";
+const primaryBtn = `${baseButton} bg-green-600 text-white hover:bg-green-700`;
+const blueLinkBtn = "text-blue-600 hover:text-blue-800 underline text-sm";
+const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";  const totalJobAcres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
 
 
   const selectedJobTypeData = jobTypesList.find(j => j.name === jobType);
-  const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(jobType);
- console.log('🧪 requiresProducts:', requiresProducts, 'jobType:', jobType);
+  console.log('🧪 selectedJobTypeData:', selectedJobTypeData);
 
+const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(
+  selectedJobTypeData?.parentName || selectedJobTypeData?.name
+);
   const selectedProductType = selectedJobTypeData?.productType || '';
   const requiresWater = selectedJobTypeData?.requiresWater || false;
 
+useEffect(() => {
+  // Only set default date if not editing and date is still blank
+  if (!location.state?.isEditing && !jobDate) {
+    const today = new Date().toISOString().split('T')[0];
+    setJobDate(today);
+  }
+}, [location.state, jobDate]);
 
   useEffect(() => {
   const loadData = async () => {
@@ -75,23 +90,31 @@ function JobSummaryPage() {
     // 🔁 With this:
     const rawTypes = jobTypeSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const flattenedTypes = rawTypes.flatMap((type) => {
-       const base = {
-        name: type.name,
-        productType: type.productType || '',
-        requiresProducts: ['Seeding', 'Spraying', 'Fertilizing'].includes(type.name),
-        requiresWater: type.requiresWater || false
-      };
+  const base = {
+    name: type.name,
+    productType: type.productType || '',
+    requiresProducts: ['Seeding', 'Spraying', 'Fertilizing'].includes(type.name),
+    requiresWater: type.requiresWater || false
+  };
 
-const subtypes = type.subTypes?.map(sub => ({
-        ...base,
-        name: sub
-      })) || [];
+  const subtypes = type.subTypes?.map(sub => ({
+    ...base,
+    name: sub,
+    parentName: type.name  // 👈 Add this
+  })) || [];
 
-      return [base, ...subtypes];
-    });
+  return [base, ...subtypes];
+});
+
      console.log('🧨 Flattened types:', flattenedTypes.map(j => j.name));
 
     setJobTypesList(flattenedTypes);
+    if (!initialJobType && flattenedTypes.length) {
+  setJobType(flattenedTypes[0].name); // Set default to first loaded
+} else if (initialJobType) {
+  setJobType(initialJobType);
+}
+
   };
 
   loadData();
@@ -100,15 +123,17 @@ const subtypes = type.subTypes?.map(sub => ({
 
   useEffect(() => {
   const loadJob = async () => {
-    const isEditing = location.state?.isEditing;
     const jobId = location.state?.jobId;
-    if (!isEditing || !jobId) return;
+    const editing = location.state?.isEditing;
+
+    if (!editing || !jobId) return;
+
+    setIsEditing(true); // ✅ keeps it locked in state
 
     const jobDoc = await getDoc(doc(db, 'jobs', jobId));
     if (!jobDoc.exists()) return;
 
     const jobData = jobDoc.data();
-
     setJobType(jobData.jobType || '');
     setJobDate(jobData.jobDate || '');
     setVendor(jobData.vendor || '');
@@ -117,10 +142,14 @@ const subtypes = type.subTypes?.map(sub => ({
     setEditableProducts(jobData.products || []);
     setWaterVolume(jobData.waterVolume || '');
     setFields(jobData.fields || []);
+    setIsEditing(true);
+    setJobId(jobId); // keeps the ID locked
+
   };
 
   loadJob();
 }, [location.state]);
+
 
 
   useEffect(() => {
@@ -195,8 +224,7 @@ const coords = shape.coordinates[0];
 
  const handleSaveJob = async () => {
   setSaving(true);
-  const isEditing = location.state?.isEditing;
-  const jobId = isEditing ? location.state?.jobId : doc(collection(db, 'jobs')).id;
+// use the state value instead
 
   if (!jobType) {
     alert('Please select a job type before saving.');
@@ -327,6 +355,7 @@ const jobObj = {
 
 console.log('Dropdown options:', jobTypesList.map(j => j.name));
 
+if (!jobTypesList.length) return null;
 
   return (
     <div className="p-6">
@@ -337,7 +366,7 @@ console.log('Dropdown options:', jobTypesList.map(j => j.name));
       {/* Inputs and product selectors */}
       <div className="mb-4">
         <label className="block text-sm font-medium">Job Type</label>
-        <select value={jobType} onChange={e => setJobType(e.target.value)} className="border p-2 rounded w-full">
+        <select value={jobType} onChange={e => setJobType(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
           {jobTypesList.map(type => (
 <option key={type.name} value={type.name}>
   {type.name}
@@ -348,19 +377,18 @@ console.log('Dropdown options:', jobTypesList.map(j => j.name));
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium">Job Date</label>
-          <input type="date" value={jobDate} onChange={e => setJobDate(e.target.value)} className="border p-2 rounded w-full" />
+          <input type="date" value={jobDate} onChange={e => setJobDate(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"/>
         </div>
         <div>
           <label className="block text-sm font-medium">Vendor</label>
-          <select value={vendor} onChange={e => setVendor(e.target.value)} className="border p-2 rounded w-full">
+          <select value={vendor} onChange={e => setVendor(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Select Vendor</option>
             {vendors.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium">Applicator</label>
-          <select value={applicator} onChange={e => setApplicator(e.target.value)} className="border p-2 rounded w-full">
-            <option value="">Select Applicator</option>
+          <select value={applicator} onChange={e => setApplicator(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
             {applicators.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           <div className="mb-4">
@@ -368,8 +396,8 @@ console.log('Dropdown options:', jobTypesList.map(j => j.name));
   <select
     value={jobStatus}
     onChange={(e) => setJobStatus(e.target.value)}
-    className="border p-2 rounded w-full"
-  >
+    className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+  
     <option value="Planned">Planned</option>
 <option value="Completed">Completed</option>
   </select>
@@ -379,58 +407,75 @@ console.log('Dropdown options:', jobTypesList.map(j => j.name));
       </div>
 
      {requiresProducts && editableProducts.map((p, i) => (
-  <div key={i} className="grid grid-cols-4 ...">
-    <Select
-      placeholder="Product"
-      options={productsList
-        .filter(prod =>
-          selectedProductType === '' ||
-          prod.type?.toLowerCase() === selectedProductType.toLowerCase()
-        )
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(prod => ({
-  value: prod.id,
-  label: prod.name,
-  unit: prod.unit,
-  crop: prod.crop // ✅ add this!
-}))
-      }
-      value={productsList.find(prod => prod.id === p.productId) ? {
-        value: p.productId,
-        label: p.productName || productsList.find(prod => prod.id === p.productId)?.name
-      } : null}
-      onChange={selected => {
-        handleProductChange(i, 'productId', selected?.value || '');
-        handleProductChange(i, 'productName', selected?.label || '');
-        handleProductChange(i, 'unit', selected?.unit || '');
-      handleProductChange(i, 'crop', selected.crop);
+<div key={i} className="grid grid-cols-4 gap-2 mb-3 items-center">
+    <ProductComboBox
+  productType={selectedProductType}
+  allProducts={productsList}
+  usedProductIds={editableProducts.map(p => p.productId)}
+  value={{
+  id: p.productId,
+  name: p.productName
+}}
 
-      }}
-      isClearable
-    />
+onChange={(selected) => {
+  handleProductChange(i, 'productId', selected.id);
+  handleProductChange(i, 'productName', selected.name);
+  handleProductChange(i, 'crop', selected.crop || '');
+
+  // ✅ Only set clean units based on rateType
+  const rateType = selected?.rateType?.toLowerCase();
+  const cleanUnit =
+    rateType === 'weight'
+      ? 'lbs/acre'
+      : rateType === 'population'
+      ? 'seeds/acre'
+      : selected.unit || '';
+
+  handleProductChange(i, 'unit', cleanUnit);
+  handleProductChange(i, 'rateType', selected.rateType || '');
+}}
+
+/>
+
     <input
       type="number"
       placeholder="Rate"
-      className="border p-2 rounded"
+className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
       value={p.rate}
       onChange={e => handleProductChange(i, 'rate', e.target.value)}
     />
     <select
-      className="border p-2 rounded w-full"
-      value={p.unit}
-      onChange={(e) => handleProductChange(i, 'unit', e.target.value)}
-    >
-      <option value="">Select Unit</option>
-      <option value="oz/acre">oz/acre</option>
-      <option value="pt/acre">pt/acre</option>
-      <option value="qt/acre">qt/acre</option>
-      <option value="gal/acre">gal/acre</option>
-      <option value="lbs/acre">lbs/acre</option>
-      <option value="seeds/acre">seeds/acre</option>
-      <option value="units/acre">units/acre</option>
-    </select>
-    <button
-      className="text-sm text-red-600 underline"
+  className="border p-2 rounded w-full"
+  value={p.unit}
+  onChange={(e) => handleProductChange(i, 'unit', e.target.value)}
+>
+  <option value="">Select Unit</option>
+
+  {/* Include current product's unit if it's not already listed */}
+  {![
+    'oz/acre',
+    'pt/acre',
+    'qt/acre',
+    'gal/acre',
+    'lbs/acre',
+    'seeds/acre',
+    'units/acre'
+  ].includes(p.unit) && p.unit && (
+    <option value={p.unit}>{p.unit}</option>
+  )}
+
+  <option value="oz/acre">oz/acre</option>
+  <option value="pt/acre">pt/acre</option>
+  <option value="qt/acre">qt/acre</option>
+  <option value="gal/acre">gal/acre</option>
+  <option value="lbs/acre">lbs/acre</option>
+  <option value="seeds/acre">seeds/acre</option>
+  <option value="units/acre">units/acre</option>
+</select>
+
+   <button
+  className={redLinkBtn}
+
       onClick={() =>
         setEditableProducts(prev => prev.filter((_, idx) => idx !== i))
       }
@@ -442,7 +487,7 @@ console.log('Dropdown options:', jobTypesList.map(j => j.name));
 
 
 {requiresProducts && (
-  <button onClick={handleAddProduct} className="text-blue-600 underline mb-4">
+  <button onClick={handleAddProduct} className={`${blueLinkBtn} mb-4`}>
     + Add Product
   </button>
 )}
@@ -474,7 +519,8 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
   }
 
   return (
-  <div key={field.id} className="border rounded p-4 mb-4">
+  <div key={field.id} className="border border-gray-300 rounded-xl bg-white p-4 shadow-sm mb-6">
+
   <p>
     <strong>{field.fieldName}</strong> – {Number(displayAcres).toFixed(2)} acres
  – {isPartial ? 'partial' : 'full'}
@@ -487,7 +533,7 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
 
       <div className="flex justify-between items-center mt-2 no-print">
         <button
-          className="text-sm text-blue-600 underline"
+className={blueLinkBtn}
           onClick={() =>
             navigate(`/jobs/edit-area/${field.id}`, {
               state: {
@@ -506,7 +552,7 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
         </button>
 
         <button
-          className="text-sm text-red-600 underline"
+className={blueLinkBtn}
           onClick={() => setFields(prev => prev.filter(f => f.id !== field.id))}
         >
           ❌ Remove Field
@@ -517,7 +563,9 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
 })}
 
 </div>
-<div className="mt-6 border-t pt-4">
+
+{requiresProducts && (
+  <div className="mt-6 border-t pt-4">
     <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
     {editableProducts.map((p, i) => {
       const rate = parseFloat(p.rate);
@@ -525,20 +573,21 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
       const crop = p.crop?.toLowerCase?.() || '';
       const totalAcres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
       const totalAmount = rate * totalAcres;
+      let display = '';
 
-      let display = `${totalAmount.toFixed(1)} ${p.unit}`;
+      if (['seeds/acre', 'population'].includes(unit)) {
+  const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+  const totalSeeds = rate * totalAcres;
+  const units = totalSeeds / seedsPerUnit;
+  display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+} else if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].includes(unit)) {
+  const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+  const bushels = totalAmount / lbsPerBushel;
+  display = `${bushels.toFixed(1)} bushels`;
+} else {
+  display = `${totalAmount.toFixed(1)} ${unit}`;
+}
 
-      if (['seeds/acre', 'population'].some(u => unit.includes(u))) {
-        const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-        const units = totalAmount / seedsPerUnit;
-        display = `${units.toFixed(1)} units`;
-      }
-
-      if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].some(u => unit.includes(u))) {
-        const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-        const bushels = totalAmount / lbsPerBushel;
-        display = `${bushels.toFixed(1)} bushels`;
-      }
 
       return (
         <div key={i} className="text-sm text-gray-700">
@@ -547,6 +596,8 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
       );
     })}
   </div>
+)}
+
 
       <div className="flex justify-between items-center">
         <label className="flex items-center gap-2">
@@ -554,15 +605,16 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
           <span>Generate PDF after saving</span>
         </label>
         <button
-  className="bg-green-600 text-white px-4 py-2 rounded"
+className={primaryBtn}
   onClick={handleSaveJob}
   disabled={saving}
 >
-  {saving
-    ? 'Saving...'
-    : location.state?.isEditing
-      ? 'Update Job'
-      : 'Save Final Job'}
+ {saving
+  ? 'Saving...'
+  : isEditing
+    ? 'Update Job'
+    : 'Save Final Job'}
+
 </button>
 
       </div>

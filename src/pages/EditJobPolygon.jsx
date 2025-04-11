@@ -15,7 +15,9 @@ export default function EditJobPolygon() {
   const [drawnAcres, setDrawnAcres] = useState(null);
 
   useEffect(() => {
-    if (!field?.boundary?.geojson) return;
+    let geo = field?.boundary?.geojson || field?.boundary;
+if (!geo) return;
+
 
     // Clear any existing map instance
     if (window._leaflet_map) {
@@ -35,7 +37,7 @@ export default function EditJobPolygon() {
       maxZoom: 22,
     }).addTo(map);
 
-    let geo = field.boundary.geojson;
+    
     try {
       if (typeof geo === 'string') geo = JSON.parse(geo);
     } catch (err) {
@@ -55,6 +57,31 @@ export default function EditJobPolygon() {
       }).addTo(map);
 
       map.fitBounds(polygon.getBounds(), { padding: [20, 20] });
+      // 🟦 Draw existing drawnPolygon if present
+if (location.state?.drawnPolygon) {
+  let overlay = location.state.drawnPolygon;
+  if (typeof overlay === 'string') {
+    try {
+      overlay = JSON.parse(overlay);
+    } catch {
+      overlay = null;
+    }
+  }
+
+  if (overlay?.geometry?.type === 'Polygon') {
+    const overlayCoords = overlay.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
+    const overlayLayer = L.polygon(overlayCoords, {
+      color: '#3b82f6',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.2
+    }).addTo(map);
+
+    setDrawnPolygon(overlay);
+    const acres = turf.area(overlay) * 0.000247105;
+    setDrawnAcres(acres.toFixed(2));
+  }
+}
+
     }
 
     map.pm.addControls({
@@ -92,33 +119,56 @@ export default function EditJobPolygon() {
     });
   }, [field]);
 
-  const handleSave = () => {
-    const updatedField = {
-      ...field,
-      ...(drawnPolygon
-        ? {
-            drawnPolygon: JSON.stringify(drawnPolygon),
-            drawnAcres: parseFloat(drawnAcres),
-          }
-        : {
-            drawnPolygon: null,
-            drawnAcres: undefined,
-          }),
-    };
-
-    const previousState = location.state || {};
-    const selectedFields = previousState.selectedFields?.map(f =>
-      f.id === updatedField.id ? updatedField : f
-    ) || [updatedField];
-
-    navigate('/jobs/summary', {
-      state: {
-        ...previousState,
-        selectedFields,
-        updatedField,
-      },
-    });
+const handleSave = async () => {
+  const updatedField = {
+    ...field,
+    drawnPolygon: JSON.stringify(drawnPolygon),
+    drawnAcres: parseFloat(drawnAcres)
   };
+
+  const previousState = location.state || {};
+  const selectedFields = previousState.selectedFields?.map(f =>
+    f.id === updatedField.id ? updatedField : f
+  ) || [updatedField];
+
+  const linkedToJobId = location.state?.linkedToJobId;
+  if (linkedToJobId) {
+    const masterRef = doc(db, 'jobs', linkedToJobId);
+    const masterSnap = await getDoc(masterRef);
+    if (masterSnap.exists()) {
+      const masterData = masterSnap.data();
+
+      const updatedFields = (masterData.fields || []).map(f =>
+        f.id === updatedField.id
+          ? {
+              ...f,
+              drawnPolygon: updatedField.drawnPolygon,
+              drawnAcres: updatedField.drawnAcres,
+              acres: updatedField.drawnAcres
+            }
+          : f
+      );
+
+      await setDoc(masterRef, {
+        ...masterData,
+        fields: updatedFields,
+        acres: {
+          ...masterData.acres,
+          [updatedField.id]: updatedField.drawnAcres
+        }
+      });
+    }
+  }
+
+  navigate('/jobs/summary', {
+    state: {
+      ...previousState,
+      selectedFields,
+      updatedField,
+    },
+  });
+};
+
 
   if (!field) {
     return <div className="p-6">No field data found.</div>;

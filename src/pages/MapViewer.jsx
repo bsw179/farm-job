@@ -38,12 +38,14 @@ const cropColors = {
 function FieldLabel({ acres, operator, center, fontSize, colorMode, varietyInfo }) {
   let line1 = `${acres?.toFixed(1)} ac`;
   let line2 = operator || '—';
+  let line3 = null;
 
   if (colorMode === 'variety' && varietyInfo?.variety) {
     line1 = varietyInfo.variety;
     line2 = varietyInfo.rate && varietyInfo.unit
       ? `${varietyInfo.rate} ${varietyInfo.unit}`
       : '';
+    line3 = varietyInfo.vendor || null;
   }
 
   return (
@@ -58,11 +60,14 @@ function FieldLabel({ acres, operator, center, fontSize, colorMode, varietyInfo 
         className="text-center font-semibold text-black"
       >
         <div>{line1}</div>
-        {line2 && <div className="text-gray-700">{line2}</div>}
+        {line2 && <div className="text-black">{line2}</div>}
+        {line3 && <div className="text-black">{line3}</div>}
       </div>
     </Tooltip>
   );
 }
+
+
 
 
 
@@ -106,36 +111,55 @@ export default function MapViewer() {
 
   useEffect(() => {
   const fetchSeedingJobs = async () => {
-    const snapshot = await getDocs(collection(db, 'jobs'));
-    const seedingJobs = snapshot.docs
-      .map(doc => doc.data())
-      .filter(job =>
-        job.jobType === 'Seeding' &&
-        job.cropYear === cropYear &&
-        Array.isArray(job.fieldIds) &&
-        Array.isArray(job.products)
+    console.log('🧪 Running fetchSeedingJobs from jobsByField');
+
+    const snapshot = await getDocs(collection(db, 'jobsByField'));
+    console.log('📦 Total jobsByField loaded:', snapshot.docs.length);
+
+    const allJobs = snapshot.docs.map(doc => doc.data());
+    console.log('📝 All jobsByField:', allJobs);
+
+    const seedingJobs = allJobs.filter(job => {
+      const isSeeding =
+        job.jobType === 'Seeding' || job.parentJobType === 'Seeding';
+      const hasCropYear = job.cropYear === cropYear;
+      const hasFieldId = !!job.fieldId;
+      const hasProducts = Array.isArray(job.products);
+
+      console.log(
+        '🔎 Job Check →',
+        job.jobType,
+        '| cropYear match:', hasCropYear,
+        '| hasFieldId:', hasFieldId,
+        '| hasProducts:', hasProducts
       );
 
-const varietyMap = {};
+      return isSeeding && hasCropYear && hasFieldId && hasProducts;
+    });
 
-seedingJobs.forEach(job => {
-  job.fieldIds.forEach(fieldId => {
-    const product = job.products?.[0];
-    if (product?.productName) {
-      varietyMap[fieldId] = {
-        variety: product.productName,
-        rate: product.rate || null,
-        unit: product.unit || null,
-      };
-    }
-  });
-});
+    console.log('🌱 Filtered seedingJobs:', seedingJobs.length);
 
-setVarietyMap(varietyMap);
+    const varietyMap = {};
+    seedingJobs.forEach(job => {
+      const product = job.products?.[0];
+      if (product?.productName) {
+        console.log('✅ Found variety for field:', job.fieldId, product.productName);
+        varietyMap[job.fieldId] = {
+          variety: product.productName,
+          rate: product.rate || null,
+          unit: product.unit || null,
+          vendor: job.vendor || null,
+        };
+      }
+    });
+
+    console.log('🗺️ Variety map:', varietyMap);
+    setVarietyMap(varietyMap);
   };
 
   fetchSeedingJobs();
 }, [cropYear]);
+
 
   useEffect(() => {
     const updateScale = () => {
