@@ -366,13 +366,17 @@ if (!jobTypesList.length) return null;
       {/* Inputs and product selectors */}
       <div className="mb-4">
         <label className="block text-sm font-medium">Job Type</label>
-        <select value={jobType} onChange={e => setJobType(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {jobTypesList.map(type => (
-<option key={type.name} value={type.name}>
-  {type.name}
-</option>
-          ))}
-        </select>
+       <select
+  value={jobType}
+  onChange={e => setJobType(e.target.value)}
+  className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+  <option value="">Select Job Type</option>
+  {jobTypesList.map(type => (
+    <option key={type.name} value={type.name}>{type.name}</option>
+  ))}
+</select>
+
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
@@ -388,9 +392,17 @@ if (!jobTypesList.length) return null;
         </div>
         <div>
           <label className="block text-sm font-medium">Applicator</label>
-          <select value={applicator} onChange={e => setApplicator(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
-            {applicators.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
+         <select
+  value={applicator}
+  onChange={e => setApplicator(e.target.value)}
+  className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+  <option value="">Select Applicator</option>
+  {applicators.map(a => (
+    <option key={a} value={a}>{a}</option>
+  ))}
+</select>
+
           <div className="mb-4">
   <label className="block text-sm font-medium">Job Status</label>
   <select
