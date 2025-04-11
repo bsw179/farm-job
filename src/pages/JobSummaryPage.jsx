@@ -31,9 +31,32 @@ function JobSummaryPage() {
     selectedFields = []
   } = location.state || {};
 
-  const [jobType, setJobType] = useState('');
-  const [fields, setFields] = useState([]);
-  const [jobDate, setJobDate] = useState('');
+const [jobType, setJobType] = useState(() => {
+  return location.state?.isEditing ? initialJobType : '';
+});
+console.log('🎯 Current jobType value:', jobType);
+
+const [fields, setFields] = useState([]);
+useEffect(() => {
+  const updated = location.state?.updatedField;
+  if (updated) {
+    const parsedPolygon = typeof updated.drawnPolygon === 'string'
+      ? JSON.parse(updated.drawnPolygon)
+      : updated.drawnPolygon;
+
+    setFields(prevFields =>
+      prevFields.map(f =>
+        f.id === updated.id
+          ? { ...f, ...updated, drawnPolygon: parsedPolygon }
+          : f
+      )
+    );
+  }
+}, [location.state]);
+
+  const [usedProductIds, setUsedProductIds] = useState([]);
+
+const [jobDate, setJobDate] = useState('');
   const [jobStatus, setJobStatus] = useState('Planned');
   const [saving, setSaving] = useState(false);
   const [shouldGeneratePDF, setShouldGeneratePDF] = useState(true);
@@ -54,7 +77,7 @@ const blueLinkBtn = "text-blue-600 hover:text-blue-800 underline text-sm";
 const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";  const totalJobAcres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
 
 
-  const selectedJobTypeData = jobTypesList.find(j => j.name === jobType);
+const selectedJobTypeData = jobTypesList.find(j => j.name === jobType);
   console.log('🧪 selectedJobTypeData:', selectedJobTypeData);
 
 const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(
@@ -70,6 +93,42 @@ useEffect(() => {
     setJobDate(today);
   }
 }, [location.state, jobDate]);
+useEffect(() => {
+  if (!location.state?.isEditing) {
+    console.log('🧼 Forcing jobType to blank on mount');
+    setJobType('');
+  }
+}, []);
+useEffect(() => {
+  console.log('🔥 Watcher — jobType changed to:', jobType);
+  if (jobType && !jobTypesList.some(j => j.name === jobType)) {
+    console.warn('💣 Invalid jobType set!', jobType);
+  }
+}, [jobType]);
+useEffect(() => {
+  const loadUsedProducts = async () => {
+    if (!jobType) return;
+
+    const q = query(
+      collection(db, 'jobs'),
+      where('jobType', '==', jobType),
+      where('cropYear', '==', cropYear)
+    );
+    const snap = await getDocs(q);
+
+    const allUsed = new Set();
+    snap.docs.forEach(doc => {
+      const products = doc.data().products || [];
+      products.forEach(p => {
+        if (p.productId) allUsed.add(p.productId);
+      });
+    });
+
+    setUsedProductIds(Array.from(allUsed));
+  };
+
+  loadUsedProducts();
+}, [jobType, cropYear]);
 
   useEffect(() => {
   const loadData = async () => {
@@ -109,9 +168,10 @@ useEffect(() => {
      console.log('🧨 Flattened types:', flattenedTypes.map(j => j.name));
 
     setJobTypesList(flattenedTypes);
-    if (!initialJobType && flattenedTypes.length) {
-  setJobType(flattenedTypes[0].name); // Set default to first loaded
-} else if (initialJobType) {
+ if (initialJobType) {
+  setJobType(initialJobType);
+}
+ else if (initialJobType) {
   setJobType(initialJobType);
 }
 
@@ -152,11 +212,13 @@ useEffect(() => {
 
 
 
-  useEffect(() => {
-    if (location.state?.selectedFields?.length) {
-      setFields(location.state.selectedFields);
-    }
-  }, [location.key]);
+ useEffect(() => {
+  const updated = location.state?.updatedField;
+  if (!updated && location.state?.selectedFields?.length) {
+    setFields(location.state.selectedFields);
+  }
+}, [location.key]);
+
 
   const handleProductChange = (index, field, value) => {
     const updated = [...editableProducts];
@@ -169,57 +231,65 @@ useEffect(() => {
   };
 
  function renderBoundarySVG(geometry, overlayRaw) {
-if (!geometry) return null;
+  if (!geometry) return null;
 
-let shape = geometry;
-if (geometry.type === 'Feature' && geometry.geometry?.type === 'Polygon') {
-  shape = geometry.geometry;
-}
+  let shape = geometry;
+  if (geometry.type === 'Feature' && geometry.geometry?.type === 'Polygon') {
+    shape = geometry.geometry;
+  }
 
-if (shape.type !== 'Polygon' || !shape.coordinates?.[0]) return null;
-
-const coords = shape.coordinates[0];
+  if (shape.type !== 'Polygon' || !shape.coordinates?.[0]) return null;
+  const coords = shape.coordinates[0];
 
   const bounds = coords.reduce((acc, [lng, lat]) => ({
     minX: Math.min(acc.minX, lng),
     maxX: Math.max(acc.maxX, lng),
     minY: Math.min(acc.minY, lat),
-    maxY: Math.max(acc.maxY, lat)
+    maxY: Math.max(acc.maxY, lat),
   }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
 
   const width = bounds.maxX - bounds.minX || 1;
   const height = bounds.maxY - bounds.minY || 1;
-  const scale = Math.min(280 / width, 280 / height); // controls size in box
+  const boxSize = 300;
+  const margin = 10;
 
-  const path = coords.map(([lng, lat], i) => {
-    const x = (lng - bounds.minX) * scale + 10;
-    const y = 300 - ((lat - bounds.minY) * scale) - 10;
+  const scale = (boxSize - margin * 2) / Math.max(width, height);
+  const xOffset = (boxSize - width * scale) / 2;
+  const yOffset = (boxSize - height * scale) / 2;
+
+  const project = ([lng, lat]) => ({
+    x: (lng - bounds.minX) * scale + xOffset,
+    y: boxSize - ((lat - bounds.minY) * scale + yOffset),
+  });
+
+  const basePath = coords.map((pt, i) => {
+    const { x, y } = project(pt);
     return `${i === 0 ? 'M' : 'L'}${x},${y}`;
   }).join(' ') + ' Z';
 
-  let overlay = overlayRaw;
-  if (typeof overlay === 'string') {
-    try { overlay = JSON.parse(overlay); } catch { overlay = null; }
-  }
-
   let overlayPath = null;
-  if (overlay?.type === 'Feature' && overlay.geometry?.type === 'Polygon') {
-    overlayPath = overlay.geometry.coordinates[0].map(([lng, lat], i) => {
-      const x = (lng - bounds.minX) * scale + 10;
-      const y = 300 - ((lat - bounds.minY) * scale) - 10;
+  if (overlayRaw?.type === 'Feature' && overlayRaw.geometry?.type === 'Polygon') {
+    const overlayCoords = overlayRaw.geometry.coordinates?.[0] || [];
+    overlayPath = overlayCoords.map((pt, i) => {
+      const { x, y } = project(pt);
       return `${i === 0 ? 'M' : 'L'}${x},${y}`;
     }).join(' ') + ' Z';
   }
 
   return (
-    <svg viewBox="0 0 300 300" className="w-full h-48 bg-gray-100 border rounded">
-      <path d={path} fill="none" stroke="#1e40af" strokeWidth="2" />
+    <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-64 h-64 bg-white border rounded shadow mx-auto">
+      {/* Full field boundary = RED if overlay exists */}
+      <path d={basePath} fill={overlayPath ? '#F87171' : '#34D399'} fillOpacity={0.4} stroke="#4B5563" strokeWidth="1.5" />
+
+      {/* Application area (polygon) = GREEN */}
       {overlayPath && (
-        <path d={overlayPath} fill="rgba(59,130,246,0.15)" stroke="#3b82f6" strokeWidth="2" />
+        <path d={overlayPath} fill="#34D399" fillOpacity={0.6} stroke="#047857" strokeWidth="2" />
       )}
     </svg>
   );
 }
+
+
 
 
  const handleSaveJob = async () => {
@@ -332,16 +402,22 @@ const jobObj = {
 
 
     if (shouldGeneratePDF) {
-      const { generatePDFBlob } = await import('../utils/generatePDF');
-      const blob = await generatePDFBlob(jobObj);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `JobOrder_${jobType}_${cropYear}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+  try {
+    const { generatePDFBlob } = await import('../utils/generatePDF');
+    const blob = await generatePDFBlob(jobObj);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `JobOrder_${jobType}_${cropYear}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error('🧨 PDF generation failed:', err);
+    alert('Job saved, but PDF failed to generate.');
+  }
+}
+
 
     navigate('/jobs');
   } catch (error) {
@@ -359,23 +435,23 @@ if (!jobTypesList.length) return null;
 
   return (
     <div className="p-6">
-      <p className="text-xs text-red-500 mb-2">
-  requiresProducts: {String(requiresProducts)}
-</p>
+     
 
       {/* Inputs and product selectors */}
       <div className="mb-4">
         <label className="block text-sm font-medium">Job Type</label>
-       <select
-  value={jobType}
-  onChange={e => setJobType(e.target.value)}
-  className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-  <option value="">Select Job Type</option>
-  {jobTypesList.map(type => (
-    <option key={type.name} value={type.name}>{type.name}</option>
-  ))}
-</select>
+       {jobTypesList.length > 0 && (
+  <select
+    value={jobType}
+    onChange={e => setJobType(e.target.value)}
+    className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">Select Job Type</option>
+    {jobTypesList.map(type => (
+      <option key={type.name} value={type.name}>{type.name}</option>
+    ))}
+  </select>
+)}
 
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -423,7 +499,7 @@ if (!jobTypesList.length) return null;
     <ProductComboBox
   productType={selectedProductType}
   allProducts={productsList}
-  usedProductIds={editableProducts.map(p => p.productId)}
+usedProductIds={usedProductIds}
   value={{
   id: p.productId,
   name: p.productName
@@ -499,9 +575,13 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
 
 
 {requiresProducts && (
-  <button onClick={handleAddProduct} className={`${blueLinkBtn} mb-4`}>
-    + Add Product
-  </button>
+  <button
+  onClick={handleAddProduct}
+  className="text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition mb-4"
+>
+  + Add Product
+</button>
+
 )}
       {requiresWater && (
         <div className="mb-4">
@@ -511,10 +591,9 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
       )}
 <div className="mb-6">
 <h3 className="text-lg font-semibold mb-2">
-  Fields ({fields.length}) – {totalJobAcres} acres total
-
-  
+  Fields ({fields.length}) – {totalJobAcres.toFixed(2)} acres total
 </h3>
+
 
  {fields.map((field) => {
   const isPartial = field.drawnPolygon && field.drawnAcres;
@@ -539,9 +618,14 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
   </p>
   <p>Crop: {crop}</p>
 
-      <div className="mt-4" id={`field-canvas-${field.id}`}>
-        {renderBoundarySVG(parsedGeo, field.drawnPolygon)}
-      </div>
+     <div
+  id={`field-canvas-${field.id}`}
+  className="bg-white p-2 rounded border shadow-sm mt-4"
+  style={{ width: 'fit-content', margin: '0 auto' }}
+>
+  {renderBoundarySVG(parsedGeo, field.drawnPolygon)}
+</div>
+
 
       <div className="flex justify-between items-center mt-2 no-print">
         <button

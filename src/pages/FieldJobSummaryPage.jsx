@@ -9,6 +9,8 @@ function FieldJobSummaryPage() {
   const navigate = useNavigate();
 
   const [job, setJob] = useState(null);
+  const [usedProductIds, setUsedProductIds] = useState([]);
+
   const [productsList, setProductsList] = useState([]);
   const [saving, setSaving] = useState(false);
   const [vendors, setVendors] = useState([]);
@@ -29,6 +31,31 @@ const [fieldBoundary, setFieldBoundary] = useState(null);
 
   loadVendorsAndApplicators();
 }, []);
+useEffect(() => {
+  const loadUsedProducts = async () => {
+    if (!jobType) return;
+
+    const q = query(
+      collection(db, 'jobs'),
+      where('jobType', '==', jobType),
+      where('cropYear', '==', cropYear) // optional, can remove if you want across all years
+    );
+
+    const snap = await getDocs(q);
+    const ids = new Set();
+
+    snap.forEach(doc => {
+      const job = doc.data();
+      job.products?.forEach(p => {
+        if (p.productId) ids.add(p.productId);
+      });
+    });
+
+    setUsedProductIds(Array.from(ids));
+  };
+
+  loadUsedProducts();
+}, [jobType, cropYear]);
 
  useEffect(() => {
   const fetchData = async () => {
@@ -147,8 +174,6 @@ const handleSave = async () => {
   };
 
   function renderBoundarySVG(geometry, overlayRaw) {
-    console.log('📐 field geometry:', geometry);
-
   if (!geometry) return null;
 
   let shape = geometry;
@@ -157,49 +182,59 @@ const handleSave = async () => {
   }
 
   if (shape.type !== 'Polygon' || !shape.coordinates?.[0]) return null;
-
   const coords = shape.coordinates[0];
+
+  // 🔧 Unwrap overlay if needed
+  let overlay = overlayRaw;
+  if (overlayRaw?.type === 'Feature' && overlayRaw.geometry?.type === 'Polygon') {
+    overlay = overlayRaw.geometry;
+  }
 
   const bounds = coords.reduce((acc, [lng, lat]) => ({
     minX: Math.min(acc.minX, lng),
     maxX: Math.max(acc.maxX, lng),
     minY: Math.min(acc.minY, lat),
-    maxY: Math.max(acc.maxY, lat)
+    maxY: Math.max(acc.maxY, lat),
   }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
 
   const width = bounds.maxX - bounds.minX || 1;
   const height = bounds.maxY - bounds.minY || 1;
-  const scale = Math.min(280 / width, 280 / height);
+  const boxSize = 300;
+  const margin = 10;
 
-  const path = coords.map(([lng, lat], i) => {
-    const x = (lng - bounds.minX) * scale + 10;
-    const y = 300 - ((lat - bounds.minY) * scale) - 10;
+  const scale = (boxSize - margin * 2) / Math.max(width, height);
+  const xOffset = (boxSize - width * scale) / 2;
+  const yOffset = (boxSize - height * scale) / 2;
+
+  const project = ([lng, lat]) => ({
+    x: (lng - bounds.minX) * scale + xOffset,
+    y: boxSize - ((lat - bounds.minY) * scale + yOffset),
+  });
+
+  const basePath = coords.map((pt, i) => {
+    const { x, y } = project(pt);
     return `${i === 0 ? 'M' : 'L'}${x},${y}`;
   }).join(' ') + ' Z';
 
-  let overlay = overlayRaw;
-  if (typeof overlay === 'string') {
-    try { overlay = JSON.parse(overlay); } catch { overlay = null; }
-  }
-
   let overlayPath = null;
-  if (overlay?.type === 'Feature' && overlay.geometry?.type === 'Polygon') {
-    overlayPath = overlay.geometry.coordinates[0].map(([lng, lat], i) => {
-      const x = (lng - bounds.minX) * scale + 10;
-      const y = 300 - ((lat - bounds.minY) * scale) - 10;
+  if (overlay?.type === 'Polygon' && overlay.coordinates?.[0]) {
+    overlayPath = overlay.coordinates[0].map((pt, i) => {
+      const { x, y } = project(pt);
       return `${i === 0 ? 'M' : 'L'}${x},${y}`;
     }).join(' ') + ' Z';
   }
 
   return (
-<svg viewBox="0 0 300 300" className="w-[300px] h-[300px] bg-gray-100 border rounded">
-      <path d={path} fill="none" stroke="#1e40af" strokeWidth="2" />
+    <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-64 h-64 bg-white border rounded shadow mx-auto">
+      <path d={basePath} fill={overlayPath ? '#F87171' : '#34D399'} fillOpacity={0.4} stroke="#4B5563" strokeWidth="1.5" />
       {overlayPath && (
-        <path d={overlayPath} fill="rgba(59,130,246,0.15)" stroke="#3b82f6" strokeWidth="2" />
+        <path d={overlayPath} fill="#34D399" fillOpacity={0.6} stroke="#047857" strokeWidth="2" />
       )}
     </svg>
   );
 }
+
+
 
   if (!job) return <div className="p-6">Loading...</div>;
 
@@ -383,14 +418,18 @@ const handleSave = async () => {
         ))}
 <div className="mb-6">
   <label className="block text-sm font-medium text-gray-700 mb-1">Field Map Preview</label>
-<div className="border rounded shadow w-[320px] h-[320px]">
+  <div
+    id={`field-canvas-${field.id}`}
+    className="bg-white p-2 rounded border shadow-sm"
+    style={{ width: 'fit-content', margin: '0 auto' }}
+  >
     {renderBoundarySVG(
-  typeof fieldBoundary === 'string' ? JSON.parse(fieldBoundary) : fieldBoundary,
-  job.drawnPolygon
-)}
-
+      typeof fieldBoundary === 'string' ? JSON.parse(fieldBoundary) : fieldBoundary,
+      job.drawnPolygon
+    )}
   </div>
 </div>
+
 
 <div className="mt-2 no-print">
   <button

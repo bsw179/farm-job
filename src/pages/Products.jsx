@@ -18,15 +18,24 @@ export default function Products() {
   }, []);
 
   const handleSaveProduct = async () => {
-    if (currentProduct.id) {
-      await updateDoc(doc(db, 'products', currentProduct.id), currentProduct);
-    } else {
-      await addDoc(collection(db, 'products'), currentProduct);
-    }
-    fetchProducts();
-    setModalOpen(false);
-    setCurrentProduct({});
+  const unit = autoPopulateUnit(currentProduct.crop, currentProduct.rateType);
+
+  const productToSave = {
+    ...currentProduct,
+    unit
   };
+
+  if (currentProduct.id) {
+    await updateDoc(doc(db, 'products', currentProduct.id), productToSave);
+  } else {
+    await addDoc(collection(db, 'products'), productToSave);
+  }
+
+  fetchProducts();
+  setModalOpen(false);
+  setCurrentProduct({});
+};
+
 
   const handleDeleteProduct = async (id) => {
     await deleteDoc(doc(db, 'products', id));
@@ -154,6 +163,18 @@ export default function Products() {
                   <option value="Weight">Weight (lbs/acre)</option>
                   <option value="Population">Population (seeds/acre)</option>
                 </select>
+<input
+  className="border px-2 py-1 mb-4 w-full bg-gray-100 text-gray-700"
+  placeholder="Unit"
+  value={
+    currentProduct.rateType === 'Population'
+      ? 'seeds/acre'
+      : currentProduct.rateType === 'Weight'
+      ? 'lbs/acre'
+      : ''
+  }
+  disabled
+/>
 
                 <input
                   className="border px-2 py-1 mb-4 w-full"

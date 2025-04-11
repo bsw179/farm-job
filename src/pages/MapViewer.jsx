@@ -392,6 +392,7 @@ if (typeof geo === 'string') {
                 const turfCenter = centroid(geo);
 const centerCoords = turfCenter?.geometry?.coordinates;
 const center = [centerCoords[1], centerCoords[0]]; // [lat, lng]
+if (!cropYear) return <div>Loading crop year...</div>; // <— this would block it early
 
 
 return (
@@ -436,19 +437,29 @@ className="w-full text-[20pt] font-semibold text-center bg-white bg-opacity-90 r
   <div className="grid grid-cols-2 gap-y-1">
 
     {colorMode === 'variety'
-  ? Object.entries(varietyMap).map(([fieldId, v]) => {
-      const matchingField = filteredFields.find(f => f.id === fieldId);
-      if (!matchingField) return null;
+  ? Array.from(
+      Object.entries(varietyMap)
+        .filter(([fieldId]) => filteredFields.some(f => f.id === fieldId))
+        .reduce((acc, [fieldId, v]) => {
+          const field = filteredFields.find(f => f.id === fieldId);
+          if (!field || !v.variety) return acc;
 
-      const acres = acreMode === 'gps' ? matchingField.gpsAcres : matchingField.fsaAcres;
-      const hash = [...v.variety].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const key = v.variety;
+          const acres = acreMode === 'gps' ? field.gpsAcres : field.fsaAcres;
+          const prev = acc.get(key) || { ...v, totalAcres: 0 };
+          prev.totalAcres += acres || 0;
+          acc.set(key, prev);
+          return acc;
+        }, new Map())
+    ).map(([varietyName, info]) => {
+      const hash = [...varietyName].reduce((a, c) => a + c.charCodeAt(0), 0);
       const hue = hash % 360;
       const color = `hsl(${hue}, 70%, 65%)`;
 
       return (
-        <div key={v.variety} className="flex items-center space-x-2 whitespace-nowrap overflow-hidden text-ellipsis">
+        <div key={varietyName} className="flex items-center space-x-2 whitespace-nowrap overflow-hidden text-ellipsis">
           <div className="w-4 h-4 rounded-sm shrink-0" style={{ backgroundColor: color }}></div>
-          <span className="truncate">{v.variety} – {acres?.toFixed(1)} ac</span>
+          <span className="truncate">{varietyName} – {info.totalAcres.toFixed(1)} ac</span>
         </div>
       );
     })
@@ -465,6 +476,8 @@ className="w-full text-[20pt] font-semibold text-center bg-white bg-opacity-90 r
           <span className="truncate">{crop} – {getCropAcres(crop).toFixed(1)} ac</span>
         </div>
       ))}
+
+
 
   </div>
 

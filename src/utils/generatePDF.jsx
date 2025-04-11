@@ -36,16 +36,21 @@ function getPathFromPolygon(coords, size = 100, margin = 10) {
     if (y < minY) minY = y;
     if (y > maxY) maxY = y;
   });
-  const width = maxX - minX;
-  const height = maxY - minY;
+
+  const width = maxX - minX || 1;
+  const height = maxY - minY || 1;
   const scale = (size - margin * 2) / Math.max(width, height);
 
+  const xOffset = (size - width * scale) / 2;
+  const yOffset = (size - height * scale) / 2;
+
   return ring.map(([lng, lat], i) => {
-    const sx = (lng - minX) * scale + margin;
-    const sy = size - ((lat - minY) * scale + margin);
-    return `${i === 0 ? 'M' : 'L'}${sx},${sy}`;
+    const x = (lng - minX) * scale + xOffset;
+    const y = size - ((lat - minY) * scale + yOffset);
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
   }).join(' ') + ' Z';
 }
+
 
 export const generatePDFBlob = async (job) => {
 const totalAcres = job.fields?.reduce((sum, field) => {
@@ -59,29 +64,24 @@ console.log('📏 totalAcres:', totalAcres);
   const rate = parseFloat(product.rate);
   if (!rate || !totalAcres) return '';
 
- const unit = product.unit?.toLowerCase() || '';
-const crop = String(product.crop || '').toLowerCase();
-const totalAmount = rate * totalAcres;
+  const unit = product.unit?.toLowerCase() || '';
+  const crop = String(product.crop || '').toLowerCase();
+  const totalAmount = rate * totalAcres;
 
-if (['seeds/acre', 'population'].includes(unit)) {
-  const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-  const totalSeeds = rate * totalAcres;
-  const units = totalSeeds / seedsPerUnit;
-  display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
-}
+  if (['seeds/acre', 'population'].includes(unit)) {
+    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+    const totalSeeds = rate * totalAcres;
+    const units = totalSeeds / seedsPerUnit;
+    return `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+  }
 
+  if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].some(u => unit.includes(u))) {
+    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+    const bushels = totalAmount / lbsPerBushel;
+    return `${bushels.toFixed(1)} bushels`;
+  }
 
-if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].some(u => unit.includes(u))) {
-  console.log('🧪 crop string:', JSON.stringify(crop));
-
-  const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-  console.log('⚖️ Weight logic hit:', totalAmount, lbsPerBushel);
-  const bushels = totalAmount / lbsPerBushel;
-  return `${bushels.toFixed(1)} bushels`;
-}
-
-
-  // 🧮 Fallback for other units
+  // Fallback for all other units
   return `${totalAmount.toFixed(1)} ${product.unit}`;
 };
 
@@ -167,28 +167,58 @@ acres: Number(f.acres ?? f.gpsAcres ?? 0),
   );
 
   const page2 = (
-    <Page size="LETTER" style={styles.page}>
-      <Text style={styles.header}>Field Maps</Text>
-      <View style={styles.thumbRow}>
-        {job.fields?.map((f, i) => {
-          if (!f.imageBase64) return null;
-          return (
-            <View key={f.fieldId || f.id || i} style={styles.thumbWrap}>
-              {f.imageBase64 ? (
-  <Image src={f.imageBase64} style={{ width: 100, height: 100 }} />
-) : (
-  <Text style={styles.thumbLabel}>No image</Text>
-)}
+  <Page size="LETTER" style={styles.page}>
+    <Text style={styles.header}>Field Maps</Text>
 
-<Text style={styles.thumbLabel}>
-  {f.fieldName} ({Number(f.acres ?? f.gpsAcres).toFixed(1)} ac)
-</Text>
-            </View>
-          );
-        })}
+    <Text style={{ fontSize: 10, textAlign: 'center', marginBottom: 12 }}>
+      Job Date: {job.jobDate || '—'}
+    </Text>
+
+    <View style={styles.thumbRow}>
+      {job.fields?.map((f, i) => {
+        if (!f.imageBase64) return null;
+        return (
+          <View key={f.fieldId || f.id || i} style={styles.thumbWrap}>
+            <Image src={f.imageBase64} style={{ width: 100, height: 'auto' }} />
+            <Text style={styles.thumbLabel}>
+              {f.fieldName} ({Number(f.acres ?? f.gpsAcres).toFixed(1)} ac)
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+
+    {/* 📦 Add product totals + legend in one centered block */}
+    <View style={{ marginTop: 20, alignItems: 'center' }}>
+
+      {Array.isArray(job.products) && job.products.length > 0 && (
+        <View style={{ width: '100%', paddingHorizontal: 20 }}>
+          <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 4 }}>
+            Products
+          </Text>
+          {job.products.map((p, i) => (
+            <Text key={i} style={{ fontSize: 9 }}>
+              {(p.name || p.productName || 'Unnamed')} – {p.rate} {p.unit} → {totalProduct(p)}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* Legend */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+          <View style={{ width: 10, height: 10, backgroundColor: '#34D399', marginRight: 4 }} />
+          <Text style={{ fontSize: 9 }}>Apply</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ width: 10, height: 10, backgroundColor: '#F87171', marginRight: 4 }} />
+          <Text style={{ fontSize: 9 }}>Do Not Apply</Text>
+        </View>
       </View>
-    </Page>
-  );
+    </View>
+  </Page>
+);
+
 
   const doc = <Document>{[page1, page2]}</Document>;
   const blob = await pdf(doc).toBlob();

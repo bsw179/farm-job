@@ -5,23 +5,28 @@ function ProductComboBox({ value, onChange, productType, allProducts = [], usedP
   const [isOpen, setIsOpen] = useState(false);
 
   const filtered = useMemo(() => {
-   const filtered = allProducts
-  .filter(p => p.type?.toLowerCase() === productType?.toLowerCase())
-  .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()))
-  .sort((a, b) => a.name.localeCompare(b.name));
+  const filteredProducts = allProducts
+    .filter(p => !search || p.name?.toLowerCase().includes(search.toLowerCase()))
+    .filter(p => productType ? p.type?.toLowerCase() === productType.toLowerCase() : true)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-const used = filtered.filter(p => usedProductIds.includes(p.id));
-const others = filtered.filter(p => !usedProductIds.includes(p.id));
+  const used = filteredProducts.filter(p => usedProductIds.includes(p.id));
+  const others = filteredProducts.filter(p => !usedProductIds.includes(p.id));
 
+  return { used, others };
+}, [allProducts, productType, usedProductIds, search]);
 
-    return { used, others };
-  }, [allProducts, productType, usedProductIds, search]);
+// ✅ Add this line!
+const { used, others } = filtered;
+
 
   return (
     <div className="relative">
       <input
-        type="text"
-        value={search || value?.name || ''}
+        
+  type="text"
+  value={search || (value?.name ?? '')}
+
         onChange={e => setSearch(e.target.value)}
         onFocus={() => setIsOpen(true)}
         placeholder="Search products..."

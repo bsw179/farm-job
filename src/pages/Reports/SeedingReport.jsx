@@ -11,6 +11,12 @@ export default function SeedingReport() {
   const [filterType, setFilterType] = useState('');
   const [filterValue, setFilterValue] = useState('');
   const [sortKey, setSortKey] = useState('Farm');
+
+useEffect(() => {
+  console.log('🚨 Jobs:', jobs);
+}, [jobs]);
+
+
   useEffect(() => {
     const fetchData = async () => {
       const [vendorSnap, jobSnap, productSnap, fieldSnap] = await Promise.all([
@@ -62,47 +68,48 @@ export default function SeedingReport() {
   const vendorSummary = {};
 
   jobs.forEach(job => {
-    const jobProduct = job.products?.[0];
-    if (!jobProduct) return;
-    const product = products[jobProduct.productId];
-    if (!product) return;
+  const jobProduct = job.products?.[0];
+  if (!jobProduct) return;
+  const product = products[jobProduct.productId];
+  if (!product) return;
 
-    const varietyKey = `${product.name}-${product.crop}`;
-    const vendorName = vendors[jobProduct.vendorId]?.name || '—';
+  const varietyKey = `${product.name}-${product.crop}`;
+  const vendorName = job.vendor || '—';
 
-    job.fields?.forEach(field => {
-      const fieldData = fields[field.id];
-      if (!fieldData) return;
-      const acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
-      const rate = jobProduct.rate || 0;
-      const totalRate = rate * acres;
-      const converted = convertTotalUnits(product, totalRate, jobProduct.unit);
+  job.fields?.forEach(field => {
+    const fieldData = fields[field.id];
+    if (!fieldData) return;
+    const acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
+    const rate = jobProduct.rate || 0;
+    const totalRate = rate * acres;
+    const converted = convertTotalUnits(product, totalRate, jobProduct.unit);
 
-      if (!varietySummary[varietyKey]) {
-        varietySummary[varietyKey] = {
-          variety: product.name,
-          crop: product.crop,
-          totalAcres: 0,
-          totalUnits: 0,
-          unitLabel: jobProduct.unit || '',
-        };
-      }
-      varietySummary[varietyKey].totalAcres += acres;
-      varietySummary[varietyKey].totalUnits += converted;
+    if (!varietySummary[varietyKey]) {
+      varietySummary[varietyKey] = {
+        variety: product.name,
+        crop: product.crop,
+        totalAcres: 0,
+        totalUnits: 0,
+        unitLabel: jobProduct.unit || '',
+      };
+    }
+    varietySummary[varietyKey].totalAcres += acres;
+    varietySummary[varietyKey].totalUnits += converted;
 
-      if (!vendorSummary[vendorName]) vendorSummary[vendorName] = {};
-      if (!vendorSummary[vendorName][varietyKey]) {
-        vendorSummary[vendorName][varietyKey] = {
-          variety: product.name,
-          crop: product.crop,
-          totalAcres: 0,
-          totalUnits: 0,
-        };
-      }
-      vendorSummary[vendorName][varietyKey].totalAcres += acres;
-      vendorSummary[vendorName][varietyKey].totalUnits += converted;
-    });
+    if (!vendorSummary[vendorName]) vendorSummary[vendorName] = {};
+    if (!vendorSummary[vendorName][varietyKey]) {
+      vendorSummary[vendorName][varietyKey] = {
+        variety: product.name,
+        crop: product.crop,
+        totalAcres: 0,
+        totalUnits: 0,
+      };
+    }
+    vendorSummary[vendorName][varietyKey].totalAcres += acres;
+    vendorSummary[vendorName][varietyKey].totalUnits += converted;
   });
+});
+
 
   const operatorSummary = Object.entries(
     jobs.reduce((acc, job) => {
@@ -203,7 +210,7 @@ export default function SeedingReport() {
                 const product = products[jobProduct?.productId] || {};
                 const rate = jobProduct?.rate || '';
                 const unit = jobProduct?.unit || '';
-                const vendorName = vendors[jobProduct?.vendorId]?.name || '—';
+const vendorName = job.vendor || '—';
 
                 return job.fields.map(field => {
                   const fieldData = fields[field.id] || {};
