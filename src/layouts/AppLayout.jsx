@@ -27,6 +27,7 @@ import EditJobPolygon from "../pages/EditJobPolygon";
 import FieldJobSummaryPage from "../pages/FieldJobSummaryPage";
 import SeedingReport from '../pages/Reports/SeedingReport'; // adjust if path is different
 import AdminCleanupTools from '../pages/AdminCleanupTools';
+import MapLabelTester from '../pages/MapLabelTester';
 
 
 
@@ -114,6 +115,7 @@ export default function AppLayout() {
               <Route path="/jobs/field/:jobId" element={<FieldJobSummaryPage />} />
               <Route path="/reports/seeding" element={<SeedingReport />} />
              <Route path="/admin-tools" element={<AdminCleanupTools />} />
+             <Route path="/map-label-test" element={<MapLabelTester />} />
 
 
 

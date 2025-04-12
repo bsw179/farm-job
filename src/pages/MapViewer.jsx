@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { MapContainer, TileLayer, Polygon, LayersControl } from 'react-leaflet';
 import { collection, getDocs } from 'firebase/firestore';
 import 'leaflet/dist/leaflet.css';
@@ -67,11 +67,21 @@ function FieldLabel({ acres, operator, center, fontSize, colorMode, varietyInfo 
   );
 }
 
+function getFieldCenter(latlngs) {
+  const flat = latlngs.flat();
+  const lats = flat.map(p => p.lat);
+  const lngs = flat.map(p => p.lng);
+  const avgLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+  const avgLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+  return { lat: avgLat, lng: avgLng };
+}
 
 
 
 
 export default function MapViewer() {
+  const [mapReady, setMapReady] = useState(false);
+
  const [varietyMap, setVarietyMap] = useState({});
   const [fields, setFields] = useState([]);
   const [farms, setFarms] = useState([]);
@@ -84,7 +94,10 @@ export default function MapViewer() {
   const [acreMode, setAcreMode] = useState('gps');
   const [labelFontSize, setLabelFontSize] = useState(12); // default size
   const [showLabels, setShowLabels] = useState(true);     // toggle
+  const [dragLabelsMode, setDragLabelsMode] = useState(false);
+  const [labelOffsets, setLabelOffsets] = useState({});
   const { cropYear } = useContext(CropYearContext);
+const mapRef = useRef(null);
 
   useEffect(() => {
     const fetchFields = async () => {
@@ -159,6 +172,47 @@ export default function MapViewer() {
 
   fetchSeedingJobs();
 }, [cropYear]);
+
+useEffect(() => {
+  if (!mapReady || !mapRef.current) return;
+
+  const map = mapRef.current;
+
+  if (dragLabelsMode) {
+    map.dragging.disable();
+    map.scrollWheelZoom.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.boxZoom.disable();
+    map.keyboard.disable();
+  } else {
+    map.dragging.enable();
+    map.scrollWheelZoom.enable();
+    map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.boxZoom.enable();
+    map.keyboard.enable();
+  }
+}, [dragLabelsMode, mapReady]);
+
+useEffect(() => {
+  if (!mapRef.current) {
+    console.log('🛑 mapRef not ready yet');
+    return;
+  }
+
+  console.log(`🔁 dragLabelsMode is ${dragLabelsMode}`);
+
+  if (dragLabelsMode) {
+    mapRef.current.dragging.disable();
+    mapRef.current.scrollWheelZoom.disable();
+    console.log('🧊 Map drag & zoom disabled');
+  } else {
+    mapRef.current.dragging.enable();
+    mapRef.current.scrollWheelZoom.enable();
+    console.log('🟢 Map drag & zoom enabled');
+  }
+}, [dragLabelsMode]);
 
 
   useEffect(() => {
@@ -244,49 +298,94 @@ export default function MapViewer() {
     console.error('PDF export failed', err);
   }
 };
+useEffect(() => {
+  const map = mapRef.current;
+  if (!map) return;
+
+  // Fully disable interaction
+  const disableMapDragging = () => {
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.doubleClickZoom.disable();
+    map.boxZoom.disable();
+    map.keyboard.disable();
+    if (map.tap) map.tap.disable();
+
+    // Emergency kill switch — literally stop the internal dragging handler
+    if (map._handlers) {
+      map._handlers.forEach(handler => {
+        if (handler.enable && handler.disable) {
+          handler.disable();
+        }
+      });
+    }
+  };
+
+  // Re-enable interaction
+  const enableMapDragging = () => {
+    map.dragging.enable();
+    map.touchZoom.enable();
+    map.scrollWheelZoom.enable();
+    map.doubleClickZoom.enable();
+    map.boxZoom.enable();
+    map.keyboard.enable();
+    if (map.tap) map.tap.enable();
+  };
+
+  if (dragLabelsMode) {
+    disableMapDragging();
+  } else {
+    enableMapDragging();
+  }
+}, [dragLabelsMode]);
+
+
 
 
   return (
-    <div className="flex flex-col items-center bg-gray-200 p-4 space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-[794px] text-sm items-end">
-        <div className="flex flex-col text-sm">
+  <div className="flex flex-col items-center bg-gray-200 p-4 space-y-4">
+
+    <div className="w-[794px] bg-white px-4 py-3 rounded shadow border border-gray-300 space-y-2 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+        <div className="flex flex-col">
           <label className="text-gray-600 mb-1">Farm</label>
           <select
             value={selectedFarm}
             onChange={(e) => setSelectedFarm(e.target.value)}
-            className="border border-gray-300 rounded-md bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 rounded-md bg-white px-2 py-1"
           >
             {farms.map(farm => <option key={farm} value={farm}>{farm}</option>)}
           </select>
         </div>
-        <div className="flex flex-col text-sm">
+        <div className="flex flex-col">
           <label className="text-gray-600 mb-1">Operator</label>
           <select
             value={selectedOperator}
             onChange={(e) => setSelectedOperator(e.target.value)}
-            className="border px-2 py-1 rounded text-sm"
+            className="border border-gray-300 rounded-md bg-white px-2 py-1"
           >
             {operators.map(op => <option key={op} value={op}>{op}</option>)}
           </select>
         </div>
-        <div className="flex flex-col text-sm">
+        <div className="flex flex-col">
           <label className="text-gray-600 mb-1">Color By</label>
           <select
             value={colorMode}
             onChange={(e) => setColorMode(e.target.value)}
-            className="border px-2 py-1 rounded text-sm"
+            className="border border-gray-300 rounded-md bg-white px-2 py-1"
           >
             <option value="none">None</option>
             <option value="crop">Crop Type</option>
             <option value="variety">Variety</option>
           </select>
         </div>
-        <div className="flex flex-col text-sm">
+        <div className="flex flex-col">
           <label className="text-gray-600 mb-1">Acres</label>
           <select
             value={acreMode}
             onChange={(e) => setAcreMode(e.target.value)}
-            className="border px-2 py-1 rounded text-sm"
+            className="border border-gray-300 rounded-md bg-white px-2 py-1"
           >
             <option value="gps">GPS Acres</option>
             <option value="fsa">FSA Acres</option>
@@ -294,69 +393,89 @@ export default function MapViewer() {
         </div>
       </div>
 
-      <div className="w-[794px] flex justify-end mt-2">
-        <button
-          onClick={exportPNG}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
-        >
-          📸 Export PNG
-        </button>
-        <button
-          onClick={exportPDF}
-          className="ml-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
-        >
-          🧾 Export PDF
-        </button>
+      <div className="flex justify-between items-center mt-2">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={showLabels}
+              onChange={(e) => setShowLabels(e.target.checked)}
+              id="label-toggle"
+            />
+            <label htmlFor="label-toggle" className="text-gray-700">Show Labels</label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <label htmlFor="label-size" className="text-gray-700">Label Size</label>
+            <input
+              id="label-size"
+              type="number"
+              min="6"
+              max="30"
+              value={labelFontSize}
+              onChange={(e) => setLabelFontSize(Number(e.target.value))}
+              className="w-16 border border-gray-300 rounded px-1 py-0.5"
+            />
+            <span className="text-gray-500">px</span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={dragLabelsMode}
+              onChange={(e) => setDragLabelsMode(e.target.checked)}
+              id="drag-labels-toggle"
+            />
+            <label htmlFor="drag-labels-toggle" className="text-gray-700">Drag Labels</label>
+          </div>
+        </div>
+
+        <div className="flex space-x-2">
+          <button
+            onClick={exportPNG}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
+          >
+            📸 Export PNG
+          </button>
+          <button
+            onClick={exportPDF}
+            className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
+          >
+            🧾 Export PDF
+          </button>
+        </div>
       </div>
-
-     <div className="flex justify-center">
-<div className="mb-2">
-  <div className="flex items-center space-x-4 text-sm">
-    {/* Toggle */}
-    <div className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        checked={showLabels}
-        onChange={(e) => setShowLabels(e.target.checked)}
-        id="label-toggle"
-      />
-      <label htmlFor="label-toggle" className="text-gray-700">Show Field Labels</label>
     </div>
 
-    {/* Font Size Control */}
-    <div className="flex items-center space-x-2">
-      <label htmlFor="label-size" className="text-gray-700">Label Size</label>
-      <input
-        id="label-size"
-        type="number"
-        min="6"
-        max="30"
-        value={labelFontSize}
-        onChange={(e) => setLabelFontSize(Number(e.target.value))}
-        className="w-16 border border-gray-300 rounded px-1 py-0.5"
-      />
-      <span className="text-gray-500">px</span>
-    </div>
-  </div>
-</div>
+    <div className="origin-top shadow-xl" style={{ transform: `scale(${scale})` }}>
+      <div
+        id="map-export-area"
+        className="relative bg-white border border-black"
+        style={{ width: '794px', height: '1123px', paddingTop: '100px' }}
+      >
 
-  <div className="origin-top shadow-xl" style={{ transform: `scale(${scale})` }}>
-    <div
-      id="map-export-area"
-      className="relative bg-white border border-black"
-      style={{ width: '794px', height: '1123px', paddingTop: '100px' }}
-    >
 
-       <MapContainer
+     <MapContainer
   center={[35.5, -91]}
   zoom={12}
   zoomControl={false}
-  wheelPxPerZoomLevel={30} // ✅ More responsive zooming
-  zoomSnap={0.1}            // ✅ Allows fractional zoom
-  zoomDelta={0.1}           // ✅ Smaller step sizes
-  style={{ width: '94%', height: '80%', margin: '3% auto' }}
+  whenCreated={(mapInstance) => {
+    mapRef.current = mapInstance;
+    setMapReady(true);
+  }}
 
+  wheelPxPerZoomLevel={30}
+  zoomSnap={0.1}
+  zoomDelta={0.1}
+ style={{
+    width: '94%',
+    height: '80%',
+    margin: '3% auto',
+  }}
 >
+
+
+
 
 
               <ZoomDebugger />
@@ -392,7 +511,6 @@ if (typeof geo === 'string') {
                 const turfCenter = centroid(geo);
 const centerCoords = turfCenter?.geometry?.coordinates;
 const center = [centerCoords[1], centerCoords[0]]; // [lat, lng]
-if (!cropYear) return <div>Loading crop year...</div>; // <— this would block it early
 
 
 return (
@@ -401,24 +519,54 @@ return (
   positions={latlngs}
   pathOptions={{ fillColor: getColor(field), color: '#555', weight: 1, fillOpacity: 1 }}
 >
-  {showLabels && (
-   <FieldLabel
-  fieldId={field.id}
-  acres={acreMode === 'gps' ? field.gpsAcres : field.fsaAcres}
-  operator={field.operator}
-  center={center}
-  fontSize={labelFontSize}
-  colorMode={colorMode}
-  varietyInfo={varietyMap[field.id]}
-/>
-
-  )}
 </Polygon>
 
 );
 
               })}
             </MapContainer>
+{showLabels && fields.map((field) => {
+const center = field.center;
+  if (!mapRef.current || !center) return null;
+
+const point = mapRef.current.latLngToContainerPoint(L.latLng(center.lat, center.lng));
+  const offset = labelOffsets[field.id] || { x: 0, y: 0 };
+  const x = point.x + offset.x;
+  const y = point.y + offset.y;
+
+  return (
+    <Draggable
+      key={field.id}
+      disabled={!dragLabelsMode}
+      position={{ x, y }}
+      onStop={(_, data) => {
+        setLabelOffsets((prev) => ({
+          ...prev,
+          [field.id]: { x: data.x - point.x, y: data.y - point.y },
+        }));
+      }}
+    >
+      <div
+        className="absolute"
+        style={{
+          left: 0,
+          top: 0,
+          transform: `translate(${x}px, ${y}px)`,
+          cursor: dragLabelsMode ? 'move' : 'default',
+        }}
+      >
+        <FieldLabel
+          acres={acreMode === 'gps' ? field.gpsAcres : field.fsaAcres}
+          operator={field.operator}
+          center={center}
+          fontSize={labelFontSize}
+          colorMode={colorMode}
+          varietyInfo={varietyMap[field.id]}
+        />
+      </div>
+    </Draggable>
+  );
+})}
 
             <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[500px] text-center">
  <textarea
@@ -501,7 +649,7 @@ className="w-full text-[20pt] font-semibold text-center bg-white bg-opacity-90 r
 
           </div>
         </div>
-      </div>
+      
     </div>
   );
 }
