@@ -42,7 +42,7 @@ export default function MapLabelTester() {
       <div
         id="map-export-area"
         className="relative bg-white border border-black shadow-xl"
-        style={{ width: '794px', height: '1123px', paddingTop: '100px' }}
+        style={{ width: '794px', height: '1123px', paddingTop: '100px', transform: 'scale(0.75)', transformOrigin: 'top center' }}
       >
         <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[500px] text-center">
           <textarea
