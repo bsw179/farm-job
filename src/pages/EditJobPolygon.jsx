@@ -45,6 +45,8 @@ if (!geo) return;
       geo = null;
     }
 
+
+
     if (geo?.type === 'Feature') geo = geo.geometry;
 
     if (geo?.type === 'Polygon' && Array.isArray(geo.coordinates)) {
