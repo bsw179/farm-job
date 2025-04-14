@@ -5,6 +5,8 @@ import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'fireb
 import { db } from '../firebase';
 import { useCropYear } from '../context/CropYearContext';
 import area from '@turf/area';
+import { Pencil, Trash2, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 
 export default function FieldDetail() {
   const { fieldId } = useParams();
@@ -16,6 +18,7 @@ export default function FieldDetail() {
   const [editMode, setEditMode] = useState(false);
   const [fieldJobs, setFieldJobs] = useState([]);
   const [cropOptions, setCropOptions] = useState([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
 
  useEffect(() => {
@@ -76,15 +79,21 @@ export default function FieldDetail() {
 }, [fieldId]);
 
 
-  useEffect(() => {
-    const fetchFieldJobs = async () => {
-      const q = query(collection(db, 'jobsByField'), where('fieldId', '==', fieldId));
-      const snap = await getDocs(q);
-      const jobs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setFieldJobs(jobs);
-    };
-    fetchFieldJobs();
-  }, [fieldId]);
+ useEffect(() => {
+  const fetchFieldJobs = async () => {
+    const q = query(collection(db, 'jobsByField'), where('fieldId', '==', fieldId));
+    const snap = await getDocs(q);
+    const jobs = snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      fieldName: field?.fieldName || '—', // manually inject it
+    }));
+    setFieldJobs(jobs);
+  };
+
+  if (field) fetchFieldJobs();
+}, [fieldId, field]);
+
 
   useEffect(() => {
     const fetchCropTypes = async () => {
@@ -350,18 +359,74 @@ return (
           <p className="text-sm italic text-gray-500">No jobs recorded for this field yet.</p>
         ) : (
           <ul className="space-y-2">
-            {fieldJobs
-              .filter(job => job.cropYear === cropYear)
-              .map(job => (
-                <li key={job.id} className="text-sm border rounded p-2 bg-gray-50">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{job.jobType}</p>
-                      <p className="text-gray-600 text-sm">{job.jobDate || '—'} • {job.acres} acres</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
+           {fieldJobs
+  .filter(job => job.cropYear === cropYear)
+  .map(job => (
+ <li key={job.id} className="text-sm border rounded p-3 bg-white shadow">
+  <div className="flex justify-between items-start">
+    <div>
+      <div className="text-sm font-semibold text-blue-700 flex items-center gap-1">
+        {job.jobType}
+      </div>
+      <div className="text-xs text-gray-500">
+        {job.cropYear} • {job.fieldName}
+      </div>
+
+      {(() => {
+        const p = job.products?.[0];
+        return p ? (
+          <div className="text-sm text-gray-600 mt-1">
+            {p.productName || p.name} • {p.rate} {p.unit}
+          </div>
+        ) : null;
+      })()}
+
+      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+        <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
+        <span>{(job.acres || job.drawnAcres || 0).toFixed(2)} acres</span>
+      </div>
+    </div>
+
+
+    <div className="flex gap-2">
+      <button
+        onClick={() => navigate(`/jobs/field/${job.id}`)}
+        className="text-gray-500 hover:text-gray-700"
+        title="View/Edit Job"
+      >
+        <Pencil size={16} />
+      </button>
+      <button
+        onClick={() => setConfirmDeleteId(job.id)}
+        className="text-gray-500 hover:text-gray-700"
+        title="Delete Job"
+      >
+        <Trash2 size={16} />
+      </button>
+      <button
+        onClick={async () => {
+          const { generatePDFBlob } = await import('../utils/generatePDF');
+          const blob = await generatePDFBlob(job);
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `JobOrder_${job.jobType}_${job.cropYear}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }}
+        className="text-gray-500 hover:text-gray-700"
+        title="Download PDF"
+      >
+        <FileText size={16} />
+      </button>
+    </div>
+  </div>
+</li>
+
+
+  ))}
+
           </ul>
         )}
       </div>
@@ -370,6 +435,37 @@ return (
       <div className="bg-white p-3 rounded shadow col-span-2">
         <h3 className="text-sm font-semibold text-gray-700">📝 Notes + Observations</h3>
       </div>
+     
+
+{confirmDeleteId && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+      <p className="text-sm text-gray-800 mb-4">
+        Are you sure you want to delete this job? This can’t be undone.
+      </p>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setConfirmDeleteId(null)}
+          className="px-3 py-1 rounded text-sm bg-gray-200 hover:bg-gray-300"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={async () => {
+            await deleteDoc(doc(db, 'jobsByField', confirmDeleteId));
+            setFieldJobs(prev => prev.filter(j => j.id !== confirmDeleteId));
+            setConfirmDeleteId(null);
+          }}
+          className="px-3 py-1 rounded text-sm bg-red-600 text-white hover:bg-red-700"
+        >
+          Yes, Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+?
     </div>
   );
 }

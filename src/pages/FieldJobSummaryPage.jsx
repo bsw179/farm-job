@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore'
 function FieldJobSummaryPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
+const [field, setField] = useState(null);
 
   const [job, setJob] = useState(null);
   const [usedProductIds, setUsedProductIds] = useState([]);
@@ -33,20 +34,20 @@ const [fieldBoundary, setFieldBoundary] = useState(null);
 }, []);
 useEffect(() => {
   const loadUsedProducts = async () => {
-    if (!jobType) return;
+    if (!job?.jobType || !job?.cropYear) return;
 
     const q = query(
       collection(db, 'jobs'),
-      where('jobType', '==', jobType),
-      where('cropYear', '==', cropYear) // optional, can remove if you want across all years
+      where('jobType', '==', job.jobType),
+      where('cropYear', '==', job.cropYear)
     );
 
     const snap = await getDocs(q);
     const ids = new Set();
 
     snap.forEach(doc => {
-      const job = doc.data();
-      job.products?.forEach(p => {
+      const jobData = doc.data();
+      jobData.products?.forEach(p => {
         if (p.productId) ids.add(p.productId);
       });
     });
@@ -55,7 +56,8 @@ useEffect(() => {
   };
 
   loadUsedProducts();
-}, [jobType, cropYear]);
+}, [job?.jobType, job?.cropYear]);
+
 
  useEffect(() => {
   const fetchData = async () => {
@@ -68,9 +70,11 @@ useEffect(() => {
       // 👇 Fetch the full field boundary based on fieldId
       const fieldSnap = await getDoc(doc(db, 'fields', jobData.fieldId));
       if (fieldSnap.exists()) {
-        const fieldData = fieldSnap.data();
-        setFieldBoundary(fieldData.boundary?.geojson || null);
-      }
+  const fieldData = { id: fieldSnap.id, ...fieldSnap.data() };
+  setField(fieldData);
+  setFieldBoundary(fieldData.boundary?.geojson || null);
+}
+
     }
 
     const productsSnap = await getDocs(collection(db, 'products'));
@@ -418,6 +422,7 @@ const handleSave = async () => {
         ))}
 <div className="mb-6">
   <label className="block text-sm font-medium text-gray-700 mb-1">Field Map Preview</label>
+ {field && (
   <div
     id={`field-canvas-${field.id}`}
     className="bg-white p-2 rounded border shadow-sm"
@@ -428,6 +433,8 @@ const handleSave = async () => {
       job.drawnPolygon
     )}
   </div>
+)}
+
 </div>
 
 

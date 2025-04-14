@@ -153,17 +153,39 @@ const handleDelete = async (jobId, isFieldJob = false) => {
           <Button size="icon" variant="ghost"><FileText size={16} /></Button>
         </div>
       </div>
-      <div className="text-sm text-gray-800">
-        {job.products?.map((p, idx) => (
-          <div key={idx} className="text-xs text-gray-600">
-            {p.name} • {p.rate} {p.unit}
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
-        {job.totalAcres} acres
-      </div>
+{isFieldJob ? (
+  <>
+    <div className="text-sm text-gray-600">
+      {(() => {
+        const p = job.products?.[0];
+        if (!p) return '—';
+        return `${p.productName || p.name || '—'} • ${p.rate || ''} ${p.unit || ''}`;
+      })()}
+    </div>
+    <div className="flex items-center gap-2 text-xs text-gray-500">
+      <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
+      {(job.acres || job.drawnAcres || '—')} acres
+    </div>
+  </>
+) : (
+  <>
+    <div className="text-sm text-gray-600">
+      {(() => {
+        const p = job.products?.[0];
+        if (!p) return '—';
+        return `${p.productName || p.name || '—'} • ${p.rate || ''} ${p.unit || ''}`;
+      })()}
+    </div>
+    <div className="flex items-center gap-2 text-xs text-gray-500">
+      <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
+      {job.acres
+        ? `${Object.values(job.acres).reduce((sum, val) => sum + (val || 0), 0).toFixed(2)} acres`
+        : '—'}
+    </div>
+  </>
+)}
+
+
     </Card>
   );
 const renderListItem = (job, isFieldJob) => {

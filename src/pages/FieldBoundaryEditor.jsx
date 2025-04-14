@@ -255,6 +255,7 @@ export default function FieldBoundaryEditor() {
             Save Boundary
           </button>
         </div>
+      
       </div>
     </div>
   );
