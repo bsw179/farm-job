@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, getDocs, query, where, setDoc } from 'firebase/firestore';
 
 function FieldJobSummaryPage() {
   const { jobId } = useParams();
@@ -64,7 +64,14 @@ useEffect(() => {
     const jobSnap = await getDoc(doc(db, 'jobsByField', jobId));
     if (jobSnap.exists()) {
       const jobData = { id: jobSnap.id, ...jobSnap.data() };
-      setJob(jobData);
+      setJob({
+  ...jobData,
+  jobType: jobData.jobType || '',
+  drawnPolygon: typeof jobData.drawnPolygon === 'string'
+    ? JSON.parse(jobData.drawnPolygon)
+    : jobData.drawnPolygon,
+});
+
       setOriginalJob(jobData); // 👈 Save a copy of the original job for comparison
 
       // 👇 Fetch the full field boundary based on fieldId
@@ -72,7 +79,17 @@ useEffect(() => {
       if (fieldSnap.exists()) {
   const fieldData = { id: fieldSnap.id, ...fieldSnap.data() };
   setField(fieldData);
-  setFieldBoundary(fieldData.boundary?.geojson || null);
+
+  // 🛠️ Parse geojson safely
+  let geo = fieldData.boundary?.geojson || null;
+  if (typeof geo === 'string') {
+    try {
+      geo = JSON.parse(geo);
+    } catch {
+      geo = null;
+    }
+  }
+  setFieldBoundary(geo);
 }
 
     }
@@ -83,6 +100,25 @@ useEffect(() => {
 
   fetchData();
 }, [jobId]);
+
+useEffect(() => {
+  const updated = location.state?.updatedField;
+  if (updated) {
+    console.log('📥 Applying updatedField from location.state:', updated);
+
+    const parsedPolygon = typeof updated.drawnPolygon === 'string'
+      ? JSON.parse(updated.drawnPolygon)
+      : updated.drawnPolygon;
+
+    setJob(prev => ({
+      ...prev,
+      drawnPolygon: parsedPolygon,
+      drawnAcres: updated.drawnAcres,
+      acres: updated.drawnAcres
+    }));
+  }
+}, [location.state]);
+
 
 
 
@@ -101,39 +137,44 @@ useEffect(() => {
   JSON.stringify(originalJob.products) !== JSON.stringify(job.products)
 );
 if (!shouldBreakFromGroup) {
+  const cleanedDrawnPolygon = typeof job.drawnPolygon === 'object'
+    ? JSON.stringify(job.drawnPolygon)
+    : job.drawnPolygon;
+
   await updateDoc(doc(db, 'jobsByField', job.id), {
-  ...job
-});
+    ...job,
+    drawnPolygon: cleanedDrawnPolygon
+  });
 
-// 👇 Add this immediately after
-if (job.linkedToJobId) {
-  const groupRef = doc(db, 'jobs', job.linkedToJobId);
-  const groupSnap = await getDoc(groupRef);
-  if (groupSnap.exists()) {
-    const groupData = groupSnap.data();
+  // 👇 Keep master group job in sync
+  if (job.linkedToJobId) {
+    const groupRef = doc(db, 'jobs', job.linkedToJobId);
+    const groupSnap = await getDoc(groupRef);
+    if (groupSnap.exists()) {
+      const groupData = groupSnap.data();
 
-    const updatedFields = (groupData.fields || []).map(f => {
-      if (f.id !== job.fieldId) return f;
+      const updatedFields = (groupData.fields || []).map(f => {
+        if (f.id !== job.fieldId) return f;
 
-      return {
-        ...f,
-        drawnPolygon: job.drawnPolygon || f.drawnPolygon,
-        drawnAcres: job.drawnAcres || f.drawnAcres,
-        acres: job.acres || f.acres
-      };
-    });
+        return {
+          ...f,
+          drawnPolygon: cleanedDrawnPolygon,
+          drawnAcres: job.drawnAcres || f.drawnAcres,
+          acres: job.acres || f.acres
+        };
+      });
 
-    await setDoc(groupRef, {
-      ...groupData,
-      fields: updatedFields
-    });
+      await setDoc(groupRef, {
+        ...groupData,
+        fields: updatedFields
+      });
+    }
   }
-}
-
 
   navigate('/jobs');
   return;
 }
+
 const handleSave = async () => {
   setSaving(true);
 
@@ -428,12 +469,18 @@ const handleSave = async () => {
     className="bg-white p-2 rounded border shadow-sm"
     style={{ width: 'fit-content', margin: '0 auto' }}
   >
-    {renderBoundarySVG(
-      typeof fieldBoundary === 'string' ? JSON.parse(fieldBoundary) : fieldBoundary,
-      job.drawnPolygon
-    )}
+    {(() => {
+      console.log("👁️ Field Boundary:", fieldBoundary);
+      console.log("👁️ Drawn Polygon:", job.drawnPolygon);
+
+      return renderBoundarySVG(
+        fieldBoundary,
+        job.drawnPolygon
+      );
+    })()}
   </div>
 )}
+
 
 </div>
 

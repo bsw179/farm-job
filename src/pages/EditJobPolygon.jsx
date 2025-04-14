@@ -134,6 +134,8 @@ const handleSave = async () => {
   ) || [updatedField];
 
   const linkedToJobId = location.state?.linkedToJobId;
+
+  // ✅ Update the master job (if needed)
   if (linkedToJobId) {
     const masterRef = doc(db, 'jobs', linkedToJobId);
     const masterSnap = await getDoc(masterRef);
@@ -160,6 +162,16 @@ const handleSave = async () => {
         }
       });
     }
+
+    // ✅ ALSO update jobsByField for field-specific summary
+    console.log('🧠 About to update jobsByField:', `${linkedToJobId}_${field.id}`);
+
+    const jobByFieldRef = doc(db, 'jobsByField', `${linkedToJobId}_${field.id}`);
+    await updateDoc(jobByFieldRef, {
+      drawnPolygon: JSON.stringify(drawnPolygon),
+      drawnAcres: parseFloat(drawnAcres),
+      acres: parseFloat(drawnAcres)
+    });
   }
 
   navigate('/jobs/summary', {

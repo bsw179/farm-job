@@ -94,11 +94,12 @@ useEffect(() => {
   }
 }, [location.state, jobDate]);
 useEffect(() => {
-  if (!location.state?.isEditing) {
+  if (!location.state?.isEditing && !initialJobType) {
     console.log('🧼 Forcing jobType to blank on mount');
     setJobType('');
   }
-}, []);
+}, [initialJobType, location.state]);
+
 useEffect(() => {
   console.log('🔥 Watcher — jobType changed to:', jobType);
   if (jobType && !jobTypesList.some(j => j.name === jobType)) {
@@ -201,7 +202,15 @@ useEffect(() => {
     setJobStatus(jobData.status || 'Planned');
     setEditableProducts(jobData.products || []);
     setWaterVolume(jobData.waterVolume || '');
-    setFields(jobData.fields || []);
+    setFields(
+  (jobData.fields || []).map(f => ({
+    ...f,
+    drawnPolygon: typeof f.drawnPolygon === 'string'
+      ? JSON.parse(f.drawnPolygon)
+      : f.drawnPolygon
+  }))
+);
+
     setIsEditing(true);
     setJobId(jobId); // keeps the ID locked
 
@@ -216,6 +225,30 @@ useEffect(() => {
   const updated = location.state?.updatedField;
   if (!updated && location.state?.selectedFields?.length) {
     setFields(location.state.selectedFields);
+  }
+}, [location.key]);
+
+useEffect(() => {
+  const updated = location.state?.updatedField;
+  const selected = location.state?.selectedFields || [];
+
+  if (updated) {
+    const parsedPolygon = typeof updated.drawnPolygon === 'string'
+      ? JSON.parse(updated.drawnPolygon)
+      : updated.drawnPolygon;
+
+    const alreadyIncluded = selected.some(f => f.id === updated.id);
+    const mergedFields = alreadyIncluded
+      ? selected.map(f =>
+          f.id === updated.id
+            ? { ...f, ...updated, drawnPolygon: parsedPolygon }
+            : f
+        )
+      : [...selected, { ...updated, drawnPolygon: parsedPolygon }];
+
+    setFields(mergedFields);
+  } else if (selected.length) {
+    setFields(selected);
   }
 }, [location.key]);
 
@@ -341,17 +374,38 @@ useEffect(() => {
     return { ...field, imageBase64 };
   }));
 
-  const updatedFieldsWithAcres = updatedFields.map(f => ({
+  const updatedFieldsWithAcres = updatedFields.map(f => {
+  let polygon = f.drawnPolygon;
+
+  // If it's a Feature, convert to string
+  if (polygon && typeof polygon === 'object' && polygon.type === 'Feature') {
+    polygon = JSON.stringify(polygon);
+  }
+
+  return {
     ...f,
+    drawnPolygon: polygon ?? null,
     acres: f.drawnAcres ?? f.gpsAcres ?? 0
-  }));
+  };
+});
+
+
+const cleanedProducts = editableProducts.map(p => ({
+  productId: p.productId || '',
+  productName: p.productName || '',
+  rate: p.rate || '',
+  unit: p.unit || '',
+  crop: p.crop || '',
+  rateType: p.rateType || ''
+}));
+
 
   const masterJob = {
     jobId,
     jobType,
-    vendor,
-    applicator,
-    products: editableProducts,
+    vendor: vendor || '',
+  applicator: applicator || '',
+products: cleanedProducts,
     cropYear,
     jobDate: jobDate || new Date().toISOString().split('T')[0],
     status: jobStatus, // ← uses real selected status now
@@ -361,6 +415,7 @@ useEffect(() => {
     acres: Object.fromEntries(updatedFieldsWithAcres.map(f => [f.id, f.acres])),
     timestamp: serverTimestamp()
   };
+console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
 
   await setDoc(doc(db, 'jobs', jobId), masterJob); // ← final and only call to save job
 
@@ -381,14 +436,17 @@ useEffect(() => {
       acres: field.acres,
       drawnAcres: field.drawnAcres ?? null,
       drawnPolygon: field.drawnPolygon ?? null,
-      vendor,
-      applicator,
+     vendor: vendor || '',
+applicator: applicator || '',
+
       jobType,
       jobDate: jobDate || new Date().toISOString().split('T')[0],
-      products: editableProducts,
+products: cleanedProducts,
       waterVolume: requiresWater ? waterVolume : '',
       timestamp: serverTimestamp()
     };
+    console.log(`🧪 FIELD JOB TO SAVE [${field.id}]:`, jobEntry);
+
     return setDoc(doc(db, 'jobsByField', `${jobId}_${field.id}`), jobEntry);
   });
 
@@ -420,10 +478,11 @@ const jobObj = {
 
 
     navigate('/jobs');
-  } catch (error) {
-    console.error('Error saving job:', error);
-    alert('Failed to save job.');
-  } finally {
+ } catch (error) {
+  console.error('🔥 FULL SAVE ERROR:', error);
+  alert('Failed to save job.');
+}
+ finally {
     setSaving(false);
   }
 };
@@ -433,7 +492,8 @@ console.log('Dropdown options:', jobTypesList.map(j => j.name));
 
 if (!jobTypesList.length) return null;
 
-  return (
+
+return (
     <div className="p-6">
      
 
@@ -623,7 +683,13 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
   className="bg-white p-2 rounded border shadow-sm mt-4"
   style={{ width: 'fit-content', margin: '0 auto' }}
 >
-  {renderBoundarySVG(parsedGeo, field.drawnPolygon)}
+<p className="text-sm text-gray-600 mb-2">
+  {field.acres?.toFixed?.(2)} acres • {field.drawnPolygon ? 'partial' : 'full'}
+</p>
+
+{renderBoundarySVG(parsedGeo, field.drawnPolygon)}
+
+
 </div>
 
 
