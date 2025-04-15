@@ -70,6 +70,7 @@ const [jobDate, setJobDate] = useState('');
   const [waterVolume, setWaterVolume] = useState('');
   const [isEditing, setIsEditing] = useState(location.state?.isEditing || false);
   const [jobId, setJobId] = useState(location.state?.jobId || doc(collection(db, 'jobs')).id);
+const [notes, setNotes] = useState(location.state?.notes || '');
 
 const baseButton = "inline-flex items-center px-4 py-2 rounded shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1";
 const primaryBtn = `${baseButton} bg-green-600 text-white hover:bg-green-700`;
@@ -405,7 +406,7 @@ const cleanedProducts = editableProducts.map(p => ({
     jobType,
     vendor: vendor || '',
   applicator: applicator || '',
-products: cleanedProducts,
+  products: cleanedProducts,
     cropYear,
     jobDate: jobDate || new Date().toISOString().split('T')[0],
     status: jobStatus, // ← uses real selected status now
@@ -413,6 +414,7 @@ products: cleanedProducts,
     waterVolume: requiresWater ? waterVolume : '',
     fields: updatedFieldsWithAcres,
     acres: Object.fromEntries(updatedFieldsWithAcres.map(f => [f.id, f.acres])),
+    notes,
     timestamp: serverTimestamp()
   };
 console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
@@ -436,12 +438,15 @@ console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
       acres: field.acres,
       drawnAcres: field.drawnAcres ?? null,
       drawnPolygon: field.drawnPolygon ?? null,
-     vendor: vendor || '',
-applicator: applicator || '',
+      vendor: vendor || '',
+      applicator: applicator || '',
 
       jobType,
       jobDate: jobDate || new Date().toISOString().split('T')[0],
-products: cleanedProducts,
+      notes,
+
+      products: cleanedProducts,
+
       waterVolume: requiresWater ? waterVolume : '',
       timestamp: serverTimestamp()
     };
@@ -697,6 +702,7 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
 {renderBoundarySVG(parsedGeo, field.drawnPolygon)}
 
 
+
 </div>
 
 
@@ -731,6 +737,16 @@ className={blueLinkBtn}
   );
 })}
 
+</div>
+<div className="mt-6">
+  <label className="block text-sm font-medium mb-1">Notes</label>
+  <textarea
+    value={notes}
+    onChange={e => setNotes(e.target.value)}
+    className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
+    rows={4}
+    placeholder="Add any notes for this job..."
+  />
 </div>
 
 {requiresProducts && (

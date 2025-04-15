@@ -1,6 +1,8 @@
 // src/components/TopBar.jsx
 import React, { useContext, useRef, useEffect, useState } from 'react';
 import { CropYearContext } from '../context/CropYearContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 
 export default function TopBar({ onNavigate }) {
   const { cropYear, setCropYear } = useContext(CropYearContext);
@@ -49,7 +51,18 @@ export default function TopBar({ onNavigate }) {
               <div className="px-4 py-2 border-b font-semibold">User Profile</div>
               <button onClick={() => handlePageChange('Profile Settings')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Profile Settings</button>
               <button onClick={() => handlePageChange('Manage Users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
-              <button onClick={() => setShowMenu(false)} className="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+              <button
+  onClick={() => {
+    setShowMenu(false);
+    signOut(auth).catch((err) => {
+      console.error('Logout failed:', err);
+    });
+  }}
+  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 font-semibold"
+>
+  Logout
+</button>
+
 
               <div className="px-4 py-2 border-t font-semibold">Setup</div>
               <button onClick={() => handlePageChange('Products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Products</button>

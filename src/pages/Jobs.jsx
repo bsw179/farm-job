@@ -151,50 +151,7 @@ const handleDelete = async (jobId, isFieldJob = false) => {
 >
   <Trash2 size={16} />
 </Button>
-<Button
-  size="icon"
-  variant="ghost"
-  onClick={async () => {
-    try {
-      const { generatePDFBlob } = await import('../utils/generatePDF');
-
-      const fullJob = isFieldJob
-        ? {
-        ...job,
-      fields: [
-        await getDoc(doc(db, 'fields', job.fieldId)).then(snap => ({
-          id: job.fieldId,
-          fieldName: job.fieldName,
-          acres: job.acres,
-          drawnAcres: job.drawnAcres,
-          drawnPolygon: job.drawnPolygon,
-          ...(snap.exists() ? snap.data() : {})
-        }))
-      ],
-      acres: { [job.fieldId]: job.acres },
-      fieldIds: [job.fieldId],
-    }
-  : job;
-
-      const blob = await generatePDFBlob(fullJob);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = isFieldJob
-        ? `FieldJob_${job.fieldName || job.id}.pdf`
-        : `Job_${job.jobType || 'Job'}_${job.cropYear || ''}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('PDF generation failed:', err);
-      alert('Failed to generate PDF.');
-    }
-  }}
->
-  <FileText size={16} />
-</Button>
-
+          <Button size="icon" variant="ghost"><FileText size={16} /></Button>
         </div>
       </div>
 {isFieldJob ? (
@@ -462,8 +419,6 @@ const renderListItem = (job, isFieldJob) => {
   }`}
 >
   Sort by {key}
-{sortKey === key && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
-
 </button>
 
     ))}

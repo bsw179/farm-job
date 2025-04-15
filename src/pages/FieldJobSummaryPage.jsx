@@ -8,6 +8,7 @@ function FieldJobSummaryPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
 const [field, setField] = useState(null);
+const [notes, setNotes] = useState('');
 
   const [job, setJob] = useState(null);
   const [usedProductIds, setUsedProductIds] = useState([]);
@@ -64,6 +65,7 @@ useEffect(() => {
     const jobSnap = await getDoc(doc(db, 'jobsByField', jobId));
     if (jobSnap.exists()) {
       const jobData = { id: jobSnap.id, ...jobSnap.data() };
+      setNotes(jobData.notes || '');
       setJob({
   ...jobData,
   jobType: jobData.jobType || '',
@@ -186,6 +188,8 @@ const fieldData = fieldSnap.exists() ? fieldSnap.data() : {};
 
 const fullJob = {
   ...job,
+  notes,
+
   fields: [
     {
       id: job.fieldId,
@@ -240,15 +244,16 @@ const handleSave = async () => {
 };
 
     try {
-      await updateDoc(doc(db, 'jobsByField', job.id), {
+     await updateDoc(doc(db, 'jobsByField', job.id), {
   products: job.products,
   status: job.status || 'Planned',
   vendor: job.vendor || '',
   applicator: job.applicator || '',
   jobDate: job.jobDate || '',
-  linkedToJobId: job.linkedToJobId || null
-
+  linkedToJobId: job.linkedToJobId || null,
+  notes: notes || ''
 });
+
 
 
 
@@ -541,6 +546,17 @@ const handleSave = async () => {
           );
         })()}
       </div>
+      <div className="mt-6">
+  <label className="block text-sm font-medium mb-1">Notes</label>
+  <textarea
+    value={notes}
+    onChange={(e) => setNotes(e.target.value)}
+    className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
+    rows={4}
+    placeholder="Add any notes for this job..."
+  />
+</div>
+
     </>
   )}
 </div>

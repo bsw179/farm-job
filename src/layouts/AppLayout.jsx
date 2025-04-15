@@ -113,71 +113,56 @@ export default function AppLayout() {
               />
 
              <Routes>
-  <Route path="/login" element={<LoginPage />} />
+ <Route path="/login" element={<LoginPage />} />
 
-  <Route
-    path="*"
-    element={
-      <RequireLogin>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/fields" element={<Fields />} />
-          <Route path="/fields/:fieldId" element={<FieldDetail />} />
-          <Route
-            path="/fields/:fieldId/boundary-editor"
-            element={<FieldBoundaryEditor />}
-          />
-          <Route path="/map-viewer" element={<MapViewer />} />
-          <Route path="/profile-settings" element={<ProfileSettings />} />
-          <Route path="/manage-users" element={<ManageUsers />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/manage-partners" element={<ManagePartners />} />
-          <Route
-            path="/setup/manage-crop-types"
-            element={<ManageCropTypes />}
-          />
-          <Route
-            path="/setup/import-boundaries"
-            element={<BoundaryUploadMapbox />}
-          />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/metrics" element={<FieldMetrics />} />
-          <Route path="/jobs" element={
-            <RequireRole role="manager">
-              <Jobs />
-            </RequireRole>
-          } />
-          <Route path="/setup/manage-job-types" element={<ManageJobTypes />} />
-          <Route path="/reports/seeding" element={<SeedingReport />} />
-          <Route path="/admin-tools" element={
-            <RequireRole role="admin">
-              <AdminCleanupTools />
-            </RequireRole>
-          } />
-          <Route path="/jobs/create" element={
-            <RequireRole role="manager">
-              <CreateJobPage />
-            </RequireRole>
-          } />
-          <Route path="/jobs/summary" element={
-            <RequireRole role="manager">
-              <JobSummaryPage />
-            </RequireRole>
-          } />
-          <Route path="/jobs/edit-area/:fieldId" element={
-            <RequireRole role="manager">
-              <EditJobPolygon />
-            </RequireRole>
-          } />
-          <Route path="/jobs/field/:jobId" element={
-            <RequireRole role="manager">
-              <FieldJobSummaryPage />
-            </RequireRole>
-          } />
-        </Routes>
-      </RequireLogin>
-    }
-  />
+<Route
+  path="*"
+  element={
+    <RequireLogin>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/fields" element={<Fields />} />
+        <Route path="/fields/:fieldId" element={<FieldDetail />} />
+        <Route path="/fields/:fieldId/boundary-editor" element={<FieldBoundaryEditor />} />
+        <Route path="/map-viewer" element={<MapViewer />} />
+        <Route path="/profile-settings" element={<ProfileSettings />} />
+       <Route path="/manage-users" element={<ManageUsers />} />
+
+        <Route path="/products" element={<Products />} />
+
+       <Route path="/manage-partners" element={<ManagePartners />} />
+
+      <Route path="/setup/manage-crop-types" element={<ManageCropTypes />} />
+
+       <Route path="/setup/import-boundaries" element={<BoundaryUploadMapbox />} />
+
+       <Route path="/setup/manage-job-types" element={<ManageJobTypes />} />
+
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/reports/seeding" element={<SeedingReport />} />
+        <Route path="/metrics" element={<FieldMetrics />} />
+        <Route path="/admin-tools" element={
+          <RequireRole role="admin">
+            <AdminCleanupTools />
+          </RequireRole>
+        } />
+       <Route path="/jobs" element={<Jobs />} />
+
+
+       <Route path="/jobs/create" element={<CreateJobPage />} />
+
+      
+       <Route path="/jobs/summary" element={<JobSummaryPage />} />
+
+       <Route path="/jobs/edit-area/:fieldId" element={<EditJobPolygon />} />
+
+      <Route path="/jobs/field/:jobId" element={<FieldJobSummaryPage />} />
+
+      </Routes>
+    </RequireLogin>
+  }
+/>
+
 </Routes>
 
             </main>
