@@ -165,11 +165,54 @@ if (!shouldBreakFromGroup) {
       });
 
       await setDoc(groupRef, {
-        ...groupData,
-        fields: updatedFields
-      });
+  ...groupData,
+  fields: updatedFields.map(f => ({
+    ...f,
+    drawnPolygon: f.drawnPolygon ?? null,
+    drawnAcres: f.drawnAcres ?? null,
+    acres: f.acres ?? 0,
+    crop: f.crop ?? '',
+    fieldName: f.fieldName ?? '',
+  }))
+});
+
     }
   }
+if (generatePdf) {
+  try {
+    const { generatePDFBlob } = await import('../utils/generatePDF');
+const fieldSnap = await getDoc(doc(db, 'fields', job.fieldId));
+const fieldData = fieldSnap.exists() ? fieldSnap.data() : {};
+
+const fullJob = {
+  ...job,
+  fields: [
+    {
+      id: job.fieldId,
+      fieldName: job.fieldName,
+      acres: job.acres,
+      drawnAcres: job.drawnAcres,
+      drawnPolygon: job.drawnPolygon,
+      ...fieldData,
+    }
+  ],
+  acres: { [job.fieldId]: job.acres },
+  fieldIds: [job.fieldId],
+};
+
+const blob = await generatePDFBlob(fullJob);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `FieldJob_${job.fieldName || job.id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error('PDF generation failed:', err);
+    alert('Job saved, but PDF failed to generate.');
+  }
+}
 
   navigate('/jobs');
   return;
@@ -283,8 +326,9 @@ const handleSave = async () => {
 
   if (!job) return <div className="p-6">Loading...</div>;
 
-  return (
-    <div className="p-6">
+ return (
+  <div className="px-4 py-6 max-w-full overflow-x-hidden">
+
      <h2 className="text-xl font-bold mb-4">Edit Field Job – {job.fieldName}</h2>
 <div className="mb-4">
   <label className="block text-sm font-medium">Job Type</label>
@@ -371,7 +415,10 @@ const handleSave = async () => {
   </div>
 
         {job.products.map((p, i) => (
-          <div key={i} className="grid grid-cols-3 gap-2 mb-2">
+<div
+  key={i}
+  className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2"
+>
           <select
   className="border p-2 rounded"
   value={p.productName || ''}
@@ -400,23 +447,12 @@ const handleSave = async () => {
 >
   <option value="">Select Product</option>
   {productsList.map(prod => (
-    <option key={prod.id} value={prod.name}>
-      {prod.name}
-    </option>
-  ))}
-  <button
-  onClick={() =>
-    setJob(prev => ({
-      ...prev,
-      products: [...prev.products, { productId: '', productName: '', rate: '', unit: '' }]
-    }))
-  }
-  className="text-blue-600 hover:text-blue-800 underline text-sm mb-4"
->
-  + Add Product
-</button>
+  <option key={prod.id} value={prod.name}>
+    {prod.name}
+  </option>
+))}
+</select>  {/* 👈 properly close the dropdown here */}
 
-</select>
 
            <input
   type="text"
@@ -460,29 +496,55 @@ const handleSave = async () => {
 })()}
 
           </div>
+          
         ))}
-<div className="mb-6">
+
+        <button
+  onClick={() =>
+    setJob(prev => ({
+      ...prev,
+      products: [...prev.products, { productId: '', productName: '', rate: '', unit: '' }]
+    }))
+  }
+  className="text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition mb-4"
+>
+  + Add Product
+</button>
+
+<div className="border border-gray-300 rounded-xl bg-white p-4 shadow-sm mb-6">
+
   <label className="block text-sm font-medium text-gray-700 mb-1">Field Map Preview</label>
- {field && (
-  <div
-    id={`field-canvas-${field.id}`}
-    className="bg-white p-2 rounded border shadow-sm"
-    style={{ width: 'fit-content', margin: '0 auto' }}
-  >
-    {(() => {
-      console.log("👁️ Field Boundary:", fieldBoundary);
-      console.log("👁️ Drawn Polygon:", job.drawnPolygon);
 
-      return renderBoundarySVG(
-        fieldBoundary,
-        job.drawnPolygon
-      );
-    })()}
-  </div>
-)}
+  {field && (
+    <>
+      <div>
+        <p className="font-semibold mb-1">
+          {job.fieldName} – {job.acres?.toFixed?.(2)} acres – {job.drawnPolygon ? 'partial' : 'full'}
+        </p>
+        <p className="text-sm text-gray-600 mb-2">
+          Crop: {job.crop || '—'}
+        </p>
+      </div>
 
+      <div
+        id={`field-canvas-${field.id}`}
+        className="bg-white p-2 rounded border shadow-sm"
+        style={{ width: 'fit-content', margin: '0 auto' }}
+      >
+        {(() => {
+          console.log("👁️ Field Boundary:", fieldBoundary);
+          console.log("👁️ Drawn Polygon:", job.drawnPolygon);
 
+          return renderBoundarySVG(
+            fieldBoundary,
+            job.drawnPolygon
+          );
+        })()}
+      </div>
+    </>
+  )}
 </div>
+
 
 
 <div className="mt-2 no-print">
@@ -507,7 +569,55 @@ const handleSave = async () => {
   </button>
 </div>
 
-      </div>
+     </div>
+
+<div className="mt-6 border-t pt-4">
+  <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
+  {job.products.map((p, i) => {
+  const rate = parseFloat(p.rate);
+  const unit = p.unit?.toLowerCase() || '';
+  const crop = p.crop?.toLowerCase?.() || '';
+  const acres = job.acres || 0;
+  const totalAmount = rate * acres;
+  let display = '';
+
+  if (['seeds/acre', 'population'].includes(unit)) {
+    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+    const totalSeeds = rate * acres;
+    const units = totalSeeds / seedsPerUnit;
+    display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+  } else if (['lbs/acre'].includes(unit)) {
+    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+    const bushels = totalAmount / lbsPerBushel;
+    display = `${bushels.toFixed(1)} bushels`;
+  } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
+    const gal = totalAmount / 128;
+    display = `${gal.toFixed(2)} gallons`;
+  } else if (unit === 'pt/acre') {
+    const gal = totalAmount / 8;
+    display = `${gal.toFixed(2)} gallons`;
+  } else if (unit === 'qt/acre') {
+    const gal = totalAmount / 4;
+    display = `${gal.toFixed(2)} gallons`;
+  } else if (unit === 'oz dry/acre') {
+    const lbs = totalAmount / 16;
+    display = `${lbs.toFixed(2)} lbs`;
+  } else if (unit === 'tons/acre') {
+    display = `${totalAmount.toFixed(2)} tons`;
+  } else {
+    display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
+  }
+
+  return (
+    <div key={i} className="text-sm text-gray-700">
+      {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
+    </div>
+  );
+})}
+
+
+</div>
+
 <label className="flex items-center gap-2 text-sm text-gray-700 mb-2">
   <input
     type="checkbox"
@@ -517,14 +627,15 @@ const handleSave = async () => {
   Generate PDF after saving
 </label>
 
-      <div className="flex justify-between items-center">
-        <button onClick={() => navigate('/jobs')} className="text-blue-600 underline">← Cancel</button>
-        <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded" disabled={saving}>
-          {saving ? 'Updating...' : 'Update Field Job'}
-        </button>
-      </div>
-    </div>
-  );
+<div className="flex justify-between items-center">
+  <button onClick={() => navigate('/jobs')} className="text-blue-600 underline">← Cancel</button>
+  <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded" disabled={saving}>
+    {saving ? 'Updating...' : 'Update Field Job'}
+  </button>
+</div>
+</div>
+);
 }
 
 export default FieldJobSummaryPage;
+

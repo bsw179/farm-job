@@ -34,6 +34,7 @@ const [sortKey, setSortKey] = useState('date'); // or 'type', 'field'
 const [showFilterPanel, setShowFilterPanel] = useState(false);
 const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Planned', 'Completed'
 const [filterType, setFilterType] = useState('All'); // or specific job type name
+const [sortDirection, setSortDirection] = useState('desc'); // 'desc' = newest first
 
   const navigate = useNavigate();
 
@@ -150,7 +151,50 @@ const handleDelete = async (jobId, isFieldJob = false) => {
 >
   <Trash2 size={16} />
 </Button>
-          <Button size="icon" variant="ghost"><FileText size={16} /></Button>
+<Button
+  size="icon"
+  variant="ghost"
+  onClick={async () => {
+    try {
+      const { generatePDFBlob } = await import('../utils/generatePDF');
+
+      const fullJob = isFieldJob
+        ? {
+        ...job,
+      fields: [
+        await getDoc(doc(db, 'fields', job.fieldId)).then(snap => ({
+          id: job.fieldId,
+          fieldName: job.fieldName,
+          acres: job.acres,
+          drawnAcres: job.drawnAcres,
+          drawnPolygon: job.drawnPolygon,
+          ...(snap.exists() ? snap.data() : {})
+        }))
+      ],
+      acres: { [job.fieldId]: job.acres },
+      fieldIds: [job.fieldId],
+    }
+  : job;
+
+      const blob = await generatePDFBlob(fullJob);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = isFieldJob
+        ? `FieldJob_${job.fieldName || job.id}.pdf`
+        : `Job_${job.jobType || 'Job'}_${job.cropYear || ''}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      alert('Failed to generate PDF.');
+    }
+  }}
+>
+  <FileText size={16} />
+</Button>
+
         </div>
       </div>
 {isFieldJob ? (
@@ -344,9 +388,11 @@ const renderListItem = (job, isFieldJob) => {
     return matchesStatus && matchesType && matchesSearch;
   })
   .sort((a, b) => {
-    if (sortKey === 'date') {
-      return (a.jobDate || '').localeCompare(b.jobDate || '');
-    }
+  if (sortKey === 'date') {
+    const compare = (a.jobDate || '').localeCompare(b.jobDate || '');
+    return sortDirection === 'asc' ? compare : -compare;
+  }
+
     if (sortKey === 'type') {
       return a.jobType?.localeCompare(b.jobType || '');
     }
@@ -400,14 +446,26 @@ const renderListItem = (job, isFieldJob) => {
   <div className="flex items-center gap-2">
     {['date', 'type', 'field'].map(key => (
       <button
-        key={key}
-        onClick={() => setSortKey(key)}
-        className={`px-3 py-1 rounded text-sm border ${
-          sortKey === key ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
-        }`}
-      >
-        Sort by {key}
-      </button>
+  key={key}
+  onClick={() => {
+    if (sortKey === key) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDirection('desc');
+    }
+  }}
+  className={`px-3 py-1 rounded text-sm border ${
+    sortKey === key
+      ? 'bg-blue-600 text-white'
+      : 'text-gray-600 hover:bg-gray-100'
+  }`}
+>
+  Sort by {key}
+{sortKey === key && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
+
+</button>
+
     ))}
   </div>
 

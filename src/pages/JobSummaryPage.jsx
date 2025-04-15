@@ -555,7 +555,11 @@ return (
       </div>
 
      {requiresProducts && editableProducts.map((p, i) => (
-<div key={i} className="grid grid-cols-4 gap-2 mb-3 items-center">
+<div
+  key={i}
+  className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3 items-center"
+>
+
     <ProductComboBox
   productType={selectedProductType}
   allProducts={productsList}
@@ -612,13 +616,16 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
     <option value={p.unit}>{p.unit}</option>
   )}
 
-  <option value="oz/acre">oz/acre</option>
-  <option value="pt/acre">pt/acre</option>
-  <option value="qt/acre">qt/acre</option>
-  <option value="gal/acre">gal/acre</option>
-  <option value="lbs/acre">lbs/acre</option>
-  <option value="seeds/acre">seeds/acre</option>
-  <option value="units/acre">units/acre</option>
+ <option value="fl oz/acre">fl oz/acre</option>
+<option value="pt/acre">pt/acre</option>
+<option value="qt/acre">qt/acre</option>
+<option value="gal/acre">gal/acre</option>
+<option value="lbs/acre">lbs/acre</option>
+<option value="oz dry/acre">oz dry/acre</option> {/* 👈 for dry stuff like Sharpen */}
+<option value="tons/acre">tons/acre</option>
+<option value="seeds/acre">seeds/acre</option>
+<option value="units/acre">units/acre</option>
+
 </select>
 
    <button
@@ -730,33 +737,47 @@ className={blueLinkBtn}
   <div className="mt-6 border-t pt-4">
     <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
     {editableProducts.map((p, i) => {
-      const rate = parseFloat(p.rate);
-      const unit = p.unit?.toLowerCase() || '';
-      const crop = p.crop?.toLowerCase?.() || '';
-      const totalAcres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
-      const totalAmount = rate * totalAcres;
-      let display = '';
+  const rate = parseFloat(p.rate);
+  const unit = p.unit?.toLowerCase() || '';
+  const crop = p.crop?.toLowerCase?.() || '';
+  const acres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
+  const totalAmount = rate * acres;
+  let display = '';
 
-      if (['seeds/acre', 'population'].includes(unit)) {
-  const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-  const totalSeeds = rate * totalAcres;
-  const units = totalSeeds / seedsPerUnit;
-  display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
-} else if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].includes(unit)) {
-  const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-  const bushels = totalAmount / lbsPerBushel;
-  display = `${bushels.toFixed(1)} bushels`;
-} else {
-  display = `${totalAmount.toFixed(1)} ${unit}`;
-}
+  if (['seeds/acre', 'population'].includes(unit)) {
+    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+    const totalSeeds = rate * acres;
+    const units = totalSeeds / seedsPerUnit;
+    display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+  } else if (['lbs/acre'].includes(unit)) {
+    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+    const bushels = totalAmount / lbsPerBushel;
+    display = `${bushels.toFixed(1)} bushels`;
+  } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
+    const gal = totalAmount / 128;
+    display = `${gal.toFixed(2)} gallons`;
+  } else if (unit === 'pt/acre') {
+    const gal = totalAmount / 8;
+    display = `${gal.toFixed(2)} gallons`;
+  } else if (unit === 'qt/acre') {
+    const gal = totalAmount / 4;
+    display = `${gal.toFixed(2)} gallons`;
+  } else if (unit === 'oz dry/acre') {
+    const lbs = totalAmount / 16;
+    display = `${lbs.toFixed(2)} lbs`;
+  } else if (unit === 'tons/acre') {
+    display = `${totalAmount.toFixed(2)} tons`;
+  } else {
+    display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
+  }
 
+  return (
+    <div key={i} className="text-sm text-gray-700">
+      {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
+    </div>
+  );
+})}
 
-      return (
-        <div key={i} className="text-sm text-gray-700">
-          {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
-        </div>
-      );
-    })}
   </div>
 )}
 

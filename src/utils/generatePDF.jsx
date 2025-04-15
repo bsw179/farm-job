@@ -75,14 +75,39 @@ console.log('📏 totalAcres:', totalAcres);
     return `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
   }
 
-  if (['lbs/acre', 'pounds/acre', 'bushels (45 lbs/bu)'].some(u => unit.includes(u))) {
-    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-    const bushels = totalAmount / lbsPerBushel;
-    return `${bushels.toFixed(1)} bushels`;
-  }
+  if (['lbs/acre'].includes(unit)) {
+  const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+  const bushels = totalAmount / lbsPerBushel;
+  return `${bushels.toFixed(1)} bushels`;
+}
 
-  // Fallback for all other units
-  return `${totalAmount.toFixed(1)} ${product.unit}`;
+if (['fl oz/acre', 'oz/acre'].includes(unit)) {
+  const gal = totalAmount / 128;
+  return `${gal.toFixed(2)} gallons`;
+}
+
+if (unit === 'pt/acre') {
+  const gal = totalAmount / 8;
+  return `${gal.toFixed(2)} gallons`;
+}
+
+if (unit === 'qt/acre') {
+  const gal = totalAmount / 4;
+  return `${gal.toFixed(2)} gallons`;
+}
+
+if (unit === 'oz dry/acre') {
+  const lbs = totalAmount / 16;
+  return `${lbs.toFixed(2)} lbs`;
+}
+
+if (unit === 'tons/acre') {
+  return `${totalAmount.toFixed(2)} tons`;
+}
+
+// Fallback (clean display, remove /acre)
+return `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
+
 };
 
 
