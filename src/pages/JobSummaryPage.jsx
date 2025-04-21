@@ -34,7 +34,6 @@ function JobSummaryPage() {
 const [jobType, setJobType] = useState(() => {
   return location.state?.isEditing ? initialJobType : '';
 });
-console.log('🎯 Current jobType value:', jobType);
 
 const [fields, setFields] = useState([]);
 useEffect(() => {
@@ -71,21 +70,34 @@ const [jobDate, setJobDate] = useState('');
   const [isEditing, setIsEditing] = useState(location.state?.isEditing || false);
   const [jobId, setJobId] = useState(location.state?.jobId || doc(collection(db, 'jobs')).id);
 const [notes, setNotes] = useState(location.state?.notes || '');
+const [passes, setPasses] = useState(location.state?.passes || 1);
 
 const baseButton = "inline-flex items-center px-4 py-2 rounded shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1";
 const primaryBtn = `${baseButton} bg-green-600 text-white hover:bg-green-700`;
 const blueLinkBtn = "text-blue-600 hover:text-blue-800 underline text-sm";
-const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";  const totalJobAcres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
+const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";  
+const isLeveeJob = jobType?.name?.toLowerCase().includes('levee') || jobType?.name?.toLowerCase().includes('pack');
 
+const totalJobAcres = fields.reduce((sum, f) => {
+  if (isLeveeJob) {
+    const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+    if (crop === 'Rice' && f.riceLeveeAcres) {
+      return sum + parseFloat(f.riceLeveeAcres);
+    }
+    if (crop === 'Soybeans' && f.beanLeveeAcres) {
+      return sum + parseFloat(f.beanLeveeAcres);
+    }
+  }
+  return sum + (f.drawnAcres ?? f.gpsAcres ?? 0);
+}, 0);
 
-const selectedJobTypeData = jobTypesList.find(j => j.name === jobType);
-  console.log('🧪 selectedJobTypeData:', selectedJobTypeData);
 
 const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(
-  selectedJobTypeData?.parentName || selectedJobTypeData?.name
+  jobType?.parentName
 );
-  const selectedProductType = selectedJobTypeData?.productType || '';
-  const requiresWater = selectedJobTypeData?.requiresWater || false;
+
+const selectedProductType = jobType?.productType || '';
+const requiresWater = jobType?.parentName === 'Spraying';
 
 useEffect(() => {
   // Only set default date if not editing and date is still blank
@@ -96,15 +108,12 @@ useEffect(() => {
 }, [location.state, jobDate]);
 useEffect(() => {
   if (!location.state?.isEditing && !initialJobType) {
-    console.log('🧼 Forcing jobType to blank on mount');
     setJobType('');
   }
 }, [initialJobType, location.state]);
 
 useEffect(() => {
-  console.log('🔥 Watcher — jobType changed to:', jobType);
   if (jobType && !jobTypesList.some(j => j.name === jobType)) {
-    console.warn('💣 Invalid jobType set!', jobType);
   }
 }, [jobType]);
 useEffect(() => {
@@ -145,42 +154,25 @@ useEffect(() => {
     setApplicators(applicatorSnap.docs.map(doc => doc.data().name));
     setProductsList(productSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    // 🔥 Replace this line:
-    // setJobTypesList(jobTypeSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-
-    // 🔁 With this:
     const rawTypes = jobTypeSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const flattenedTypes = rawTypes.flatMap((type) => {
-  const base = {
-    name: type.name,
-    productType: type.productType || '',
-    requiresProducts: ['Seeding', 'Spraying', 'Fertilizing'].includes(type.name),
-    requiresWater: type.requiresWater || false
-  };
 
-  const subtypes = type.subTypes?.map(sub => ({
-    ...base,
-    name: sub,
-    parentName: type.name  // 👈 Add this
-  })) || [];
-
-  return [base, ...subtypes];
-});
-
-     console.log('🧨 Flattened types:', flattenedTypes.map(j => j.name));
+    const flattenedTypes = rawTypes.flatMap(type =>
+      (type.subTypes || []).map(sub => ({
+        ...sub,
+        parentName: type.name
+      }))
+    );
 
     setJobTypesList(flattenedTypes);
- if (initialJobType) {
-  setJobType(initialJobType);
-}
- else if (initialJobType) {
-  setJobType(initialJobType);
-}
 
+    if (initialJobType) {
+      setJobType(initialJobType);
+    }
   };
 
   loadData();
 }, []);
+
 
 
   useEffect(() => {
@@ -214,6 +206,7 @@ useEffect(() => {
 
     setIsEditing(true);
     setJobId(jobId); // keeps the ID locked
+    setNotes(jobData.notes || '');
 
   };
 
@@ -265,6 +258,7 @@ useEffect(() => {
   };
 
  function renderBoundarySVG(geometry, overlayRaw) {
+  
   if (!geometry) return null;
 
   let shape = geometry;
@@ -375,10 +369,9 @@ useEffect(() => {
     return { ...field, imageBase64 };
   }));
 
-  const updatedFieldsWithAcres = updatedFields.map(f => {
+ const updatedFieldsWithAcres = updatedFields.map(f => {
   let polygon = f.drawnPolygon;
 
-  // If it's a Feature, convert to string
   if (polygon && typeof polygon === 'object' && polygon.type === 'Feature') {
     polygon = JSON.stringify(polygon);
   }
@@ -386,9 +379,13 @@ useEffect(() => {
   return {
     ...f,
     drawnPolygon: polygon ?? null,
-    acres: f.drawnAcres ?? f.gpsAcres ?? 0
+    acres: f.drawnAcres ?? f.gpsAcres ?? 0,
+    riceLeveeAcres: f?.riceLeveeAcres ?? null,
+    beanLeveeAcres: f?.beanLeveeAcres ?? null
   };
 });
+
+
 
 
 const cleanedProducts = editableProducts.map(p => ({
@@ -402,22 +399,30 @@ const cleanedProducts = editableProducts.map(p => ({
 
 
   const masterJob = {
-    jobId,
-    jobType,
-    vendor: vendor || '',
+  jobId,
+  jobType: {
+    name: jobType.name,
+    icon: jobType.icon || '',
+    cost: jobType.cost || 0,
+    parentName: jobType.parentName || ''
+  },
+...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+  vendor: vendor || '',
   applicator: applicator || '',
   products: cleanedProducts,
-    cropYear,
-    jobDate: jobDate || new Date().toISOString().split('T')[0],
-    status: jobStatus, // ← uses real selected status now
-    fieldIds: updatedFieldsWithAcres.map(f => f.id),
-    waterVolume: requiresWater ? waterVolume : '',
-    fields: updatedFieldsWithAcres,
-    acres: Object.fromEntries(updatedFieldsWithAcres.map(f => [f.id, f.acres])),
-    notes,
-    timestamp: serverTimestamp()
-  };
-console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
+  cropYear,
+  jobDate: jobDate || new Date().toISOString().split('T')[0],
+  status: jobStatus,
+  fieldIds: updatedFieldsWithAcres.map(f => f.id),
+  waterVolume: jobType?.parentName === 'Spraying' ? waterVolume : '',
+  fields: updatedFieldsWithAcres,
+  acres: Object.fromEntries(updatedFieldsWithAcres.map(f => [f.id, f.acres])),
+  notes,
+  timestamp: serverTimestamp()
+};
+
+
+console.log('📦 Saving master job:', masterJob);
 
   await setDoc(doc(db, 'jobs', jobId), masterJob); // ← final and only call to save job
 
@@ -440,8 +445,27 @@ console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
       drawnPolygon: field.drawnPolygon ?? null,
       vendor: vendor || '',
       applicator: applicator || '',
+...(() => {
+  const crop = field.crop || field.crops?.[cropYear]?.crop || '';
+  if (crop.includes('Rice')) {
+    return { riceLeveeAcres: field.riceLeveeAcres ?? null };
+  }
+  if (crop.includes('Soybean')) {
+    return { beanLeveeAcres: field.beanLeveeAcres ?? null };
+  }
+  return {};
+})(),
 
-      jobType,
+
+     jobType: {
+  name: jobType.name,
+  icon: jobType.icon || '',
+  cost: jobType.cost || 0,
+  parentName: jobType.parentName || ''
+},
+  ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+ // 👈 here
+
       jobDate: jobDate || new Date().toISOString().split('T')[0],
       notes,
 
@@ -450,8 +474,7 @@ console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
       waterVolume: requiresWater ? waterVolume : '',
       timestamp: serverTimestamp()
     };
-    console.log(`🧪 FIELD JOB TO SAVE [${field.id}]:`, jobEntry);
-
+console.log('💾 jobEntry:', jobEntry);
     return setDoc(doc(db, 'jobsByField', `${jobId}_${field.id}`), jobEntry);
   });
 
@@ -459,6 +482,7 @@ console.log('🧪 MASTER JOB DATA TO SAVE:', masterJob);
 
 const jobObj = {
   ...masterJob,
+  operator: updatedFieldsWithAcres[0]?.operator || '',
   fields: updatedFieldsWithAcres,
   acres: Object.fromEntries(updatedFieldsWithAcres.map(f => [f.id, f.acres]))
 };
@@ -476,24 +500,23 @@ const jobObj = {
     link.click();
     document.body.removeChild(link);
   } catch (err) {
-    console.error('🧨 PDF generation failed:', err);
     alert('Job saved, but PDF failed to generate.');
   }
 }
 
 
     navigate('/jobs');
- } catch (error) {
-  console.error('🔥 FULL SAVE ERROR:', error);
+} catch (error) {
+  console.error('🔥 SAVE ERROR:', error);
   alert('Failed to save job.');
 }
+
  finally {
     setSaving(false);
   }
 };
 
 
-console.log('Dropdown options:', jobTypesList.map(j => j.name));
 
 if (!jobTypesList.length) return null;
 
@@ -506,16 +529,22 @@ return (
       <div className="mb-4">
         <label className="block text-sm font-medium">Job Type</label>
        {jobTypesList.length > 0 && (
-  <select
-    value={jobType}
-    onChange={e => setJobType(e.target.value)}
-    className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-  >
-    <option value="">Select Job Type</option>
-    {jobTypesList.map(type => (
-      <option key={type.name} value={type.name}>{type.name}</option>
-    ))}
-  </select>
+ <select
+  value={jobType?.name || ''}
+  onChange={e => {
+    const selected = jobTypesList.find(t => t.name === e.target.value);
+    setJobType(selected || '');
+  }}
+  className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+  <option value="">Select Job Type</option>
+  {jobTypesList.map(type => (
+    <option key={type.name} value={type.name}>
+      {type.name} {type.parentName ? `(${type.parentName})` : ''}
+    </option>
+  ))}
+</select>
+
 )}
 
       </div>
@@ -567,7 +596,15 @@ return (
 
     <ProductComboBox
   productType={selectedProductType}
-  allProducts={productsList}
+allProducts={productsList.filter(p => {
+  const parent = jobType?.parentName;
+  if (parent === 'Seeding') return p.type === 'Seed';
+  if (parent === 'Spraying') return p.type === 'Chemical';
+  if (parent === 'Fertilizer') return p.type === 'Fertilizer';
+  return true; // fallback if no match
+})}
+
+
 usedProductIds={usedProductIds}
   value={{
   id: p.productId,
@@ -630,6 +667,7 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
 <option value="tons/acre">tons/acre</option>
 <option value="seeds/acre">seeds/acre</option>
 <option value="units/acre">units/acre</option>
+<option value="%v/v">%V/V</option>
 
 </select>
 
@@ -645,29 +683,51 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
   </div>
 ))}
 
-
 {requiresProducts && (
   <button
-  onClick={handleAddProduct}
-  className="text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition mb-4"
->
-  + Add Product
-</button>
-
+    onClick={handleAddProduct}
+    className="text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition mb-4"
+  >
+    + Add Product
+  </button>
 )}
-      {requiresWater && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium">Water Volume (gal/acre)</label>
-          <input type="number" className="border rounded p-2 w-48" value={waterVolume} onChange={e => setWaterVolume(e.target.value)} />
-        </div>
-      )}
+
+{jobType?.parentName === 'Tillage' && (
+  <div className="mb-4">
+    <label className="block text-sm font-medium">Number of Passes</label>
+    <input
+      type="number"
+      min={1}
+      value={passes}
+      onChange={(e) => setPasses(e.target.value)}
+      className="border border-gray-300 rounded-md px-3 py-2 w-32 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+)}
+
+    {jobType?.parentName === 'Spraying' && (
+  <div className="mb-4">
+    <label className="block text-sm font-medium">Water Volume (gal/acre)</label>
+    <input
+      type="number"
+      className="border rounded p-2 w-48"
+      value={waterVolume}
+      onChange={e => setWaterVolume(e.target.value)}
+    />
+  </div>
+)}
+
 <div className="mb-6">
 <h3 className="text-lg font-semibold mb-2">
   Fields ({fields.length}) – {totalJobAcres.toFixed(2)} acres total
 </h3>
 
 
- {fields.map((field) => {
+
+  {fields.map((field) => {
+
+  // rest of your render logic
+
   const isPartial = field.drawnPolygon && field.drawnAcres;
 const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
   const crop = field.crop || field.crops?.[cropYear]?.crop || '—';
@@ -684,10 +744,15 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
   return (
   <div key={field.id} className="border border-gray-300 rounded-xl bg-white p-4 shadow-sm mb-6">
 
-  <p>
-    <strong>{field.fieldName}</strong> – {Number(displayAcres).toFixed(2)} acres
- – {isPartial ? 'partial' : 'full'}
-  </p>
+<p>
+  <strong>{field.fieldName}</strong> –{' '}
+  {isLeveeJob
+    ? `${((field.crop || field.crops?.[cropYear]?.crop || '').includes('Rice')
+        ? field.riceLeveeAcres
+        : field.beanLeveeAcres) || 0} acres (Levee – ${field.crop || field.crops?.[cropYear]?.crop || '—'})`
+    : `${Number(displayAcres).toFixed(2)} acres – ${isPartial ? 'partial' : 'full'}`}
+</p>
+
   <p>Crop: {crop}</p>
 
      <div
@@ -695,9 +760,7 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
   className="bg-white p-2 rounded border shadow-sm mt-4"
   style={{ width: 'fit-content', margin: '0 auto' }}
 >
-<p className="text-sm text-gray-600 mb-2">
-  {field.acres?.toFixed?.(2)} acres • {field.drawnPolygon ? 'partial' : 'full'}
-</p>
+
 
 {renderBoundarySVG(parsedGeo, field.drawnPolygon)}
 
@@ -710,17 +773,19 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
         <button
 className={blueLinkBtn}
           onClick={() =>
-            navigate(`/jobs/edit-area/${field.id}`, {
-              state: {
-                field,
-                selectedFields: fields,
-                jobType,
-                vendor,
-                applicator,
-                products: editableProducts,
-                cropYear
-              }
-            })
+       navigate(`/jobs/edit-area/${field.id}`, {
+  state: {
+    field, // 👈 this line is required
+    selectedFields: fields,
+    drawnPolygon: field.drawnPolygon,
+    jobType,
+    vendor,
+    applicator,
+    products: editableProducts,
+    cropYear
+  }
+})
+
           }
         >
           ✏️ Edit Area
@@ -756,7 +821,15 @@ className={blueLinkBtn}
   const rate = parseFloat(p.rate);
   const unit = p.unit?.toLowerCase() || '';
   const crop = p.crop?.toLowerCase?.() || '';
-  const acres = fields.reduce((sum, f) => sum + (f.drawnAcres ?? f.gpsAcres ?? 0), 0);
+  const acres = fields.reduce((sum, f) => {
+  if (isLeveeJob) {
+    const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+    if (crop.includes('Rice') && f.riceLeveeAcres) return sum + parseFloat(f.riceLeveeAcres);
+    if (crop.includes('Soybean') && f.beanLeveeAcres) return sum + parseFloat(f.beanLeveeAcres);
+  }
+  return sum + (f.drawnAcres ?? f.gpsAcres ?? 0);
+}, 0);
+
   const totalAmount = rate * acres;
   let display = '';
 
@@ -781,6 +854,11 @@ className={blueLinkBtn}
   } else if (unit === 'oz dry/acre') {
     const lbs = totalAmount / 16;
     display = `${lbs.toFixed(2)} lbs`;
+    } else if (unit === '%v/v') {
+  const water = parseFloat(waterVolume || 0);
+  const gal = (rate / 100) * water * acres;
+  display = `${gal.toFixed(2)} gallons`;
+
   } else if (unit === 'tons/acre') {
     display = `${totalAmount.toFixed(2)} tons`;
   } else {

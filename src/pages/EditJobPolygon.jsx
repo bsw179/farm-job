@@ -1,10 +1,13 @@
-// src/pages/EditJobPolygon.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import L from 'leaflet';
+
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
+
 import * as turf from '@turf/turf';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function EditJobPolygon() {
   const navigate = useNavigate();
@@ -13,115 +16,141 @@ export default function EditJobPolygon() {
   const field = location.state?.field;
   const [drawnPolygon, setDrawnPolygon] = useState(null);
   const [drawnAcres, setDrawnAcres] = useState(null);
+  const [mapType, setMapType] = useState('satellite');
+  const drawnLayerRef = useRef(null);
 
   useEffect(() => {
+    if (!field) return;
+
     let geo = field?.boundary?.geojson || field?.boundary;
-if (!geo) return;
+    if (!geo) return;
 
+    try {
+      if (typeof geo === 'string') geo = JSON.parse(geo);
+      if (geo?.type === 'Feature') geo = geo.geometry;
+    } catch (err) {
+      console.warn('Invalid GeoJSON:', err);
+      return;
+    }
 
-    // Clear any existing map instance
     if (window._leaflet_map) {
       window._leaflet_map.remove();
       delete window._leaflet_map;
     }
 
-    const map = L.map('map', {
-      center: [35, -91],
-      zoom: 17,
-      zoomControl: true,
-    });
+    const map = L.map('map', { center: [35, -91], zoom: 17 });
     window._leaflet_map = map;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: 'Tiles © Esri',
-      maxZoom: 22,
-    }).addTo(map);
+    const tileLayer = mapType === 'satellite'
+      ? L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
+      : L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    tileLayer.addTo(map);
 
-    
-    try {
-      if (typeof geo === 'string') geo = JSON.parse(geo);
-    } catch (err) {
-      console.warn('Invalid GeoJSON string:', err);
-      geo = null;
-    }
-
-
-
-    if (geo?.type === 'Feature') geo = geo.geometry;
-
-    if (geo?.type === 'Polygon' && Array.isArray(geo.coordinates)) {
+    // Static boundary
+    if (geo?.type === 'Polygon') {
       const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
-      const polygon = L.polygon(coords, {
-        color: 'gray',
-        weight: 1,
-        fillOpacity: 0.2,
-        interactive: false,
-      }).addTo(map);
+const boundary = L.polygon(coords, {
+  color: 'gray',
+  weight: 1,
+  fillOpacity: 0.2,
+  interactive: false,
+  pmIgnore: false
+}).addTo(map);
 
-      map.fitBounds(polygon.getBounds(), { padding: [20, 20] });
-      // 🟦 Draw existing drawnPolygon if present
-if (location.state?.drawnPolygon) {
-  let overlay = location.state.drawnPolygon;
-  if (typeof overlay === 'string') {
-    try {
-      overlay = JSON.parse(overlay);
-    } catch {
-      overlay = null;
-    }
-  }
+// Remove Geoman's layer hook manually
+delete boundary.pm;
 
-  if (overlay?.geometry?.type === 'Polygon') {
-    const overlayCoords = overlay.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
-    const overlayLayer = L.polygon(overlayCoords, {
-      color: '#3b82f6',
-      fillColor: '#3b82f6',
-      fillOpacity: 0.2
-    }).addTo(map);
 
-    setDrawnPolygon(overlay);
-    const acres = turf.area(overlay) * 0.000247105;
-    setDrawnAcres(acres.toFixed(2));
-  }
-}
-
+      map.fitBounds(boundary.getBounds());
     }
 
     map.pm.addControls({
       position: 'topleft',
       drawMarker: false,
-      drawPolyline: false,
       drawCircle: false,
-      drawRectangle: false,
       drawCircleMarker: false,
+      drawPolyline: true,
+      drawRectangle: true,
+      drawPolygon: true
     });
 
-    const drawnLayerRef = { current: null };
+    const layers = [];
 
+    // Load existing drawn polygons
+    if (location.state?.drawnPolygon) {
+      let stored = location.state.drawnPolygon;
+      if (typeof stored === 'string') {
+        try { stored = JSON.parse(stored); } catch { stored = null; }
+      }
+
+      if (stored?.type === 'FeatureCollection') {
+        stored.features.forEach((feature) => {
+          if (feature.geometry.type === 'Polygon') {
+            const coords = feature.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
+            const layer = L.polygon(coords, {
+              color: '#3b82f6',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.2
+            }).addTo(map);
+
+            if (layer.pm) {
+              layer.pm.enable();
+              layer.on('pm:edit', updateTotalAcres);
+            }
+
+            layers.push(layer);
+          }
+        });
+
+        updateTotalAcres();
+      }
+    }
+
+    // New feature creation
     map.on('pm:create', (e) => {
-      if (drawnLayerRef.current) {
-        map.removeLayer(drawnLayerRef.current);
+  const layer = e.layer;
+
+ if (e.shape === 'Line') {
+  layer.pm.setOptions({ snapIgnore: false });
+  return;
+}
+
+
+
+  layers.push(layer);
+  map.addLayer(layer);
+  layer.pm.enable();
+  layer.on('pm:edit', updateTotalAcres);
+  updateTotalAcres();
+});
+
+
+
+
+
+    map.on('pm:remove', (e) => {
+      const layer = e.layer;
+      const index = layers.indexOf(layer);
+      if (index !== -1) {
+        layers.splice(index, 1);
       }
-
-      const geo = e.layer.toGeoJSON();
-      const acres = turf.area(geo) * 0.000247105;
-
-      drawnLayerRef.current = e.layer;
-      map.addLayer(e.layer);
-      setDrawnPolygon(geo);
-      setDrawnAcres(acres.toFixed(2));
+      updateTotalAcres();
     });
 
-    map.on('pm:remove', () => {
-      if (drawnLayerRef.current) {
-        map.removeLayer(drawnLayerRef.current);
-        drawnLayerRef.current = null;
-      }
-      setDrawnPolygon(null);
-      setDrawnAcres(null);
-    });
-  }, [field]);
+   function updateTotalAcres() {
+  if (!layers.length) return;
 
+  const geo = layers[0].toGeoJSON();
+  const acres = turf.area(geo) * 0.000247105;
+
+  setDrawnPolygon(geo); // Just the single polygon feature
+  setDrawnAcres(acres.toFixed(2));
+}
+
+  }, [field, mapType]);
 const handleSave = async () => {
+  if (!drawnPolygon || !drawnAcres) return;
+
   const updatedField = {
     ...field,
     drawnPolygon: JSON.stringify(drawnPolygon),
@@ -135,10 +164,10 @@ const handleSave = async () => {
 
   const linkedToJobId = location.state?.linkedToJobId;
 
-  // ✅ Update the master job (if needed)
   if (linkedToJobId) {
     const masterRef = doc(db, 'jobs', linkedToJobId);
     const masterSnap = await getDoc(masterRef);
+
     if (masterSnap.exists()) {
       const masterData = masterSnap.data();
 
@@ -163,9 +192,6 @@ const handleSave = async () => {
       });
     }
 
-    // ✅ ALSO update jobsByField for field-specific summary
-    console.log('🧠 About to update jobsByField:', `${linkedToJobId}_${field.id}`);
-
     const jobByFieldRef = doc(db, 'jobsByField', `${linkedToJobId}_${field.id}`);
     await updateDoc(jobByFieldRef, {
       drawnPolygon: JSON.stringify(drawnPolygon),
@@ -173,6 +199,7 @@ const handleSave = async () => {
       acres: parseFloat(drawnAcres)
     });
   }
+console.log('🌾 Saving polygon:', JSON.stringify(drawnPolygon, null, 2));
 
   navigate('/jobs/summary', {
     state: {
@@ -183,35 +210,21 @@ const handleSave = async () => {
   });
 };
 
-
-  if (!field) {
-    return <div className="p-6">No field data found.</div>;
-  }
-
-  return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Draw Job Area – {field.fieldName}</h2>
-
-      <div id="map" className="w-full h-[500px] rounded border mb-4" />
-
-      <p className="text-sm text-gray-600 mb-4">
-        📐 {drawnAcres ? `${drawnAcres} acres` : 'No area drawn yet'}
-      </p>
-
-      <div className="flex gap-4">
-        <button
-          onClick={() => navigate('/jobs/summary', { state: location.state })}
-          className="px-4 py-2 border rounded"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Save Area
-        </button>
+return (
+  <div className="p-4">
+    <div id="map" className="h-[600px] w-full rounded shadow" />
+    <div className="mt-4 flex justify-between items-center">
+      <div className="text-sm text-gray-700">
+        Acres: <span className="font-semibold">{drawnAcres || '—'}</span>
       </div>
+      <button
+        onClick={handleSave}
+        className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+      >
+        Save Area
+      </button>
     </div>
-  );
+  </div>
+);
 }
+

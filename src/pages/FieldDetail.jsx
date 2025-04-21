@@ -35,7 +35,14 @@ export default function FieldDetail() {
         }
       }
       setField(data);
-      setUpdatedField(data);
+   setUpdatedField(prev => ({
+  ...data,
+  riceLeveeAcres: data.riceLeveeAcres ?? '',
+  beanLeveeAcres:
+    data.beanLeveeAcres ??
+    (data.riceLeveeAcres ? +(data.riceLeveeAcres * 0.5).toFixed(2) : ''),
+}));
+
 
       // 🧠 Add boundary preview map if boundary exists
      setTimeout(() => {
@@ -118,7 +125,15 @@ export default function FieldDetail() {
   const handleUpdate = async () => {
     const ref = doc(db, 'fields', fieldId);
     const clean = { ...updatedField };
-    if (clean.boundary?.geojson) delete clean.boundary.geojson;
+if (
+  (clean.beanLeveeAcres === undefined || clean.beanLeveeAcres === '') &&
+  clean.riceLeveeAcres &&
+  !isNaN(clean.riceLeveeAcres)
+) {
+  clean.beanLeveeAcres = +(clean.riceLeveeAcres * 0.5).toFixed(2);
+}
+
+
     await updateDoc(ref, clean);
     const updatedSnap = await getDoc(ref);
     const updatedData = { id: fieldId, ...updatedSnap.data() };
@@ -153,7 +168,10 @@ export default function FieldDetail() {
     ['operatorRentShare', 'Operator Rent %'],
     ['landowner', 'Landowner'],
     ['landownerExpenseShare', 'Landowner Expense %'],
-    ['landownerRentShare', 'Landowner Rent %']
+    ['landownerRentShare', 'Landowner Rent %'],
+    ['riceLeveeAcres', 'Rice Levee Acres'],
+    ['beanLeveeAcres', 'Bean Levee Acres'],
+
   ];
 
   const renderBoundarySVG = (geometry) => {
@@ -176,7 +194,10 @@ export default function FieldDetail() {
       return `${i === 0 ? 'M' : 'L'}${x},${y}`;
     }).join(' ') + ' Z';
 
-  
+  if (!field || !updatedField) {
+  return <div className="p-6">Loading field data...</div>;
+}
+
 
 return (
   <div>
@@ -208,20 +229,36 @@ return (
 
       {/* Field Info */}
       <div className="grid grid-cols-2 gap-2 mb-6 text-sm">
-        {fieldOrder.map(([key, label]) => (
-          <div key={key} className="bg-white p-3 rounded shadow">
-            <label className="block text-xs text-gray-500 mb-1">{label}</label>
-            {editMode ? (
-              <input
-                className="border p-2 rounded w-full"
-                value={updatedField[key] || ''}
-                onChange={(e) => setUpdatedField({ ...updatedField, [key]: e.target.value })}
-              />
-            ) : (
-              <div className="font-medium">{key === 'gpsAcres' ? gpsAcresFromBoundary : field[key] || '—'}</div>
-            )}
-          </div>
-        ))}
+        {fieldOrder && Array.isArray(fieldOrder) && fieldOrder.map(([key, label]) => (
+
+  <div key={key} className="bg-white p-3 rounded shadow">
+    <label className="block text-xs text-gray-500 mb-1">{label}</label>
+    {editMode ? (
+      <>
+        <input
+          className="border p-2 rounded w-full"
+value={updatedField[key] !== undefined ? updatedField[key] : ''}
+          onChange={(e) => setUpdatedField({ ...updatedField, [key]: e.target.value })}
+        />
+        {key === 'riceLeveeAcres' && (
+          <p className="text-xs text-gray-500 mt-1 italic">
+            Used for levee making and levee seeding when crop is rice
+          </p>
+        )}
+        {key === 'beanLeveeAcres' && (
+          <p className="text-xs text-gray-500 mt-1 italic">
+            Used for levee making when crop is soybeans (defaults to 50% of rice levees)
+          </p>
+        )}
+      </>
+    ) : (
+      <div className="font-medium">
+        {key === 'gpsAcres' ? gpsAcresFromBoundary : field[key] || '—'}
+      </div>
+    )}
+  </div>
+))}
+
       </div>
 
       {/* Crop Info */}
@@ -366,8 +403,7 @@ return (
   <div className="flex justify-between items-start">
     <div>
       <div className="text-sm font-semibold text-blue-700 flex items-center gap-1">
-        {job.jobType}
-      </div>
+{typeof job.jobType === 'string' ? job.jobType : job.jobType?.name}      </div>
       <div className="text-xs text-gray-500">
         {job.cropYear} • {job.fieldName}
       </div>

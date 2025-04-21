@@ -42,9 +42,10 @@ const [selectedVendors, setSelectedVendors] = useState([]);
       const fieldMap = {};
       fieldSnap.docs.forEach(doc => { fieldMap[doc.id] = doc.data(); });
 
-      const seedJobs = jobSnap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(j => j.jobType === 'Seeding');
+     const seedJobs = jobSnap.docs
+  .map(doc => ({ id: doc.id, ...doc.data() }))
+  .filter(j => j.jobType?.parentName === 'Seeding');
+
 
       setJobs(seedJobs);
       setProducts(productMap);
@@ -76,42 +77,88 @@ const [selectedVendors, setSelectedVendors] = useState([]);
     const product = products[jobProduct.productId];
     if (!product) return;
 
-    const varietyKey = `${product.name}-${product.crop}`;
+    const isLeveeJob = job.jobType?.name?.toLowerCase?.().includes('levee') || job.jobType?.name?.toLowerCase?.().includes('pack');
+const varietyKey = `${product.name}-${product.crop}`;
+
     const vendorName = job.vendor || '—';
 
     job.fields?.forEach(field => {
       const fieldData = fields[field.id];
       if (!fieldData) return;
-      const acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
+     let acres = 0;
+const crop = fieldData.crops?.[2025]?.crop || fieldData.crop || '';
+const jobName = job.jobType?.name?.toLowerCase() || '';
+
+ {
+acres = (() => {
+  const crop = fieldData.crops?.[2025]?.crop || fieldData.crop || '';
+  const jobName = job.jobType?.name?.toLowerCase?.() || '';
+
+  if (jobName.includes('levee') || jobName.includes('pack')) {
+    if (crop.includes('Rice')) return parseFloat(fieldData.riceLeveeAcres) || 0;
+    if (crop.includes('Soybean')) return parseFloat(fieldData.beanLeveeAcres) || 0;
+  }
+
+  return job.acres?.[field.id] || fieldData.gpsAcres || 0;
+})();
+}
+
       const rate = jobProduct.rate || 0;
       const totalRate = rate * acres;
       const converted = convertTotalUnits(product, totalRate, jobProduct.unit);
       const unitType = jobProduct.unit.includes('seeds') ? 'units' : jobProduct.unit.includes('lbs') ? 'bushels' : 'units';
+if (!varietySummary[varietyKey]) {
+ varietySummary[varietyKey] = {
+  variety: product.name,
+  crop: product.crop,
+  fieldAcres: 0,
+  leveeAcres: 0,
+  totalAcres: 0, // ✅ add this
+  totalUnits: 0,
+  unitLabel: unitType,
+};
+} else {
+  // Make sure unitLabel stays consistent (don't let another unit cause a split)
+  if (!varietySummary[varietyKey].unitLabel) {
+    varietySummary[varietyKey].unitLabel = unitType;
+  }
+}
 
-      if (!varietySummary[varietyKey]) {
-        varietySummary[varietyKey] = {
-          variety: product.name,
-          crop: product.crop,
-          totalAcres: 0,
-          totalUnits: 0,
-          unitLabel: unitType,
-        };
-      }
-      varietySummary[varietyKey].totalAcres += acres;
+
+if (isLeveeJob) {
+  varietySummary[varietyKey].leveeAcres += parseFloat(acres) || 0;
+} else {
+  varietySummary[varietyKey].fieldAcres += parseFloat(acres) || 0;
+}
+varietySummary[varietyKey].totalAcres =
+  varietySummary[varietyKey].fieldAcres + varietySummary[varietyKey].leveeAcres;
+
       varietySummary[varietyKey].totalUnits += converted;
 
       if (!vendorSummary[vendorName]) vendorSummary[vendorName] = {};
-      if (!vendorSummary[vendorName][varietyKey]) {
-        vendorSummary[vendorName][varietyKey] = {
-          variety: product.name,
-          crop: product.crop,
-          totalAcres: 0,
-          totalUnits: 0,
-          unitLabel: unitType,
-          expenseSplit: {},
-        };
-      }
-      vendorSummary[vendorName][varietyKey].totalAcres += acres;
+     if (!vendorSummary[vendorName][varietyKey]) {
+  vendorSummary[vendorName][varietyKey] = {
+    variety: product.name,
+    crop: product.crop,
+    fieldAcres: 0,
+    leveeAcres: 0,
+    totalAcres: 0,
+    totalUnits: 0,
+    unitLabel: unitType,
+    expenseSplit: {},
+  };
+}
+
+if (isLeveeJob) {
+  vendorSummary[vendorName][varietyKey].leveeAcres += parseFloat(acres) || 0;
+} else {
+  vendorSummary[vendorName][varietyKey].fieldAcres += parseFloat(acres) || 0;
+}
+
+vendorSummary[vendorName][varietyKey].totalAcres =
+  vendorSummary[vendorName][varietyKey].fieldAcres +
+  vendorSummary[vendorName][varietyKey].leveeAcres;
+
       vendorSummary[vendorName][varietyKey].totalUnits += converted;
 
     const operatorName = fieldData.operator || '—';
@@ -268,7 +315,18 @@ Object.entries(vendorSummary)
         if (!fieldData) return;
 
         const operator = fieldData.operator || '—';
-        const acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
+        let acres = 0;
+const fieldCrop = fieldData.crops?.[2025]?.crop || fieldData.crop || '';
+const jobName = job.jobType?.name?.toLowerCase?.() || '';
+
+if (jobName.includes('levee') || jobName.includes('pack')) {
+  if (fieldCrop.includes('Rice')) acres = parseFloat(fieldData.riceLeveeAcres) || 0;
+  else if (fieldCrop.includes('Soybean')) acres = parseFloat(fieldData.beanLeveeAcres) || 0;
+} else {
+  acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
+}
+
+
         const crop = product.crop || '—';
         const variety = product.name || '—';
         const key = `${operator}-${crop}-${variety}`;
@@ -310,7 +368,18 @@ const sortedFieldRows = filteredJobs.flatMap(job => {
 
   return job.fields.map(field => {
     const fieldData = fields[field.id] || {};
-    const acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
+    const crop = fieldData.crops?.[2025]?.crop?.toLowerCase?.() || fieldData.crop?.toLowerCase?.() || '';
+const jobName = job.jobType?.name?.toLowerCase?.() || '';
+
+const acres =
+  jobName.includes('levee') || jobName.includes('pack')
+    ? crop.includes('rice')
+      ? parseFloat(fieldData.riceLeveeAcres) || 0
+      : crop.includes('soybean')
+        ? parseFloat(fieldData.beanLeveeAcres) || 0
+        : 0
+    : job.acres?.[field.id] || fieldData.gpsAcres || 0;
+
 
     return {
       farm: fieldData.farmName || '—',
@@ -318,7 +387,8 @@ const sortedFieldRows = filteredJobs.flatMap(job => {
       acres,
       crop: product.crop || '—',
       operator: fieldData.operator || '—',
-      variety: product.name || '—',
+      variety: `${product.name || '—'}${job.jobType?.name?.toLowerCase?.().includes('levee') || job.jobType?.name?.toLowerCase?.().includes('pack') ? ' (Levee Seeding)' : ''}`,
+
       rate: `${rate} ${unit}`,
       vendor: vendorName,
     };
@@ -557,23 +627,37 @@ if (sortKey === 'Farm') {
       <section>
         <h2 className="text-xl font-semibold">Variety Summary</h2>
         <table className="min-w-full text-sm border mt-2">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-2 py-1">Variety</th>
-              <th className="border px-2 py-1">Crop</th>
-              <th className="border px-2 py-1">Total Acres</th>
-              <th className="border px-2 py-1">Total</th>
-            </tr>
-          </thead>
+    <thead className="bg-gray-100">
+  <tr>
+    <th className="border px-2 py-1">Variety</th>
+    <th className="border px-2 py-1">Crop</th>
+    <th className="border px-2 py-1">Field Acres</th>
+    <th className="border px-2 py-1">Levee Acres</th>
+    <th className="border px-2 py-1">Total Acres</th>
+    <th className="border px-2 py-1">Total</th>
+  </tr>
+</thead>
+
+
           <tbody>
-            {Object.values(varietySummary).map(row => (
-              <tr key={`${row.variety}-${row.crop}`}>
-                <td className="border px-2 py-1">{row.variety}</td>
-                <td className="border px-2 py-1">{row.crop}</td>
-                <td className="border px-2 py-1 text-right">{row.totalAcres.toFixed(1)}</td>
-                <td className="border px-2 py-1 text-right">{row.totalUnits.toFixed(1)} {row.unitLabel}</td>
-              </tr>
-            ))}
+  {Object.values(varietySummary).map(row => (
+  <tr key={`${row.variety}-${row.crop}`}>
+    <td className="border px-2 py-1">{row.variety}</td>
+    <td className="border px-2 py-1">{row.crop}</td>
+    <td className="border px-2 py-1 text-right">{parseFloat(row.fieldAcres || 0).toFixed(1)}</td>
+    <td className="border px-2 py-1 text-right">
+  {row.crop === 'Rice' && row.leveeAcres > 0
+    ? parseFloat(row.leveeAcres).toFixed(1)
+    : '—'}
+</td>
+
+    <td className="border px-2 py-1 text-right">{parseFloat(row.totalAcres || 0).toFixed(1)}</td>
+    <td className="border px-2 py-1 text-right">{row.totalUnits.toFixed(1)} {row.unitLabel}</td>
+  </tr>
+))}
+
+
+            
           </tbody>
         </table>
       </section>
@@ -586,29 +670,41 @@ if (sortKey === 'Farm') {
             <h3 className="font-bold">Vendor: {vendorName}</h3>
             <table className="min-w-full text-sm border mt-2">
               <thead className="bg-gray-100">
-                <tr>
-                  <th className="border px-2 py-1">Variety</th>
-                  <th className="border px-2 py-1">Crop</th>
-                  <th className="border px-2 py-1">Total Acres</th>
-                  <th className="border px-2 py-1">Total</th>
-                  <th className="border px-2 py-1">Expense Split</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.values(varieties).map(row => (
-                  <tr key={`${row.variety}-${row.crop}`}>
-                    <td className="border px-2 py-1">{row.variety}</td>
-                    <td className="border px-2 py-1">{row.crop}</td>
-                    <td className="border px-2 py-1 text-right">{row.totalAcres.toFixed(1)}</td>
-                    <td className="border px-2 py-1 text-right">{row.totalUnits.toFixed(1)} {row.unitLabel}</td>
-                    <td className="border px-2 py-1">
-                      {Object.entries(row.expenseSplit).map(([name, val]) => (
-                        <div key={name}>({name} - {val.toFixed(1)} {row.unitLabel})</div>
-                      ))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  <tr>
+    <th className="border px-2 py-1">Variety</th>
+    <th className="border px-2 py-1">Crop</th>
+    <th className="border px-2 py-1">Field Acres</th>
+    <th className="border px-2 py-1">Levee Acres</th>
+    <th className="border px-2 py-1">Total Acres</th>
+    <th className="border px-2 py-1">Total</th>
+    <th className="border px-2 py-1">Expense Split</th>
+  </tr>
+</thead>
+
+            <tbody>
+  {Object.values(varieties).map(row => (
+    <tr key={`${row.variety}-${row.crop}`}>
+      <td className="border px-2 py-1">{row.variety}</td>
+      <td className="border px-2 py-1">{row.crop}</td>
+      <td className="border px-2 py-1 text-right">{parseFloat(row.fieldAcres || 0).toFixed(1)}</td>
+      <td className="border px-2 py-1 text-right">
+  {row.crop === 'Rice' && row.leveeAcres > 0
+    ? parseFloat(row.leveeAcres).toFixed(1)
+    : '—'}
+</td>
+
+      <td className="border px-2 py-1 text-right">{parseFloat(row.totalAcres || 0).toFixed(1)}</td>
+      <td className="border px-2 py-1 text-right">{row.totalUnits.toFixed(1)} {row.unitLabel}</td>
+      <td className="border px-2 py-1">
+       {Object.entries(row.expenseSplit).map(([name, val]) => (
+  <div key={name}>{name} - {val.toFixed(1)} {row.unitLabel}</div>
+))}
+
+      </td>
+    </tr>
+  ))}
+</tbody>
+
             </table>
           </div>
         ))}

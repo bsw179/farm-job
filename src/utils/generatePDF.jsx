@@ -1,251 +1,151 @@
-// File: generatePDF.jsx (with Page 2 wireframes)
+// File: generatePDF.jsx (Updated with field-level splits, 4-per-row maps)
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, pdf, Font, Svg, Path, Image } from '@react-pdf/renderer';
+import {
+  Page, Text, View, Document, StyleSheet, pdf, Image
+} from '@react-pdf/renderer';
 
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 12, fontFamily: 'Helvetica' },
-  header: { fontSize: 18, marginBottom: 20, textAlign: 'center' },
-  section: { marginBottom: 16 },
+  page: { padding: 36, fontSize: 10, fontFamily: 'Helvetica' },
+  header: { fontSize: 14, marginBottom: 12, textAlign: 'center', fontWeight: 'bold' },
   row: { flexDirection: 'row', marginBottom: 4 },
-  label: { width: 120, fontWeight: 'bold' },
-  value: { flex: 1 },
-  tableHeader: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    borderBottomStyle: 'solid',
-    marginBottom: 4,
-  },
-  tableRow: { flexDirection: 'row', marginBottom: 2 },
-  cell: { flex: 1, fontSize: 9 },
-  cellWide: { flex: 1.5, fontSize: 9 },
-  listItem: { marginLeft: 10 },
-  thumbWrap: { width: '25%', padding: 5, alignItems: 'center' },
-  thumbSvg: { width: 100, height: 100 },
-  thumbLabel: { fontSize: 9, marginTop: 4, textAlign: 'center' },
-  thumbRow: { flexDirection: 'row', flexWrap: 'wrap' }
+  label: { width: 70, fontWeight: 'bold' },
+  tightRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  section: { marginBottom: 10 },
+  tableHeader: { flexDirection: 'row', borderBottomWidth: 1, marginBottom: 2 },
+  tableRow: { flexDirection: 'row', paddingVertical: 2 },
+  shadedRow: { backgroundColor: '#f2f2f2' },
+  cell: { flex: 1 },
+  cellWide: { flex: 2 },
+  bold: { fontWeight: 'bold' },
+  legendBox: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 10 },
+  colorBox: { width: 10, height: 10, marginRight: 4 },
+  mapGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
+  mapWrap: { width: '23%', margin: '1%', alignItems: 'center' },
+  thumb: { width: 100, height: 100 },
+  thumbLabel: { fontSize: 9, marginTop: 4, textAlign: 'center' }
 });
 
-function getPathFromPolygon(coords, size = 100, margin = 10) {
-  const ring = coords[0];
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  ring.forEach(([x, y]) => {
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  });
-
-  const width = maxX - minX || 1;
-  const height = maxY - minY || 1;
-  const scale = (size - margin * 2) / Math.max(width, height);
-
-  const xOffset = (size - width * scale) / 2;
-  const yOffset = (size - height * scale) / 2;
-
-  return ring.map(([lng, lat], i) => {
-    const x = (lng - minX) * scale + xOffset;
-    const y = size - ((lat - minY) * scale + yOffset);
-    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
-  }).join(' ') + ' Z';
-}
-
-
-export const generatePDFBlob = async (job) => {
-const totalAcres = job.fields?.reduce((sum, field) => {
-  const acres = field.acres ?? field.gpsAcres ?? 0;
-  return sum + acres;
-}, 0);
-  const crop = job.fields?.[0]?.crop?.toLowerCase?.() || '';
-console.log('📏 totalAcres:', totalAcres);
-
-  const totalProduct = (product) => {
+const totalProduct = (product, acres, water) => {
   const rate = parseFloat(product.rate);
-  if (!rate || !totalAcres) return '';
+  if (!rate || !acres) return '';
+  const unit = (product.unit || '').toLowerCase();
+  const crop = (product.crop || '').toLowerCase();
+  const total = rate * acres;
 
-  const unit = product.unit?.toLowerCase() || '';
-  const crop = String(product.crop || '').toLowerCase();
-  const totalAmount = rate * totalAcres;
-
-  if (['seeds/acre', 'population'].includes(unit)) {
-    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-    const totalSeeds = rate * totalAcres;
-    const units = totalSeeds / seedsPerUnit;
-    return `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+  if (unit === '%v/v') {
+    const gal = (rate / 100) * water * acres;
+    return `${gal.toFixed(2)} gallons`;
   }
+  if (['fl oz/acre', 'fluid oz/acre'].includes(unit)) return `${(total / 128).toFixed(2)} gallons`;
+  if (unit === 'pt/acre') return `${(total / 8).toFixed(2)} gallons`;
+  if (unit === 'qt/acre') return `${(total / 4).toFixed(2)} gallons`;
+  if (unit === 'oz dry/acre') return `${(total / 16).toFixed(2)} lbs`;
+  if (unit === 'tons/acre') return `${total.toFixed(2)} tons`;
 
-  if (['lbs/acre'].includes(unit)) {
-  const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-  const bushels = totalAmount / lbsPerBushel;
-  return `${bushels.toFixed(1)} bushels`;
-}
-
-if (['fl oz/acre', 'oz/acre'].includes(unit)) {
-  const gal = totalAmount / 128;
-  return `${gal.toFixed(2)} gallons`;
-}
-
-if (unit === 'pt/acre') {
-  const gal = totalAmount / 8;
-  return `${gal.toFixed(2)} gallons`;
-}
-
-if (unit === 'qt/acre') {
-  const gal = totalAmount / 4;
-  return `${gal.toFixed(2)} gallons`;
-}
-
-if (unit === 'oz dry/acre') {
-  const lbs = totalAmount / 16;
-  return `${lbs.toFixed(2)} lbs`;
-}
-
-if (unit === 'tons/acre') {
-  return `${totalAmount.toFixed(2)} tons`;
-}
-
-// Fallback (clean display, remove /acre)
-return `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
-
+  if (unit === 'lbs/acre') {
+    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+    return `${(total / lbsPerBushel).toFixed(1)} bushels`;
+  }
+  if (unit === 'seeds/acre') {
+    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+    const units = total / seedsPerUnit;
+    return `${units.toFixed(1)} units`;
+  }
+  return `${total.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
 };
 
+export const generatePDFBlob = async (job) => {
+  const totalAcres = job.fields?.reduce((sum, f) => sum + (f.acres ?? f.gpsAcres ?? 0), 0);
+  const waterVolume = parseFloat(job.waterVolume || 0);
 
-  const derivedExpenseSplits = Array.isArray(job.fields)
-    ? job.fields.map((f) => {
-        const op = f.operator || '—';
-        const lo = f.landowner || '';
-        const opExp = f.operatorExpenseShare ?? 100;
-        const loExp = f.landownerExpenseShare ?? 0;
-        const splitSummary = loExp > 0 ? `${op}: ${opExp}% / ${lo}: ${loExp}%` : `${op}: ${opExp}%`;
-
-        return {
-          fieldName: f.fieldName,
-          farmName: f.farmName,
-acres: Number(f.acres ?? f.gpsAcres ?? 0),
-          splitSummary,
-        };
-      })
-    : [];
-
-  const page1 = (
-    <Page size="LETTER" style={styles.page}>
-      <Text style={styles.header}>Job Order</Text>
-      <View style={styles.section}>
-        <View style={styles.row}><Text style={styles.label}>Date:</Text><Text style={styles.value}>{job.jobDate || '—'}</Text></View>
-        <View style={styles.row}><Text style={styles.label}>Job Type:</Text><Text style={styles.value}>{job.jobType}</Text></View>
-        <View style={styles.row}><Text style={styles.label}>Status:</Text><Text style={styles.value}>{job.status || 'Planned'}</Text></View>
-        <View style={styles.row}><Text style={styles.label}>Fields:</Text><Text style={styles.value}>{job.fields?.map(f => f.fieldName).join(', ')}</Text></View>
-        <View style={styles.row}><Text style={styles.label}>Total Acres:</Text><Text style={styles.value}>{totalAcres.toFixed(2)}</Text>
-</View>
-        <View style={styles.row}><Text style={styles.label}>Vendor:</Text><Text style={styles.value}>{job.vendor?.name || job.vendor || job.vendorName || job.products?.[0]?.vendorName || '—'}</Text></View>
-        <View style={styles.row}><Text style={styles.label}>Applicator:</Text><Text style={styles.value}>{job.applicator || '—'}</Text></View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Products:</Text>
-        <View style={styles.tableHeader}>
-          <Text style={styles.cell}>Name</Text>
-          <Text style={styles.cell}>Rate</Text>
-          <Text style={styles.cell}>Unit</Text>
-          <Text style={styles.cell}>Total</Text>
-        </View>
-        {Array.isArray(job.products) && job.products.length > 0 ? (
-          job.products.map((p, i) => (
-            <View key={i} style={styles.tableRow}>
-              <Text style={styles.cell}>{p.name || p.productName || 'Unnamed'}</Text>
-              <Text style={styles.cell}>{p.rate}</Text>
-              <Text style={styles.cell}>{p.unit}</Text>
-              <Text style={styles.cell}>{totalProduct(p)}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.listItem}>—</Text>
-        )}
-      </View>
-
-      {derivedExpenseSplits.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.label}>Expense Splits:</Text>
-          <View style={styles.tableHeader}>
-            <Text style={styles.cell}>Field</Text>
-            <Text style={styles.cell}>Farm</Text>
-            <Text style={styles.cell}>Acres</Text>
-            <Text style={styles.cellWide}>Split</Text>
+  const doc = (
+    <Document>
+      <Page size="LETTER" style={styles.page}>
+        <View style={styles.tightRow}>
+          <View>
+            <Text style={styles.bold}>Date:</Text>
+            <Text>{job.jobDate || '—'}</Text>
+            <Text style={{ marginTop: 2 }}>{job.operator || ''}</Text>
           </View>
-          {derivedExpenseSplits.map((s, i) => (
-            <View key={i} style={styles.tableRow}>
-              <Text style={styles.cell}>{s.fieldName}</Text>
-              <Text style={styles.cell}>{s.farmName}</Text>
-              <Text style={styles.cell}>{s.acres}</Text>
-              <Text style={styles.cellWide}>{s.splitSummary}</Text>
+          <Text style={styles.header}>Job Order</Text>
+          <View><Text> </Text></View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.tightRow}>
+            <Text><Text style={styles.bold}>Vendor:</Text> {job.vendor || '—'}</Text>
+            <Text><Text style={styles.bold}>Applicator:</Text> {job.applicator || '—'}</Text>
+          </View>
+        </View>
+
+        <Text style={[styles.bold, { marginBottom: 4 }]}>Total Acres: {totalAcres.toFixed(2)}</Text>
+
+        {/* Products */}
+        <View style={styles.section}>
+          <Text style={[styles.bold, { marginBottom: 4 }]}>Products:</Text>
+          <View style={styles.tableHeader}>
+            <Text style={styles.cellWide}>Name</Text>
+            <Text style={styles.cell}>Rate</Text>
+            <Text style={styles.cell}>Total</Text>
+          </View>
+          {job.products?.map((p, i) => (
+            <View
+              key={i}
+              style={[styles.tableRow, i % 2 === 1 ? styles.shadedRow : null]}
+            >
+              <Text style={styles.cellWide}>{p.name || p.productName || 'Unnamed'}</Text>
+              <Text style={styles.cell}>{p.rate} {p.unit}</Text>
+              <Text style={styles.cell}>{totalProduct(p, totalAcres, waterVolume)}</Text>
             </View>
           ))}
         </View>
-      )}
 
-      <View style={styles.section}>
-        <Text style={styles.label}>Instructions:</Text>
-        <Text>{job.notes || '—'}</Text>
-      </View>
-    </Page>
+        {/* Comments */}
+        {job.notes && (
+          <View style={[styles.section, { marginTop: 6 }]}>
+            <Text style={[styles.bold, { marginBottom: 2 }]}>Comments/Instructions:</Text>
+            <Text>{job.notes}</Text>
+          </View>
+        )}
+
+        {/* Legend */}
+        <View style={styles.legendBox}>
+          <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: '#34D399' }]} />
+            <Text>Apply</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: '#F87171' }]} />
+            <Text>Do Not Apply</Text>
+          </View>
+        </View>
+
+        {/* Field Maps with split info */}
+        <View style={styles.mapGrid}>
+          {job.fields?.map((f, i) => {
+            if (!f.imageBase64) return null;
+
+            const op = f.operator || '—';
+            const lo = f.landowner || '';
+            const opExp = f.operatorExpenseShare ?? 100;
+            const loExp = f.landownerExpenseShare ?? 0;
+            const split = loExp > 0 ? `${op}: ${opExp}% / ${lo}: ${loExp}%` : `${op}: ${opExp}%`;
+
+            return (
+              <View key={i} style={styles.mapWrap}>
+                <Image src={f.imageBase64} style={styles.thumb} />
+                <Text style={styles.thumbLabel}>{f.fieldName} ({Number(f.acres).toFixed(1)} ac)</Text>
+                <Text style={styles.thumbLabel}>{split}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </Page>
+    </Document>
   );
 
-  const page2 = (
-  <Page size="LETTER" style={styles.page}>
-    <Text style={styles.header}>Field Maps</Text>
-
-    <Text style={{ fontSize: 10, textAlign: 'center', marginBottom: 12 }}>
-      Job Date: {job.jobDate || '—'}
-    </Text>
-
-    <View style={styles.thumbRow}>
-      {job.fields?.map((f, i) => {
-        if (!f.imageBase64) return null;
-        return (
-          <View key={f.fieldId || f.id || i} style={styles.thumbWrap}>
-            <Image src={f.imageBase64} style={{ width: 100, height: 'auto' }} />
-            <Text style={styles.thumbLabel}>
-              {f.fieldName} ({Number(f.acres ?? f.gpsAcres).toFixed(1)} ac)
-            </Text>
-          </View>
-        );
-      })}
-    </View>
-
-    {/* 📦 Add product totals + legend in one centered block */}
-    <View style={{ marginTop: 20, alignItems: 'center' }}>
-
-      {Array.isArray(job.products) && job.products.length > 0 && (
-        <View style={{ width: '100%', paddingHorizontal: 20 }}>
-          <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 4 }}>
-            Products
-          </Text>
-          {job.products.map((p, i) => (
-            <Text key={i} style={{ fontSize: 9 }}>
-              {(p.name || p.productName || 'Unnamed')} – {p.rate} {p.unit} → {totalProduct(p)}
-            </Text>
-          ))}
-        </View>
-      )}
-
-      {/* Legend */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
-          <View style={{ width: 10, height: 10, backgroundColor: '#34D399', marginRight: 4 }} />
-          <Text style={{ fontSize: 9 }}>Apply</Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 10, height: 10, backgroundColor: '#F87171', marginRight: 4 }} />
-          <Text style={{ fontSize: 9 }}>Do Not Apply</Text>
-        </View>
-      </View>
-    </View>
-  </Page>
-);
-
-
-  const doc = <Document>{[page1, page2]}</Document>;
   const blob = await pdf(doc).toBlob();
   return blob;
 };

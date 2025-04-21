@@ -24,11 +24,12 @@ export default function CreateJobPage() {
   }, []);
 
   const toggleField = (field) => {
-    setSelectedFields(prev =>
-      prev.find(f => f.id === field.id)
-        ? prev.filter(f => f.id !== field.id)
-        : [...prev, field]
-    );
+   setSelectedFields(prev =>
+  prev.find(f => f.id === field.id)
+    ? prev.filter(f => f.id !== field.id)
+: [...prev, { ...field, boundary: field.boundary ?? null }]
+);
+
   };
 
   const handleAssignCrop = async () => {
