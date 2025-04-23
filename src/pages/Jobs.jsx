@@ -1,4 +1,6 @@
 // src/pages/Jobs.jsx
+import JobDetailsModal from "@/components/JobDetailsModal";
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Tabs, Tab } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -14,20 +16,44 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  query,
+  where,
+  updateDoc // 👈 this guy
 } from 'firebase/firestore';
+
+
 import { Menu } from '@headlessui/react';
 import { MoreVertical } from 'lucide-react';
 import { getJobTypeIcon } from '../utils/getJobTypeIcon';
 import { CropYearContext } from '../context/CropYearContext';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import { useUser } from '@/context/UserContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { auth } from '../firebase';
+
+console.log('🧪 LOGGED IN UID:', auth.currentUser?.uid);
 
 
 export default function Jobs() {
   const { cropYear } = useContext(CropYearContext);
+const { role, loading } = useUser();
+
+console.log('🧪 loading:', loading, 'role:', role);
+
+if (loading || !role) return null;
+
+
 const [view, setView] = useState('By Field');
+
+// 🔒 Prevent viewer from switching to Grouped tab
+useEffect(() => {
+  if (role === 'viewer' && view === 'Grouped') {
+    setView('By Field');
+  }
+}, [role, view]);
+
   const [jobs, setJobs] = useState([]);
   const [fieldJobs, setFieldJobs] = useState([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -43,6 +69,15 @@ const [selectedJobs, setSelectedJobs] = useState([]);
 
 const getJobTypeName = (job) =>
   typeof job.jobType === 'string' ? job.jobType : job.jobType?.name || '';
+const formatShortDate = (isoString) => {
+  if (!isoString) return '—';
+
+  const [year, month, day] = isoString.split('-');
+  const localDate = new Date(Number(year), Number(month) - 1, Number(day));
+
+  return localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
 
   const navigate = useNavigate();
 const handleExportCSV = () => {
@@ -148,9 +183,7 @@ console.log(jobsToShow)
   pdf.save('FieldJobs.pdf');
 };
 
-
-  useEffect(() => {
-    const fetchJobs = async () => {
+   const fetchJobs = async () => {
       const jobsSnapshot = await getDocs(collection(db, 'jobs'));
       const jobsData = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setJobs(jobsData);
@@ -159,7 +192,7 @@ console.log(jobsToShow)
       const fieldJobsData = fieldJobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setFieldJobs(fieldJobsData);
     };
-
+  useEffect(() => {
     fetchJobs();
   }, []);
 
@@ -172,39 +205,82 @@ const handleDelete = async (jobId, isFieldJob = false) => {
 
     const jobData = jobDoc.data();
     const { linkedToJobId, fieldId } = jobData;
+console.log('🧹 Removing fieldId from master job:', fieldId);
 
     // Delete the jobsByField doc
     await deleteDoc(ref);
     setFieldJobs(fieldJobs.filter((j) => j.id !== jobId));
 
     // Now update the master job if linked
-    if (linkedToJobId) {
-      const masterRef = doc(db, 'jobs', linkedToJobId);
-      const masterSnap = await getDoc(masterRef);
-      if (!masterSnap.exists()) return;
+   if (linkedToJobId) {
+  const masterRef = doc(db, 'jobs', linkedToJobId);
+  const masterSnap = await getDoc(masterRef);
+  if (!masterSnap.exists()) return;
 
-      const masterData = masterSnap.data();
-      const updatedFields = (masterData.fields || []).filter(f => f.id !== fieldId);
-      const updatedFieldIds = (masterData.fieldIds || []).filter(id => id !== fieldId);
+  const masterData = masterSnap.data();
+  const updatedFields = (masterData.fields || []).filter(f => f.id !== fieldId);
+  const updatedFieldIds = (masterData.fieldIds || []).filter(id => id !== fieldId);
 
-      if (updatedFieldIds.length === 0) {
-        // No fields left, delete the master job too
-        await deleteDoc(masterRef);
-        setJobs(jobs.filter((j) => j.id !== linkedToJobId));
-      } else {
-        // Otherwise just update it
-        await setDoc(masterRef, {
-          ...masterData,
-          fields: updatedFields,
-          fieldIds: updatedFieldIds
-        });
-      }
-    }
+  // Delete the field job
+  await deleteDoc(ref);
+  setFieldJobs(fieldJobs.filter((j) => j.id !== jobId));
+
+  // Re-check what's left in Firestore
+  const q = query(
+    collection(db, 'jobsByField'),
+    where('linkedToJobId', '==', linkedToJobId)
+  );
+  const snap = await getDocs(q);
+
+  if (snap.size === 1) {
+    // Only one job left — unlink it and delete the group
+    const leftoverDoc = snap.docs[0];
+    await updateDoc(leftoverDoc.ref, {
+      linkedToJobId: null,
+      isDetachedFromGroup: true
+    });
+
+    await deleteDoc(masterRef);
+    setJobs(jobs.filter((j) => j.id !== linkedToJobId));
+    await fetchJobs();
+  } else if (snap.size === 0) {
+    // No field jobs left — delete group
+    await deleteDoc(masterRef);
+    setJobs(jobs.filter((j) => j.id !== linkedToJobId));
+    await fetchJobs();
   } else {
-    // It's a master job — delete it
-    await deleteDoc(ref);
-    setJobs(jobs.filter((j) => j.id !== jobId));
+    // More than one field job left — update group with new field list
+    await setDoc(masterRef, {
+      ...masterData,
+      fields: updatedFields,
+      fieldIds: updatedFieldIds
+    });
   }
+}
+
+} else {
+  // 🔥 Delete all field jobs linked to this group
+  const fieldJobSnap = await getDocs(
+    collection(db, 'jobsByField')
+  );
+  const linkedFieldJobs = fieldJobSnap.docs.filter(
+    (doc) => doc.data().linkedToJobId === jobId
+  );
+
+  await Promise.all(
+    linkedFieldJobs.map((docSnap) =>
+      deleteDoc(doc(db, 'jobsByField', docSnap.id))
+    )
+  );
+
+  // 🗑️ Delete the master job
+  await deleteDoc(ref);
+  setJobs(jobs.filter((j) => j.id !== jobId));
+  setFieldJobs((prev) =>
+    prev.filter((j) => j.linkedToJobId !== jobId)
+  );
+}
+
 };
 
 
@@ -227,64 +303,150 @@ const handleDelete = async (jobId, isFieldJob = false) => {
           {getJobTypeName(job)}
         </div>
 
-        <div className="text-xs text-gray-500">
-          {job.cropYear} • {isFieldJob
-            ? job.fieldName
-            : job.fields?.map(f => f.fieldName).join(', ')
-          }
-        </div>
+<div className="text-xs text-gray-500 leading-tight">
+  {job.cropYear} • {isFieldJob
+    ? job.fieldName
+    : [...new Set(job.fields?.filter(f => !f.isDetachedFromGroup).map(f => f.fieldName))].join(', ')
+
+
+  }
+  <br />
+  {formatShortDate(job.jobDate)}
+</div>
+
+
+
       </div>
 
       {/* 🛠 Actions (edit/delete/pdf) */}
-      <div className="flex gap-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => {
-            if (isFieldJob) {
-              navigate(`/jobs/field/${job.id}`);
-            } else {
-              navigate('/jobs/summary', {
-                state: {
-                  isEditing: true,
-                  jobId: job.id,
-                  jobType: job.jobType,
-                  jobDate: job.jobDate,
-                  vendor: job.vendor,
-                  applicator: job.applicator,
-                  products: job.products,
-                  selectedFields: job.fields || [],
-                  cropYear: job.cropYear
-                }
-              });
+      {/* 🛠 Actions (edit/delete/pdf) */}
+{role !== 'viewer' && (
+  <div className="flex gap-2">
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={() => {
+        if (isFieldJob) {
+          navigate(`/jobs/field/${job.id}`);
+        } else {
+          navigate('/jobs/summary', {
+            state: {
+              isEditing: true,
+              jobId: job.id,
+              jobType: job.jobType,
+              jobDate: job.jobDate,
+              vendor: job.vendor,
+              applicator: job.applicator,
+              products: job.products,
+         selectedFields: Array.from(
+  new Map(
+    fieldJobs
+      .filter(f => job.fieldIds?.includes(f.fieldId) && !f.isDetachedFromGroup)
+      .sort((a, b) => {
+        const hasPolyA = !!a.drawnPolygon;
+        const hasPolyB = !!b.drawnPolygon;
+        if (hasPolyA && !hasPolyB) return -1;
+        if (!hasPolyA && hasPolyB) return 1;
+        return (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0);
+      })
+      .map(f => [f.fieldId, f])
+  ).values()
+),
+
+
+
+              cropYear: job.cropYear
             }
-          }}
-        >
-          <Pencil size={16} />
-        </Button>
+          });
+        }
+      }}
+    >
+      <Pencil size={16} />
+    </Button>
 
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            setConfirmDeleteId(job.id);
-          }}
-        >
-          <Trash2 size={16} />
-        </Button>
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={(e) => {
+        e.stopPropagation();
+        setConfirmDeleteId(job.id);
+      }}
+    >
+      <Trash2 size={16} />
+    </Button>
 
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            // optional: trigger your PDF logic here
-          }}
-        >
-          <FileText size={16} />
-        </Button>
-      </div>
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={(e) => {
+        e.stopPropagation();
+        // optional: trigger your PDF logic here
+      }}
+    >
+      <FileText size={16} />
+    </Button>
+    <Button
+  size="icon"
+  variant="ghost"
+  onClick={async (e) => {
+    e.stopPropagation();
+    const newStatus = job.status === 'Planned' ? 'Completed' : 'Planned';
+
+    if (isFieldJob) {
+      const ref = doc(db, 'jobsByField', job.id);
+      await setDoc(ref, { ...job, status: newStatus }, { merge: true });
+
+      setFieldJobs(prev =>
+        prev.map(j => (j.id === job.id ? { ...j, status: newStatus } : j))
+      );
+
+      // Sync to grouped job if needed
+      if (job.linkedToJobId) {
+        const groupRef = doc(db, 'jobs', job.linkedToJobId);
+        const groupSnap = await getDoc(groupRef);
+        if (groupSnap.exists()) {
+          const groupData = groupSnap.data();
+          const updatedFields = (groupData.fields || []).map(f =>
+            f.id === job.fieldId ? { ...f, status: newStatus } : f
+          );
+          await setDoc(groupRef, { ...groupData, fields: updatedFields }, { merge: true });
+        }
+      }
+    } else {
+      const ref = doc(db, 'jobs', job.id);
+      await setDoc(ref, { ...job, status: newStatus }, { merge: true });
+
+      setJobs(prev =>
+        prev.map(j => (j.id === job.id ? { ...j, status: newStatus } : j))
+      );
+
+      // Update field jobs too
+      const snap = await getDocs(collection(db, 'jobsByField'));
+      const linked = snap.docs.filter(doc => doc.data().linkedToJobId === job.id);
+
+      await Promise.all(
+        linked.map(docSnap =>
+          setDoc(doc(db, 'jobsByField', docSnap.id), {
+            ...docSnap.data(),
+            status: newStatus
+          }, { merge: true })
+        )
+      );
+
+      setFieldJobs(prev =>
+        prev.map(j =>
+          j.linkedToJobId === job.id ? { ...j, status: newStatus } : j
+        )
+      );
+    }
+  }}
+>
+  {job.status === 'Planned' ? '✔️' : '↩️'}
+</Button>
+
+  </div>
+)}
+
     </div>
 
     {/* 🟦 CARD CONTENT (By Field) */}
@@ -299,21 +461,27 @@ const handleDelete = async (jobId, isFieldJob = false) => {
         </div>
 
         <div className="flex flex-col gap-0.5 text-xs text-gray-500">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
-            {(() => {
-              const isLeveeJob = (job.jobType?.name || '').toLowerCase().includes('levee') ||
-                                 (job.jobType?.name || '').toLowerCase().includes('pack');
-              const crop = job.crop || '';
+     <div className="flex items-center gap-2 text-xs text-gray-500">
+  <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
 
-              if (isLeveeJob) {
-                if (crop.includes('Rice')) return `${job.riceLeveeAcres || '—'} acres (Levee – Rice)`;
-                if (crop.includes('Soybean')) return `${job.beanLeveeAcres || '—'} acres (Levee – Soybeans)`;
-              }
+  {job.linkedToJobId && (
+    <Badge variant="outline">🔗 Grouped</Badge>
+  )}
 
-              return `${job.acres || job.drawnAcres || '—'} acres`;
-            })()}
-          </div>
+  {(() => {
+    const isLeveeJob = (job.jobType?.name || '').toLowerCase().includes('levee') ||
+                       (job.jobType?.name || '').toLowerCase().includes('pack');
+    const crop = job.crop || '';
+
+    if (isLeveeJob) {
+      if (crop.includes('Rice')) return `${job.riceLeveeAcres || '—'} acres (Levee – Rice)`;
+      if (crop.includes('Soybean')) return `${job.beanLeveeAcres || '—'} acres (Levee – Soybeans)`;
+    }
+
+    return `${job.acres || job.drawnAcres || '—'} acres`;
+  })()}
+</div>
+
         </div>
 
         {job.jobType?.parentName === 'Tillage' && job.passes && (
@@ -350,12 +518,13 @@ const handleDelete = async (jobId, isFieldJob = false) => {
                 return `${total.toFixed(2)} acres (Levee)`;
               }
 
-              if (job.acres && typeof job.acres === 'object') {
-                const total = Object.values(job.acres).reduce((sum, val) => sum + (val || 0), 0);
-                return `${total.toFixed(2)} acres`;
-              }
+            if (Array.isArray(job.fields)) {
+  const total = job.fields.reduce((sum, f) => sum + (f.acres || 0), 0);
+  return `${total.toFixed(2)} acres`;
+}
 
-              return `${job.drawnAcres || job.acres || '—'} acres`;
+return '— acres';
+
             })()}
           </div>
 
@@ -383,17 +552,20 @@ const renderListItem = (job, isFieldJob) => {
       {/* 📋 List View Left Section */}
       <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap text-sm">
         {/* ⬜ Checkbox */}
-        <input
-          type="checkbox"
-          checked={selectedJobs.includes(job.id)}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedJobs((prev) => [...prev, job.id]);
-            } else {
-              setSelectedJobs((prev) => prev.filter((id) => id !== job.id));
-            }
-          }}
-        />
+       {role !== 'viewer' && (
+  <input
+    type="checkbox"
+    checked={selectedJobs.includes(job.id)}
+    onChange={(e) => {
+      if (e.target.checked) {
+        setSelectedJobs((prev) => [...prev, job.id]);
+      } else {
+        setSelectedJobs((prev) => prev.filter((id) => id !== job.id));
+      }
+    }}
+  />
+)}
+
 
         {/* 📅 Job Date */}
         <div>{job.jobDate || '—'}</div>
@@ -412,7 +584,8 @@ const renderListItem = (job, isFieldJob) => {
         <div>
           {isFieldJob
             ? job.fieldName
-            : job.fields?.map(f => f.fieldName).join(', ') || '—'}
+: [...new Set(job.fields?.filter(f => !f.isDetachedFromGroup).map(f => f.fieldName))].join(', ')
+ || '—'}
         </div>
 
         {/* 🧪 Product Name */}
@@ -449,12 +622,20 @@ const renderListItem = (job, isFieldJob) => {
           )}
         </div>
 
-        {/* 📌 Status */}
-        <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
+       {/* 📌 Status + Link badge */}
+<div className="flex items-center gap-2">
+  <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
+  {job.linkedToJobId && (
+    <Badge variant="outline">🔗 Grouped</Badge>
+  )}
+</div>
+
       </div>
 
-      {/* 🧰 3-dot menu */}
-      <div>
+     {/* 🧰 3-dot menu */}
+{role !== 'viewer' && (
+  <div>
+
         <div className="job-menu relative">
           <Menu>
             <Menu.Button className="text-gray-500 hover:text-gray-700">
@@ -530,21 +711,61 @@ const renderListItem = (job, isFieldJob) => {
                 {({ active }) => (
                   <button
                     className={`block w-full px-4 py-2 text-sm text-left ${active ? 'bg-gray-100' : ''}`}
-                    onClick={async () => {
-                      const newStatus = job.status === 'Planned' ? 'Completed' : 'Planned';
-                      const ref = doc(db, isFieldJob ? 'jobsByField' : 'jobs', job.id);
-                      await setDoc(ref, { ...job, status: newStatus }, { merge: true });
+                  onClick={async () => {
+  const newStatus = job.status === 'Planned' ? 'Completed' : 'Planned';
 
-                      if (isFieldJob) {
-                        setFieldJobs(prev =>
-                          prev.map(j => (j.id === job.id ? { ...j, status: newStatus } : j))
-                        );
-                      } else {
-                        setJobs(prev =>
-                          prev.map(j => (j.id === job.id ? { ...j, status: newStatus } : j))
-                        );
-                      }
-                    }}
+  if (isFieldJob) {
+    const ref = doc(db, 'jobsByField', job.id);
+    await setDoc(ref, { ...job, status: newStatus }, { merge: true });
+
+    setFieldJobs(prev =>
+      prev.map(j => (j.id === job.id ? { ...j, status: newStatus } : j))
+    );
+
+    // 🔁 Also update linked grouped job field if exists
+    if (job.linkedToJobId) {
+      const groupRef = doc(db, 'jobs', job.linkedToJobId);
+      const groupSnap = await getDoc(groupRef);
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data();
+        const updatedFields = (groupData.fields || []).map(f =>
+          f.id === job.fieldId ? { ...f, status: newStatus } : f
+        );
+
+        await setDoc(groupRef, { ...groupData, fields: updatedFields }, { merge: true });
+      }
+    }
+
+  } else {
+    // It's a master job — update it
+    const ref = doc(db, 'jobs', job.id);
+    await setDoc(ref, { ...job, status: newStatus }, { merge: true });
+
+    setJobs(prev =>
+      prev.map(j => (j.id === job.id ? { ...j, status: newStatus } : j))
+    );
+
+    // 🔁 Also update all related jobsByField
+    const fieldSnap = await getDocs(collection(db, 'jobsByField'));
+    const linked = fieldSnap.docs.filter(doc => doc.data().linkedToJobId === job.id);
+
+    await Promise.all(
+      linked.map(docSnap =>
+        setDoc(doc(db, 'jobsByField', docSnap.id), {
+          ...docSnap.data(),
+          status: newStatus
+        }, { merge: true })
+      )
+    );
+
+    setFieldJobs(prev =>
+      prev.map(j =>
+        j.linkedToJobId === job.id ? { ...j, status: newStatus } : j
+      )
+    );
+  }
+}}
+
                   >
                     {job.status === 'Planned' ? '✔️ Mark as Completed' : '↩️ Mark as Planned'}
                   </button>
@@ -553,7 +774,8 @@ const renderListItem = (job, isFieldJob) => {
             </Menu.Items>
           </Menu>
         </div>
-      </div>
+  </div>
+)}
     </div>
   );
 };
@@ -562,7 +784,19 @@ const renderListItem = (job, isFieldJob) => {
   const filteredJobs = jobs.filter((job) => job.cropYear === cropYear);
   const filteredFieldJobs = fieldJobs.filter((job) => job.cropYear === cropYear);
 
-  const jobsToShow = (view === 'By Field' ? filteredFieldJobs : filteredJobs)
+const jobsToShow = (view === 'By Field' ? filteredFieldJobs : filteredJobs)
+  .map(job => {
+    if (view === 'Grouped') {
+      const attachedFields = fieldJobs.filter(
+        f => job.fieldIds?.includes(f.fieldId) && !f.isDetachedFromGroup
+      );
+      return {
+        ...job,
+        fields: attachedFields
+      };
+    }
+    return job;
+  })
   .filter((job) => {
     const matchesStatus =
       filterStatus === 'All' || job.status === filterStatus;
@@ -619,10 +853,19 @@ return typeA.localeCompare(typeB);
         actions={<Button onClick={() => navigate('/jobs/create')}><Plus className="mr-2" size={16} /> Create Job</Button>}
       />
 
-     <Tabs defaultValue="By Field" value={view} onValueChange={setView} className="mb-4">
-  <Tab value="By Field">By Field</Tab>
-  <Tab value="Grouped">Grouped (Bulk Edit Only)</Tab>
-</Tabs>
+{role === 'viewer' ? (
+
+  <Tabs defaultValue="By Field" value={view} onValueChange={setView} className="mb-4">
+    <Tab value="By Field">By Field</Tab>
+  </Tabs>
+) : (
+  <Tabs defaultValue="By Field" value={view} onValueChange={setView} className="mb-4">
+    <Tab value="By Field">By Field</Tab>
+    <Tab value="Grouped">Grouped (Bulk Edit Only)</Tab>
+  </Tabs>
+)}
+
+
 
 <div className="flex gap-2 items-center mb-4">
   <button
@@ -662,20 +905,34 @@ return typeA.localeCompare(typeB);
               const confirm = window.confirm(`Delete ${selectedJobs.length} selected jobs?`);
               if (!confirm) return;
 
-             await Promise.all(
+  await Promise.all(
   selectedJobs.map(async (id) => {
-    await handleDelete(id, view === 'By Field');
-
-    // Update local state immediately
     if (view === 'By Field') {
-      setFieldJobs((prev) => prev.filter((j) => j.id !== id));
+      await handleDelete(id, true); // isFieldJob = true
     } else {
-      setJobs((prev) => prev.filter((j) => j.id !== id));
+      // Also delete linked field jobs
+      const fieldJobSnap = await getDocs(collection(db, 'jobsByField'));
+      const linkedFieldJobs = fieldJobSnap.docs.filter(
+        (doc) => doc.data().linkedToJobId === id
+      );
+
+      await Promise.all(
+        linkedFieldJobs.map((docSnap) =>
+          deleteDoc(doc(db, 'jobsByField', docSnap.id))
+        )
+      );
+
+      await handleDelete(id, false); // isFieldJob = false
     }
   })
 );
 
+setJobs((prev) => prev.filter((j) => !selectedJobs.includes(j.id)));
+setFieldJobs((prev) =>
+  prev.filter((j) => !selectedJobs.includes(j.id) && !selectedJobs.includes(j.linkedToJobId))
+);
 setSelectedJobs([]);
+
 
             }}
           >
@@ -736,16 +993,19 @@ setSelectedJobs([]);
           </button>
         )}
       </Menu.Item>
-      <Menu.Item>
-        {({ active }) => (
-          <button
-            className={`block w-full px-4 py-2 text-sm text-left ${active ? 'bg-gray-100' : ''}`}
-            onClick={handleExportPDF}
-          >
-            📄 Export as PDF
-          </button>
-        )}
-      </Menu.Item>
+     {role !== 'viewer' && (
+  <Menu.Item>
+    {({ active }) => (
+      <button
+        className={`block w-full px-4 py-2 text-sm text-left ${active ? 'bg-gray-100' : ''}`}
+        onClick={handleExportPDF}
+      >
+        📄 Export as PDF
+      </button>
+    )}
+  </Menu.Item>
+)}
+
     </Menu.Items>
   </Menu>
 )}
@@ -789,31 +1049,35 @@ setSelectedJobs([]);
 
   {viewMode === 'list' && (
     <div className="flex items-center justify-between border-b py-2 px-2 text-sm font-semibold text-gray-700 bg-gray-50">
-      <input
-        type="checkbox"
-        checked={
-          selectedJobs.length > 0 &&
-          selectedJobs.length === jobsToShow.length
-        }
-        onChange={(e) => {
-          if (e.target.checked) {
-            setSelectedJobs(jobsToShow.map((j) => j.id));
-          } else {
-            setSelectedJobs([]);
-          }
-        }}
-      />
+     {role !== 'viewer' && (
+  <input
+    type="checkbox"
+    checked={
+      selectedJobs.length > 0 &&
+      selectedJobs.length === jobsToShow.length
+    }
+    onChange={(e) => {
+      if (e.target.checked) {
+        setSelectedJobs(jobsToShow.map((j) => j.id));
+      } else {
+        setSelectedJobs([]);
+      }
+    }}
+  />
+)}
+
    <div className="flex-1" />
 
       <span className="opacity-0">⋯</span>
     </div>
   )}
 
-  {jobsToShow.map(job =>
-    viewMode === 'cards'
-      ? renderJobCard(job, view === 'By Field')
-      : renderListItem(job, view === 'By Field')
-  )}
+ {jobsToShow.map(job =>
+  viewMode === 'cards'
+    ? <React.Fragment key={job.id}>{renderJobCard(job, view === 'By Field')}</React.Fragment>
+    : <React.Fragment key={job.id}>{renderListItem(job, view === 'By Field')}</React.Fragment>
+)}
+
 </div>
 
 {selectedJob && (
@@ -854,332 +1118,5 @@ setSelectedJobs([]);
   );
 }  // closing Jobs component
 
-function JobDetailsModal({ job, onClose }) {
-  if (!job) return null;
 
-  // 🧠 Utilities
-  const getJobTypeName = (job) =>
-    typeof job.jobType === 'string' ? job.jobType : job.jobType?.name || '';
-
-  const [fieldBoundary, setFieldBoundary] = useState(null);
-  const [fieldBoundaries, setFieldBoundaries] = useState([]);
-
-  // 📦 Load Field Boundary
-  useEffect(() => {
-const fieldId = job?.fieldId || job?.fields?.[0]?.id;
-if (!fieldId) return;
-
-    const loadBoundary = async () => {
-      try {
-        const fieldRef = doc(db, 'fields', fieldId);
-        const snap = await getDoc(fieldRef);
-        if (!snap.exists()) return;
-
-        let geo = snap.data()?.boundary?.geojson;
-        if (typeof geo === 'string') {
-          try {
-            geo = JSON.parse(geo);
-          } catch {
-            console.warn('❌ Could not parse field geojson');
-            return;
-          }
-        }
-
-        if (geo?.type === 'Feature') geo = geo.geometry;
-        setFieldBoundary(geo);
-        setFieldBoundaries([geo]);
-
-      } catch (err) {
-        console.error('❌ Error loading field boundary', err);
-      }
-    };
-
-    loadBoundary();
-  }, [job]);
-useEffect(() => {
-  const loadAllBoundaries = async () => {
-    if (!Array.isArray(job.fields)) return;
-
-    const boundaries = await Promise.all(
-      job.fields.map(async (f) => {
-        try {
-          const snap = await getDoc(doc(db, 'fields', f.id));
-          if (!snap.exists()) return null;
-
-          let geo = snap.data()?.boundary?.geojson;
-          if (typeof geo === 'string') {
-            try {
-              geo = JSON.parse(geo);
-            } catch {
-              return null;
-            }
-          }
-
-          if (geo?.type === 'Feature') geo = geo.geometry;
-          return geo;
-        } catch {
-          return null;
-        }
-      })
-    );
-
-    setFieldBoundaries(boundaries.filter(Boolean));
-  };
-
-  loadAllBoundaries();
-}, [job]);
-
-  // 🧾 Parse Drawn Polygon + Boundary
-let parsedPolygons = [];
-
-try {
-  if (Array.isArray(job.fields)) {
-    job.fields.forEach((f, i) => {
-      let poly = f.drawnPolygon;
-      if (typeof poly === 'string') {
-        try {
-          poly = JSON.parse(poly);
-        } catch {
-          return;
-        }
-      }
-
-      if (poly?.type === 'Feature') {
-        parsedPolygons.push(poly.geometry);
-      } else if (poly?.type === 'Polygon') {
-        parsedPolygons.push(poly);
-      }
-    });
-  }
-} catch {
-  console.warn('Failed to parse multiple drawnPolygons');
-}
-
-
-  // 🖼️ Modal Layout
-  return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-4 w-full max-w-md h-[80vh] overflow-y-auto shadow-xl relative">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-        >
-          ✖
-        </button>
-
-        {/* 📌 Header */}
-        <h2 className="text-lg font-semibold mb-2">{getJobTypeName(job)}</h2>
-        <p className="text-sm text-gray-600 mb-1">{job.cropYear} • {job.fieldName}</p>
-
-        {/* 📅 Date + Status */}
-        <div className="text-xs text-gray-600 mb-2 space-x-2">
-          {job.jobDate && <span><span className="font-medium">Date:</span> {job.jobDate}</span>}
-          <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
-        </div>
-
-        {/* 🧪 Products */}
-        {job.products?.length > 0 && (
-          <div className="mb-4">
-            <div className="grid grid-cols-2 font-semibold border-b pb-1 mb-1 text-xs text-gray-700">
-              <span>Product</span>
-              <span>Rate</span>
-            </div>
-            {job.products.map((p, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-2 gap-2 text-sm text-gray-800 border-b py-1"
-              >
-                <span>{p.productName || p.name || '—'}</span>
-                <span>{p.rate || '—'} {p.unit || ''}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 👷 Vendor / Applicator */}
-        {(job.vendor || job.applicator) && (
-          <div className="mb-4 text-sm text-gray-700 space-y-1">
-            {job.vendor && <p><span className="font-medium">Vendor:</span> {job.vendor}</p>}
-            {job.applicator && <p><span className="font-medium">Applicator:</span> {job.applicator}</p>}
-          </div>
-        )}
-
-        {/* 📐 Acres + Passes */}
-        <div className="text-xs text-gray-600 mb-4 space-y-1">
-          <p>
-            {(() => {
-              const isLeveeJob = (job.jobType?.name || '').toLowerCase().includes('levee') ||
-                                 (job.jobType?.name || '').toLowerCase().includes('pack');
-
-              if (isLeveeJob && Array.isArray(job.fields)) {
-                let total = 0;
-                job.fields.forEach(f => {
-                  const crop = f.crop || f.crops?.[job.cropYear]?.crop || '';
-                  if (crop.includes('Rice')) total += parseFloat(f.riceLeveeAcres || 0);
-                  else if (crop.includes('Soybean')) total += parseFloat(f.beanLeveeAcres || 0);
-                });
-                return `${total.toFixed(2)} acres (Levee)`;
-              }
-
-              if (typeof job.acres === 'object') {
-                const total = Object.values(job.acres).reduce((sum, val) => sum + (val || 0), 0);
-                return `${total.toFixed(2)} acres`;
-              }
-
-              return `${job.acres || job.drawnAcres || '—'} acres`;
-            })()}
-          </p>
-
-          {job.jobType?.parentName === 'Tillage' && job.passes && (
-            <p>Passes: {job.passes}</p>
-          )}
-        </div>
-
-        {/* 🗺️ Map */}
-        <div className="mt-4">
-          {renderBoundarySVG(fieldBoundaries, parsedPolygons)}
-
-        </div>
-
-        {/* 📝 Notes */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium mb-1">Notes</label>
-          <div className="text-sm text-gray-700 whitespace-pre-line border border-gray-200 rounded p-2 bg-gray-50">
-            {job.notes || '—'}
-          </div>
-        </div>
-
-        {/* 📦 Product Totals */}
-        {job.products?.length > 0 && (
-          <div className="mt-6 border-t pt-4">
-            <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
-            {job.products.map((p, i) => {
-              const rate = parseFloat(p.rate);
-              const unit = p.unit?.toLowerCase() || '';
-              const crop = p.crop?.toLowerCase?.() || '';
-              const acres = job.acres || job.drawnAcres || 0;
-              const totalAmount = rate * acres;
-              let display = '';
-
-              if (['seeds/acre', 'population'].includes(unit)) {
-                const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-                const totalSeeds = rate * acres;
-                const units = totalSeeds / seedsPerUnit;
-                display = `${units.toFixed(1)} units`;
-              } else if (['lbs/acre'].includes(unit)) {
-                const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-                const bushels = totalAmount / lbsPerBushel;
-                display = `${bushels.toFixed(1)} bushels`;
-              } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
-                const gal = totalAmount / 128;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'pt/acre') {
-                const gal = totalAmount / 8;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'qt/acre') {
-                const gal = totalAmount / 4;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'oz dry/acre') {
-                const lbs = totalAmount / 16;
-                display = `${lbs.toFixed(2)} lbs`;
-              } else if (unit === '%v/v') {
-                const water = parseFloat(job.waterVolume || 0);
-                const gal = (rate / 100) * water * acres;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'tons/acre') {
-                display = `${totalAmount.toFixed(2)} tons`;
-              } else {
-                display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
-              }
-
-              return (
-                <div key={i} className="text-sm text-gray-700">
-                  {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-function renderBoundarySVG(baseGeometries, overlayGeoJSONList) {
-  if (!Array.isArray(baseGeometries) || baseGeometries.length === 0) return null;
-
-  const boxSize = 300;
-  const margin = 10;
-
-  const allCoords = baseGeometries.flatMap(g => g?.coordinates?.[0] || []);
-
-  const bounds = allCoords.reduce((acc, [lng, lat]) => ({
-    minX: Math.min(acc.minX, lng),
-    maxX: Math.max(acc.maxX, lng),
-    minY: Math.min(acc.minY, lat),
-    maxY: Math.max(acc.maxY, lat),
-  }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
-
-  const width = bounds.maxX - bounds.minX || 1;
-  const height = bounds.maxY - bounds.minY || 1;
-  const scale = (boxSize - margin * 2) / Math.max(width, height);
-  const xOffset = (boxSize - width * scale) / 2;
-  const yOffset = (boxSize - height * scale) / 2;
-
-  const project = ([lng, lat]) => ({
-    x: (lng - bounds.minX) * scale + xOffset,
-    y: boxSize - ((lat - bounds.minY) * scale + yOffset),
-  });
-
-  const pathFromCoords = (coords) =>
-    coords.map((pt, i) => {
-      const { x, y } = project(pt);
-      return `${i === 0 ? 'M' : 'L'}${x},${y}`;
-    }).join(' ') + ' Z';
-
-  const paths = [];
-
-  // 🟥 Field boundaries (base polygons)
-  baseGeometries.forEach(geo => {
-    if (geo?.coordinates?.[0]) {
-      paths.push({
-        type: 'base',
-        d: pathFromCoords(geo.coordinates[0]),
-      });
-    }
-  });
-
-  // 🟩 Drawn overlays (application zones)
-  (overlayGeoJSONList || []).forEach(overlay => {
-    const poly = overlay?.type === 'Feature' ? overlay.geometry : overlay;
-    if (poly?.coordinates?.[0]) {
-      paths.push({
-        type: 'overlay',
-        d: pathFromCoords(poly.coordinates[0]),
-      });
-    }
-  });
-
-  return (
-    <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-full max-w-xs bg-white border rounded shadow mx-auto">
-   {paths.map((p, i) => (
-    <path
-      key={i}
-      d={p.d}
-      fill={
-        p.type === 'overlay'
-          ? '#34D399'
-          : overlayGeoJSONList?.length
-            ? '#F87171'
-            : '#34D399'
-      }
-      fillOpacity={p.type === 'overlay' ? 0.6 : 0.2}
-      stroke={p.type === 'overlay' ? '#047857' : '#4B5563'}
-      strokeWidth={p.type === 'overlay' ? 2 : 1.5}
-    />
-  ))}
-</svg>
-  );
-}
 

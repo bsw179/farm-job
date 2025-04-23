@@ -1,0 +1,33 @@
+.calendar-job-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.calendar-job-snippet {
+    font-size: 0.7rem;
+    line-height: 1.1rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ➡️ Hover state must be SEPARATE */
+.calendar-job-snippet:hover {
+    background-color: #f3f4f6;
+    /* Tailwind gray-100 */
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+
+.job-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: #34D399;
+    /* Tailwind green */
+    border-radius: 50%;
+    margin-right: 4px;
+}

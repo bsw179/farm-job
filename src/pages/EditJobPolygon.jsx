@@ -14,6 +14,8 @@ export default function EditJobPolygon() {
   const { fieldId } = useParams();
   const location = useLocation();
   const field = location.state?.field;
+  console.log('🧩 Edit Area → incoming polygon:', field?.drawnPolygon);
+
   const [drawnPolygon, setDrawnPolygon] = useState(null);
   const [drawnAcres, setDrawnAcres] = useState(null);
   const [mapType, setMapType] = useState('satellite');
@@ -77,34 +79,33 @@ delete boundary.pm;
     const layers = [];
 
     // Load existing drawn polygons
-    if (location.state?.drawnPolygon) {
-      let stored = location.state.drawnPolygon;
-      if (typeof stored === 'string') {
-        try { stored = JSON.parse(stored); } catch { stored = null; }
+   if (field?.drawnPolygon) {
+  let stored = field.drawnPolygon;
+  if (typeof stored === 'string') {
+    try { stored = JSON.parse(stored); } catch { stored = null; }
+  }
+
+  if (stored?.type === 'FeatureCollection' || stored?.type === 'Feature' || stored?.type === 'Polygon') {
+    const geometry = stored.type === 'Feature' ? stored.geometry : stored;
+    if (geometry?.type === 'Polygon') {
+      const coords = geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
+      const layer = L.polygon(coords, {
+        color: '#3b82f6',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.2
+      }).addTo(map);
+
+      if (layer.pm) {
+        layer.pm.enable();
+        layer.on('pm:edit', updateTotalAcres);
       }
 
-      if (stored?.type === 'FeatureCollection') {
-        stored.features.forEach((feature) => {
-          if (feature.geometry.type === 'Polygon') {
-            const coords = feature.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
-            const layer = L.polygon(coords, {
-              color: '#3b82f6',
-              fillColor: '#3b82f6',
-              fillOpacity: 0.2
-            }).addTo(map);
-
-            if (layer.pm) {
-              layer.pm.enable();
-              layer.on('pm:edit', updateTotalAcres);
-            }
-
-            layers.push(layer);
-          }
-        });
-
-        updateTotalAcres();
-      }
+      layers.push(layer);
+      updateTotalAcres();
     }
+  }
+}
+
 
     // New feature creation
     map.on('pm:create', (e) => {

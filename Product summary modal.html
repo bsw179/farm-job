@@ -1,0 +1,401 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.4">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 12.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 12.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
+    span.s1 {font-kerning: none}
+  </style>
+</head>
+<body>
+<p class="p1"><span class="s1">// src/components/ProductSummaryModal.jsx</span></p>
+<p class="p1"><span class="s1">import React from 'react';</span></p>
+<p class="p1"><span class="s1">import { deleteDoc, doc } from 'firebase/firestore';</span></p>
+<p class="p1"><span class="s1">import { db } from '../firebase';</span></p>
+<p class="p1"><span class="s1">import { useNavigate } from 'react-router-dom';</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">export default function ProductSummaryModal({ product, purchases, jobsByField, fields, onClose }) {</span></p>
+<p class="p1"><span class="s1">// 🔹 Total raw applied + purchase cost</span></p>
+<p class="p1"><span class="s1">const totalPurchased = purchases.reduce((sum, p) =&gt; sum + (p.normalizedAmount || 0), 0);</span></p>
+<p class="p1"><span class="s1">const totalCost = purchases.reduce((sum, p) =&gt; sum + (p.cost || 0), 0);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// 🔹 Avg $/unit based on original purchase unit (not normalized)</span></p>
+<p class="p1"><span class="s1">let avgRate = null;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (purchases.length &gt; 0) {</span></p>
+<p class="p1"><span class="s1">const unitGrouped = {};</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">purchases.forEach(p =&gt; {</span></p>
+<p class="p1"><span class="s1">if (!unitGrouped[p.unit]) {</span></p>
+<p class="p1"><span class="s1">unitGrouped[p.unit] = { totalAmount: 0, totalCost: 0 };</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">unitGrouped[p.unit].totalAmount += p.amount || 0;</span></p>
+<p class="p1"><span class="s1">unitGrouped[p.unit].totalCost += p.cost || 0;</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const [firstUnit, unitData] = Object.entries(unitGrouped)[0] || [];</span></p>
+<p class="p1"><span class="s1">avgRate = unitData.totalAmount &gt; 0</span></p>
+<p class="p1"><span class="s1">? {</span></p>
+<p class="p1"><span class="s1">value: unitData.totalCost / unitData.totalAmount,</span></p>
+<p class="p1"><span class="s1">unit: firstUnit</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">: null;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const remaining = totalPurchased - applied;</span></p>
+<p class="p1"><span class="s1">const navigate = useNavigate();</span></p>
+<p class="p1"><span class="s1">// 🔹 Convert normalized to invoice-style unit (bushels, units)</span></p>
+<p class="p1"><span class="s1">const getInvoiceEquivalent = (normalized) =&gt; {</span></p>
+<p class="p1"><span class="s1">const type = (product.type || '').toLowerCase();</span></p>
+<p class="p1"><span class="s1">const crop = (product.crop || '').toLowerCase();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (type === 'seed') {</span></p>
+<p class="p1"><span class="s1">if (normalized &gt; 5000000) {</span></p>
+<p class="p1"><span class="s1">// Treat as seeds</span></p>
+<p class="p1"><span class="s1">if (crop.includes('rice')) return `${(normalized / 900000).toFixed(1)} units`;</span></p>
+<p class="p1"><span class="s1">if (crop.includes('soybean')) return `${(normalized / 140000).toFixed(1)} units`;</span></p>
+<p class="p1"><span class="s1">} else {</span></p>
+<p class="p1"><span class="s1">// Treat as weight</span></p>
+<p class="p1"><span class="s1">if (crop.includes('rice')) return `${(normalized / 45).toFixed(1)} bushels`;</span></p>
+<p class="p1"><span class="s1">if (crop.includes('soybean')) return `${(normalized / 60).toFixed(1)} bushels`;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (type === 'fertilizer') return `${(normalized / 2000).toFixed(1)} tons`;</span></p>
+<p class="p1"><span class="s1">if (type === 'chemical') return `${(normalized / 128).toFixed(1)} gal`;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">return '';</span></p>
+<p class="p1"><span class="s1">};</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// 🔹 Resolve normalized unit label</span></p>
+<p class="p1"><span class="s1">const getDisplayUnitLabel = () =&gt; {</span></p>
+<p class="p1"><span class="s1">const type = (product.type || '').toLowerCase();</span></p>
+<p class="p1"><span class="s1">const crop = (product.crop || '').toLowerCase();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (type === 'seed') {</span></p>
+<p class="p1"><span class="s1">if (product.unit?.includes('seed')) return 'seeds';</span></p>
+<p class="p1"><span class="s1">if (product.unit?.includes('unit')) return 'units';</span></p>
+<p class="p1"><span class="s1">if (product.unit?.includes('lb')) return 'lbs';</span></p>
+<p class="p1"><span class="s1">return crop.includes('rice') || crop.includes('soy') ? 'lbs' : 'units';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (type === 'fertilizer') return 'lbs';</span></p>
+<p class="p1"><span class="s1">if (type === 'chemical') return 'oz';</span></p>
+<p class="p1"><span class="s1">return 'units';</span></p>
+<p class="p1"><span class="s1">};</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">return (</span></p>
+<p class="p1"><span class="s1">&lt;div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div className="bg-white p-6 rounded shadow-xl w-[700px] max-h-[90vh] overflow-y-auto relative"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;button</span></p>
+<p class="p1"><span class="s1">onClick={onClose}</span></p>
+<p class="p1"><span class="s1">className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-sm"</span></p>
+<p class="p1"><span class="s1">&gt;</span></p>
+<p class="p1"><span class="s1">✕</span></p>
+<p class="p1"><span class="s1">&lt;/button&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;h2 className="text-xl font-bold mb-1"&gt;{product.name}&lt;/h2&gt;</span></p>
+<p class="p1"><span class="s1">&lt;p className="text-sm text-gray-600 mb-4"&gt;</span></p>
+<p class="p1"><span class="s1">{product.type} • {product.crop} • {product.unit}</span></p>
+<p class="p1"><span class="s1">&lt;/p&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;div className="grid grid-cols-2 gap-4 text-sm mb-4"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;strong&gt;Applied:&lt;/strong&gt; {applied.toLocaleString()} {getDisplayUnitLabel()}</span></p>
+<p class="p1"><span class="s1">&lt;span className="text-gray-500 ml-1 text-sm"&gt;({getInvoiceEquivalent(applied)})&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;div&gt;&lt;strong&gt;Purchased:&lt;/strong&gt; {totalPurchased.toLocaleString()}&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div&gt;&lt;strong&gt;Remaining:&lt;/strong&gt; {remaining.toLocaleString()}&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div&gt;&lt;strong&gt;Avg $/unit:&lt;/strong&gt; {avgRate ? `$${avgRate.value.toFixed(2)} / ${avgRate.unit}` : '—'}&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;div&gt;&lt;strong&gt;Total Cost:&lt;/strong&gt; {totalCost ? `$${totalCost.toFixed(2)}` : '—'}&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;h3 className="font-semibold text-sm border-b pb-1 mb-2"&gt;Purchase History&lt;/h3&gt;</span></p>
+<p class="p1"><span class="s1">&lt;table className="w-full text-sm border"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;thead className="bg-gray-100"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Date&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Vendor&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Amount&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Unit&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Cost&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Rate&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Note&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/thead&gt;</span></p>
+<p class="p1"><span class="s1">&lt;tbody&gt;</span></p>
+<p class="p1"><span class="s1">{purchases.map((p, i) =&gt; (</span></p>
+<p class="p1"><span class="s1">&lt;tr key={p.id}&gt;</span></p>
+<p class="p1"><span class="s1">{/* 🔹 Date */}</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{p.date?.toDate?.().toLocaleDateString?.() || '—'}&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">{/* 🔹 Vendor */}</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{p.vendor || '—'}&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">{/* 🔹 Amount + Unit */}</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{p.amount}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{p.unit}&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">{/* 🔹 Cost + Rate */}</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{p.cost ? `$${p.cost.toFixed(2)}` : '—'}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{p.rate ? `$${p.rate.toFixed(2)}` : '—'}&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">{/* 🔹 Invoice + Note */}</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{p.note || '—'}&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">{/* 🔹 Delete Button */}</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right whitespace-nowrap"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;button</span></p>
+<p class="p1"><span class="s1">onClick={() =&gt; {</span></p>
+<p class="p1"><span class="s1">navigate(`/financial/log?id=${p.id}`);</span></p>
+<p class="p1"><span class="s1">}}</span></p>
+<p class="p1"><span class="s1">className="text-blue-600 hover:underline text-xs mr-2"</span></p>
+<p class="p1"><span class="s1">&gt;</span></p>
+<p class="p1"><span class="s1">Edit</span></p>
+<p class="p1"><span class="s1">&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1">&lt;button</span></p>
+<p class="p1"><span class="s1">onClick={async () =&gt; {</span></p>
+<p class="p1"><span class="s1">if (window.confirm('Are you sure you want to delete this purchase?')) {</span></p>
+<p class="p1"><span class="s1">await deleteDoc(doc(db, 'inputPurchases', p.id));</span></p>
+<p class="p1"><span class="s1">window.location.reload();</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">}}</span></p>
+<p class="p1"><span class="s1">className="text-red-600 hover:underline text-xs"</span></p>
+<p class="p1"><span class="s1">&gt;</span></p>
+<p class="p1"><span class="s1">Delete</span></p>
+<p class="p1"><span class="s1">&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1">))}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;/tbody&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/table&gt;</span></p>
+<p class="p1"><span class="s1">&lt;h3 className="font-semibold text-sm border-b pb-1 mb-2 mt-6"&gt;Usage History&lt;/h3&gt;</span></p>
+<p class="p1"><span class="s1">&lt;table className="w-full text-sm border"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;thead className="bg-gray-100"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Date&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Field&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Farm&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Job&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Vendor&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1 text-right"&gt;Acres&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1 text-right"&gt;Rate&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1 text-right"&gt;Total&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1 text-right"&gt;$/acre&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/thead&gt;</span></p>
+<p class="p1"><span class="s1">&lt;tbody&gt;</span></p>
+<p class="p1"><span class="s1">{jobsByField</span></p>
+<p class="p1"><span class="s1">.filter(job =&gt; job.products?.some(p =&gt; p.productId === product.id))</span></p>
+<p class="p1"><span class="s1">.flatMap(job =&gt; {</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const matching = job.products.filter(p =&gt; p.productId === product.id);</span></p>
+<p class="p1"><span class="s1">return matching.flatMap(p =&gt; {</span></p>
+<p class="p1"><span class="s1">return (job.fields || []).map(fieldRef =&gt; {</span></p>
+<p class="p1"><span class="s1">const field = fields[fieldRef.id];</span></p>
+<p class="p1"><span class="s1">if (!field) return null;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const crop = field.crops?.[job.cropYear]?.crop || field.crop || '';</span></p>
+<p class="p1"><span class="s1">const jobName = job.jobType?.name?.toLowerCase() || '';</span></p>
+<p class="p1"><span class="s1">let acres = 0;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (jobName.includes('levee') || jobName.includes('pack')) {</span></p>
+<p class="p1"><span class="s1">if (crop.toLowerCase().includes('rice')) acres = parseFloat(field.riceLeveeAcres) || 0;</span></p>
+<p class="p1"><span class="s1">else if (crop.toLowerCase().includes('soybean')) acres = parseFloat(field.beanLeveeAcres) || 0;</span></p>
+<p class="p1"><span class="s1">} else {</span></p>
+<p class="p1"><span class="s1">acres = job.acres?.[field.id] || field.gpsAcres || 0;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const rate = parseFloat(p.rate) || 0;</span></p>
+<p class="p1"><span class="s1">const total = rate * acres;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">return (</span></p>
+<p class="p1"><span class="s1">&lt;tr key={job.id + '-' + fieldRef.id}&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{job.date ? new Date(job.date).toLocaleDateString() : '—'}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{field.fieldName || '—'}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{field.farmName || '—'}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{job.jobType?.name || '—'}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{job.vendor || '—'}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{acres.toFixed(1)}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{rate} {p.unit}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{total.toFixed(1)}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;</span></p>
+<p class="p1"><span class="s1">{avgRate</span></p>
+<p class="p1"><span class="s1">? `$${(rate * avgRate).toFixed(2)}`</span></p>
+<p class="p1"><span class="s1">: '—'}</span></p>
+<p class="p1"><span class="s1">&lt;/td&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1">);</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">})</span></p>
+<p class="p1"><span class="s1">.filter(Boolean)}</span></p>
+<p class="p1"><span class="s1">&lt;/tbody&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/table&gt;</span></p>
+<p class="p1"><span class="s1">&lt;h3 className="font-semibold text-sm border-b pb-1 mb-2 mt-6"&gt;Expense Split Summary&lt;/h3&gt;</span></p>
+<p class="p1"><span class="s1">&lt;table className="w-full text-sm border"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;thead className="bg-gray-100"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1"&gt;Entity&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;th className="border px-2 py-1 text-right"&gt;Share&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/thead&gt;</span></p>
+<p class="p1"><span class="s1">&lt;tbody&gt;</span></p>
+<p class="p1"><span class="s1">{(() =&gt; {</span></p>
+<p class="p1"><span class="s1">const entityTotals = {};</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">jobs</span></p>
+<p class="p1"><span class="s1">.filter(job =&gt; job.products?.some(p =&gt; p.productId === product.id))</span></p>
+<p class="p1"><span class="s1">.forEach(job =&gt; {</span></p>
+<p class="p1"><span class="s1">const matching = job.products.filter(p =&gt; p.productId === product.id);</span></p>
+<p class="p1"><span class="s1">matching.forEach(p =&gt; {</span></p>
+<p class="p1"><span class="s1">job.fields?.forEach(fieldRef =&gt; {</span></p>
+<p class="p1"><span class="s1">const field = fields[fieldRef.id];</span></p>
+<p class="p1"><span class="s1">if (!field) return;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const crop = field.crops?.[job.cropYear]?.crop || field.crop || '';</span></p>
+<p class="p1"><span class="s1">const jobName = job.jobType?.name?.toLowerCase() || '';</span></p>
+<p class="p1"><span class="s1">let acres = 0;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (jobName.includes('levee') || jobName.includes('pack')) {</span></p>
+<p class="p1"><span class="s1">if (crop.toLowerCase().includes('rice')) acres = parseFloat(field.riceLeveeAcres) || 0;</span></p>
+<p class="p1"><span class="s1">else if (crop.toLowerCase().includes('soybean')) acres = parseFloat(field.beanLeveeAcres) || 0;</span></p>
+<p class="p1"><span class="s1">} else {</span></p>
+<p class="p1"><span class="s1">acres = job.acres?.[fieldRef.id] || field.gpsAcres || 0;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const rate = parseFloat(p.rate) || 0;</span></p>
+<p class="p1"><span class="s1">const total = rate * acres;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const operator = field.operator || '—';</span></p>
+<p class="p1"><span class="s1">const landowner = field.landowner || '—';</span></p>
+<p class="p1"><span class="s1">const operatorShare = field.operatorExpenseShare ?? 0;</span></p>
+<p class="p1"><span class="s1">const landownerShare = field.landownerExpenseShare ?? 0;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (operatorShare &gt; 0) {</span></p>
+<p class="p1"><span class="s1">entityTotals[operator] = (entityTotals[operator] || 0) + total * (operatorShare / 100);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (landownerShare &gt; 0) {</span></p>
+<p class="p1"><span class="s1">entityTotals[landowner] = (entityTotals[landowner] || 0) + total * (landownerShare / 100);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">return Object.entries(entityTotals).map(([name, amount]) =&gt; (</span></p>
+<p class="p1"><span class="s1">&lt;tr key={name}&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1"&gt;{name}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;td className="border px-2 py-1 text-right"&gt;{amount.toFixed(1)}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1">));</span></p>
+<p class="p1"><span class="s1">})()}</span></p>
+<p class="p1"><span class="s1">&lt;/tbody&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/table&gt;</span></p>
+<p class="p1"><span class="s1">{/* 🔹 Reconciliation Note */}</span></p>
+<p class="p1"><span class="s1">&lt;div className="mt-6 border-t pt-4 text-sm"&gt;</span></p>
+<p class="p1"><span class="s1">{(() =&gt; {</span></p>
+<p class="p1"><span class="s1">// 1. Calculate your total share of applied amount</span></p>
+<p class="p1"><span class="s1">let totalMyShare = 0;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">jobs</span></p>
+<p class="p1"><span class="s1">.filter(job =&gt; job.products?.some(p =&gt; p.productId === product.id))</span></p>
+<p class="p1"><span class="s1">.forEach(job =&gt; {</span></p>
+<p class="p1"><span class="s1">const matching = job.products.filter(p =&gt; p.productId === product.id);</span></p>
+<p class="p1"><span class="s1">matching.forEach(p =&gt; {</span></p>
+<p class="p1"><span class="s1">job.fields?.forEach(fieldRef =&gt; {</span></p>
+<p class="p1"><span class="s1">const field = fields[fieldRef.id];</span></p>
+<p class="p1"><span class="s1">if (!field) return;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const crop = field.crops?.[job.cropYear]?.crop || field.crop || '';</span></p>
+<p class="p1"><span class="s1">const jobName = job.jobType?.name?.toLowerCase() || '';</span></p>
+<p class="p1"><span class="s1">let acres = 0;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (jobName.includes('levee') || jobName.includes('pack')) {</span></p>
+<p class="p1"><span class="s1">if (crop.toLowerCase().includes('rice')) acres = parseFloat(field.riceLeveeAcres) || 0;</span></p>
+<p class="p1"><span class="s1">else if (crop.toLowerCase().includes('soybean')) acres = parseFloat(field.beanLeveeAcres) || 0;</span></p>
+<p class="p1"><span class="s1">} else {</span></p>
+<p class="p1"><span class="s1">acres = job.acres?.[fieldRef.id] || field.gpsAcres || 0;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const rate = parseFloat(p.rate) || 0;</span></p>
+<p class="p1"><span class="s1">const total = rate * acres;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const operatorShare = field.operatorExpenseShare ?? 0;</span></p>
+<p class="p1"><span class="s1">totalMyShare += total * (operatorShare / 100);</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// 2. Calculate what you’ve logged as YOUR share</span></p>
+<p class="p1"><span class="s1">const purchasedMyShare = purchases</span></p>
+<p class="p1"><span class="s1">.filter(p =&gt; p.isFullAmount === false)</span></p>
+<p class="p1"><span class="s1">.reduce((sum, p) =&gt; sum + (p.normalizedAmount || 0), 0);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">const diff = purchasedMyShare - totalMyShare;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">return (</span></p>
+<p class="p1"><span class="s1">&lt;&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div&gt;&lt;strong&gt;Total Applied (Your Share):&lt;/strong&gt; {totalMyShare.toFixed(1)} {getDisplayUnitLabel()}&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div&gt;&lt;strong&gt;Total Purchased (Logged by You):&lt;/strong&gt; {purchasedMyShare.toFixed(1)} {getDisplayUnitLabel()}&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div className={`mt-1 font-medium ${Math.abs(diff) &lt; 1 ? 'text-green-700' : 'text-yellow-700'}`}&gt;</span></p>
+<p class="p1"><span class="s1">{Math.abs(diff) &lt; 1</span></p>
+<p class="p1"><span class="s1">? '✅ Your purchase log matches your expected usage.'</span></p>
+<p class="p1"><span class="s1">: `⚠️ You are ${diff &gt; 0 ? 'over' : 'under'} by ${Math.abs(diff).toFixed(1)} ${getDisplayUnitLabel()}.`}</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;/&gt;</span></p>
+<p class="p1"><span class="s1">);</span></p>
+<p class="p1"><span class="s1">})()}</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">{/* 🔹 Over/Under Usage Warning */}</span></p>
+<p class="p1"><span class="s1">{(() =&gt; {</span></p>
+<p class="p1"><span class="s1">const totalApplied = applied;</span></p>
+<p class="p1"><span class="s1">const totalPurchased = purchases.reduce((sum, p) =&gt; sum + (p.normalizedAmount || 0), 0);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (totalPurchased &lt; totalApplied - 1) {</span></p>
+<p class="p1"><span class="s1">return (</span></p>
+<p class="p1"><span class="s1">&lt;div className="mt-4 text-yellow-700 text-sm"&gt;</span></p>
+<p class="p1"><span class="s1">⚠️ Product was applied more than it was purchased. You may still need to log additional invoices.</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">if (totalPurchased &gt; totalApplied + 1) {</span></p>
+<p class="p1"><span class="s1">return (</span></p>
+<p class="p1"><span class="s1">&lt;div className="mt-4 text-yellow-700 text-sm"&gt;</span></p>
+<p class="p1"><span class="s1">⚠️ You have logged more purchased product than was used. Possible overbilling or incorrect entry.</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">return null;</span></p>
+<p class="p1"><span class="s1">})()}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">{/* 🔹 View Fields / Jobs Action */}</span></p>
+<p class="p1"><span class="s1">&lt;button</span></p>
+<p class="p1"><span class="s1">onClick={() =&gt; {</span></p>
+<p class="p1"><span class="s1">alert('Coming soon: Show filtered field/job list for this product.');</span></p>
+<p class="p1"><span class="s1">}}</span></p>
+<p class="p1"><span class="s1">className="mt-4 text-sm text-blue-600 hover:underline"</span></p>
+<p class="p1"><span class="s1">&gt;</span></p>
+<p class="p1"><span class="s1">View Fields Where This Product Was Used</span></p>
+<p class="p1"><span class="s1">&lt;/button&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+</body>
+</html>

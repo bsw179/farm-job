@@ -24,7 +24,7 @@ const [selectedVendors, setSelectedVendors] = useState([]);
     const fetchData = async () => {
       const [vendorSnap, jobSnap, productSnap, fieldSnap] = await Promise.all([
         getDocs(collection(db, 'vendors')),
-        getDocs(collection(db, 'jobs')),
+        getDocs(collection(db, 'jobsByField')),
         getDocs(collection(db, 'products')),
         getDocs(collection(db, 'fields')),
     
@@ -71,115 +71,111 @@ const [selectedVendors, setSelectedVendors] = useState([]);
   const varietySummary = {};
   const vendorSummary = {};
 
-  jobs.forEach(job => {
-    const jobProduct = job.products?.[0];
-    if (!jobProduct) return;
-    const product = products[jobProduct.productId];
-    if (!product) return;
+ jobs.forEach(job => {
+  const jobProduct = job.products?.[0];
+  if (!jobProduct) return;
 
-    const isLeveeJob = job.jobType?.name?.toLowerCase?.().includes('levee') || job.jobType?.name?.toLowerCase?.().includes('pack');
-const varietyKey = `${product.name}-${product.crop}`;
+  const product = products[jobProduct.productId];
+  if (!product) return;
 
-    const vendorName = job.vendor || '—';
+  const fieldData = fields[job.fieldId];
+  if (!fieldData) return;
 
-    job.fields?.forEach(field => {
-      const fieldData = fields[field.id];
-      if (!fieldData) return;
-     let acres = 0;
-const crop = fieldData.crops?.[2025]?.crop || fieldData.crop || '';
-const jobName = job.jobType?.name?.toLowerCase() || '';
-
- {
-acres = (() => {
   const crop = fieldData.crops?.[2025]?.crop || fieldData.crop || '';
-  const jobName = job.jobType?.name?.toLowerCase?.() || '';
+  const jobName = job.jobType?.name?.toLowerCase() || '';
+  const isLeveeJob = jobName.includes('levee') || jobName.includes('pack');
+  const varietyKey = `${product.name}-${product.crop}`;
+  const vendorName = job.vendor || '—';
 
-  if (jobName.includes('levee') || jobName.includes('pack')) {
-    if (crop.includes('Rice')) return parseFloat(fieldData.riceLeveeAcres) || 0;
-    if (crop.includes('Soybean')) return parseFloat(fieldData.beanLeveeAcres) || 0;
+  const acres = (() => {
+    if (isLeveeJob) {
+      if (crop.includes('Rice')) return parseFloat(fieldData.riceLeveeAcres) || 0;
+      if (crop.includes('Soybean')) return parseFloat(fieldData.beanLeveeAcres) || 0;
+    }
+    return job.acres || fieldData.gpsAcres || 0;
+  })();
+
+  const rate = jobProduct.rate || 0;
+  const totalRate = rate * acres;
+  const converted = convertTotalUnits(product, totalRate, jobProduct.unit);
+  const unitType = jobProduct.unit.includes('seeds')
+    ? 'units'
+    : jobProduct.unit.includes('lbs')
+      ? 'bushels'
+      : 'units';
+
+  if (!varietySummary[varietyKey]) {
+    varietySummary[varietyKey] = {
+      variety: product.name,
+      crop: product.crop,
+      fieldAcres: 0,
+      leveeAcres: 0,
+      totalAcres: 0,
+      totalUnits: 0,
+      unitLabel: unitType,
+    };
+  } else {
+    if (!varietySummary[varietyKey].unitLabel) {
+      varietySummary[varietyKey].unitLabel = unitType;
+    }
   }
 
-  return job.acres?.[field.id] || fieldData.gpsAcres || 0;
-})();
-}
-
-      const rate = jobProduct.rate || 0;
-      const totalRate = rate * acres;
-      const converted = convertTotalUnits(product, totalRate, jobProduct.unit);
-      const unitType = jobProduct.unit.includes('seeds') ? 'units' : jobProduct.unit.includes('lbs') ? 'bushels' : 'units';
-if (!varietySummary[varietyKey]) {
- varietySummary[varietyKey] = {
-  variety: product.name,
-  crop: product.crop,
-  fieldAcres: 0,
-  leveeAcres: 0,
-  totalAcres: 0, // ✅ add this
-  totalUnits: 0,
-  unitLabel: unitType,
-};
-} else {
-  // Make sure unitLabel stays consistent (don't let another unit cause a split)
-  if (!varietySummary[varietyKey].unitLabel) {
-    varietySummary[varietyKey].unitLabel = unitType;
+  if (isLeveeJob) {
+    varietySummary[varietyKey].leveeAcres += parseFloat(acres) || 0;
+  } else {
+    varietySummary[varietyKey].fieldAcres += parseFloat(acres) || 0;
   }
-}
 
+  varietySummary[varietyKey].totalAcres =
+    varietySummary[varietyKey].fieldAcres + varietySummary[varietyKey].leveeAcres;
 
-if (isLeveeJob) {
-  varietySummary[varietyKey].leveeAcres += parseFloat(acres) || 0;
-} else {
-  varietySummary[varietyKey].fieldAcres += parseFloat(acres) || 0;
-}
-varietySummary[varietyKey].totalAcres =
-  varietySummary[varietyKey].fieldAcres + varietySummary[varietyKey].leveeAcres;
+  varietySummary[varietyKey].totalUnits += converted;
 
-      varietySummary[varietyKey].totalUnits += converted;
+  // vendor summary (if you're doing it here too)
+  if (!vendorSummary[vendorName]) vendorSummary[vendorName] = {};
+  if (!vendorSummary[vendorName][varietyKey]) {
+    vendorSummary[vendorName][varietyKey] = {
+      variety: product.name,
+      crop: product.crop,
+      fieldAcres: 0,
+      leveeAcres: 0,
+      totalAcres: 0,
+      totalUnits: 0,
+      unitLabel: unitType,
+      expenseSplit: {},
+    };
+  }
 
-      if (!vendorSummary[vendorName]) vendorSummary[vendorName] = {};
-     if (!vendorSummary[vendorName][varietyKey]) {
-  vendorSummary[vendorName][varietyKey] = {
-    variety: product.name,
-    crop: product.crop,
-    fieldAcres: 0,
-    leveeAcres: 0,
-    totalAcres: 0,
-    totalUnits: 0,
-    unitLabel: unitType,
-    expenseSplit: {},
-  };
-}
+  if (isLeveeJob) {
+    vendorSummary[vendorName][varietyKey].leveeAcres += parseFloat(acres) || 0;
+  } else {
+    vendorSummary[vendorName][varietyKey].fieldAcres += parseFloat(acres) || 0;
+  }
 
-if (isLeveeJob) {
-  vendorSummary[vendorName][varietyKey].leveeAcres += parseFloat(acres) || 0;
-} else {
-  vendorSummary[vendorName][varietyKey].fieldAcres += parseFloat(acres) || 0;
-}
+  vendorSummary[vendorName][varietyKey].totalAcres =
+    vendorSummary[vendorName][varietyKey].fieldAcres +
+    vendorSummary[vendorName][varietyKey].leveeAcres;
 
-vendorSummary[vendorName][varietyKey].totalAcres =
-  vendorSummary[vendorName][varietyKey].fieldAcres +
-  vendorSummary[vendorName][varietyKey].leveeAcres;
+  vendorSummary[vendorName][varietyKey].totalUnits += converted;
 
-      vendorSummary[vendorName][varietyKey].totalUnits += converted;
+  const operatorName = fieldData.operator || '—';
+  const landownerName = fieldData.landowner || '—';
+  const operatorShare = fieldData.operatorExpenseShare ?? 0;
+  const landownerShare = fieldData.landownerExpenseShare ?? 0;
 
-    const operatorName = fieldData.operator || '—';
-const landownerName = fieldData.landowner || '—';
-const operatorShare = fieldData.operatorExpenseShare ?? 0;
-const landownerShare = fieldData.landownerExpenseShare ?? 0;
+  if (operatorShare > 0) {
+    vendorSummary[vendorName][varietyKey].expenseSplit[operatorName] =
+      (vendorSummary[vendorName][varietyKey].expenseSplit[operatorName] || 0) +
+      converted * (operatorShare / 100);
+  }
 
-if (operatorShare > 0) {
-  vendorSummary[vendorName][varietyKey].expenseSplit[operatorName] =
-    (vendorSummary[vendorName][varietyKey].expenseSplit[operatorName] || 0) + converted * (operatorShare / 100);
-}
+  if (landownerShare > 0) {
+    vendorSummary[vendorName][varietyKey].expenseSplit[landownerName] =
+      (vendorSummary[vendorName][varietyKey].expenseSplit[landownerName] || 0) +
+      converted * (landownerShare / 100);
+  }
+});
 
-if (landownerShare > 0) {
-  vendorSummary[vendorName][varietyKey].expenseSplit[landownerName] =
-    (vendorSummary[vendorName][varietyKey].expenseSplit[landownerName] || 0) + converted * (landownerShare / 100);
-}
-
-
-
-    });
-  });
 
   const handleExportCSV = () => {
   const header = ['Farm', 'Field', 'Acres', 'Crop', 'Operator', 'Variety', 'Rate', 'Vendor'];
@@ -304,61 +300,59 @@ Object.entries(vendorSummary)
 
 
 
-   const operatorSummary = Object.entries(
-    jobs.reduce((acc, job) => {
-      const jobProduct = job.products?.[0];
-      const product = products[jobProduct?.productId];
-      if (!product) return acc;
+  const operatorSummary = Object.entries(
+  jobs.reduce((acc, job) => {
+    const jobProduct = job.products?.[0];
+    const product = products[jobProduct?.productId];
+    if (!product) return acc;
 
-      job.fields?.forEach(field => {
-        const fieldData = fields[field.id];
-        if (!fieldData) return;
+    const fieldData = fields[job.fieldId];
+    if (!fieldData) return acc;
 
-        const operator = fieldData.operator || '—';
-        let acres = 0;
-const fieldCrop = fieldData.crops?.[2025]?.crop || fieldData.crop || '';
-const jobName = job.jobType?.name?.toLowerCase?.() || '';
+    const operator = fieldData.operator || '—';
+    const crop = product.crop || '—';
+    const variety = product.name || '—';
 
-if (jobName.includes('levee') || jobName.includes('pack')) {
-  if (fieldCrop.includes('Rice')) acres = parseFloat(fieldData.riceLeveeAcres) || 0;
-  else if (fieldCrop.includes('Soybean')) acres = parseFloat(fieldData.beanLeveeAcres) || 0;
-} else {
-  acres = job.acres?.[field.id] || fieldData.gpsAcres || 0;
-}
+    const jobName = job.jobType?.name?.toLowerCase() || '';
+    const cropName = fieldData.crops?.[2025]?.crop?.toLowerCase?.() || fieldData.crop?.toLowerCase?.() || '';
 
+    const acres = (() => {
+      if (jobName.includes('levee') || jobName.includes('pack')) {
+        if (cropName.includes('rice')) return parseFloat(fieldData.riceLeveeAcres) || 0;
+        if (cropName.includes('soybean')) return parseFloat(fieldData.beanLeveeAcres) || 0;
+        return 0;
+      }
+      return job.acres || fieldData.gpsAcres || 0;
+    })();
 
-        const crop = product.crop || '—';
-        const variety = product.name || '—';
-        const key = `${operator}-${crop}-${variety}`;
+    const key = `${operator}-${crop}-${variety}`;
+    acc[key] = acc[key] || { operator, crop, variety, acres: 0 };
+    acc[key].acres += acres;
 
-        acc[key] = acc[key] || { operator, crop, variety, acres: 0 };
-        acc[key].acres += acres;
-      });
+    return acc;
+  }, {})
+).reduce((grouped, [_, entry]) => {
+  const { operator, ...rest } = entry;
+  if (!grouped[operator]) grouped[operator] = [];
+  grouped[operator].push(rest);
+  return grouped;
+}, {});
 
-      return acc;
-    }, {})
-  ).reduce((grouped, [_, entry]) => {
-    const { operator, ...rest } = entry;
-    if (!grouped[operator]) grouped[operator] = [];
-    grouped[operator].push(rest);
-    return grouped;
-  }, {});
 
 
 const filteredJobs = jobs.filter(job => {
   if (!filterType || !filterValue) return true;
 
-  return job.fields.some(field => {
-    const fieldData = fields[field.id];
-    if (!fieldData) return false;
+  const fieldData = fields[job.fieldId];
+  if (!fieldData) return false;
 
-    if (filterType === 'Farm') return fieldData.farmName === filterValue;
-    if (filterType === 'Operator') return fieldData.operator === filterValue;
-    if (filterType === 'Vendor') return job.vendor === filterValue;
+  if (filterType === 'Farm') return fieldData.farmName === filterValue;
+  if (filterType === 'Operator') return fieldData.operator === filterValue;
+  if (filterType === 'Vendor') return job.vendor === filterValue;
 
-    return true;
-  });
+  return true;
 });
+
 const sortedFieldRows = filteredJobs.flatMap(job => {
   const jobProduct = job.products?.[0];
   const product = products[jobProduct?.productId] || {};
@@ -366,33 +360,31 @@ const sortedFieldRows = filteredJobs.flatMap(job => {
   const unit = jobProduct?.unit || '';
   const vendorName = job.vendor || '—';
 
-  return job.fields.map(field => {
-    const fieldData = fields[field.id] || {};
+  const fieldData = fields[job.fieldId] || {};
+return [{
+  farm: fieldData.farmName || '—',
+  field: fieldData.fieldName || '—',
+  acres: (() => {
     const crop = fieldData.crops?.[2025]?.crop?.toLowerCase?.() || fieldData.crop?.toLowerCase?.() || '';
-const jobName = job.jobType?.name?.toLowerCase?.() || '';
+    const jobName = job.jobType?.name?.toLowerCase() || '';
+    if (jobName.includes('levee') || jobName.includes('pack')) {
+      if (crop.includes('rice')) return parseFloat(fieldData.riceLeveeAcres) || 0;
+      if (crop.includes('soybean')) return parseFloat(fieldData.beanLeveeAcres) || 0;
+      return 0;
+    }
+    return job.acres || fieldData.gpsAcres || 0;
+  })(),
+  crop: products[job.products?.[0]?.productId]?.crop || '—',
+  operator: fieldData.operator || '—',
+  variety: (() => {
+    const name = products[job.products?.[0]?.productId]?.name || '—';
+    const jobName = job.jobType?.name?.toLowerCase() || '';
+    return jobName.includes('levee') || jobName.includes('pack') ? `${name} (Levee Seeding)` : name;
+  })(),
+  rate: `${job.products?.[0]?.rate || ''} ${job.products?.[0]?.unit || ''}`,
+  vendor: job.vendor || '—'
+}];
 
-const acres =
-  jobName.includes('levee') || jobName.includes('pack')
-    ? crop.includes('rice')
-      ? parseFloat(fieldData.riceLeveeAcres) || 0
-      : crop.includes('soybean')
-        ? parseFloat(fieldData.beanLeveeAcres) || 0
-        : 0
-    : job.acres?.[field.id] || fieldData.gpsAcres || 0;
-
-
-    return {
-      farm: fieldData.farmName || '—',
-      field: fieldData.fieldName || '—',
-      acres,
-      crop: product.crop || '—',
-      operator: fieldData.operator || '—',
-      variety: `${product.name || '—'}${job.jobType?.name?.toLowerCase?.().includes('levee') || job.jobType?.name?.toLowerCase?.().includes('pack') ? ' (Levee Seeding)' : ''}`,
-
-      rate: `${rate} ${unit}`,
-      vendor: vendorName,
-    };
-  });
 }).sort((a, b) => {
 if (sortKey === 'Farm') {
   return a.farm === b.farm

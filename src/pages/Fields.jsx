@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,9 @@ import { CropYearContext } from '@/context/CropYearContext';
 import { getFieldMetrics } from '@/utils/fieldMetrics';
 import { getDisplayCrop } from '@/lib/utils';
 import { collection, getDocs } from 'firebase/firestore';
+import { query, where } from 'firebase/firestore';
+import { format, subDays } from 'date-fns';
+import { CloudRain } from 'lucide-react';
 
 export default function Fields() {
   const { cropYear } = useContext(CropYearContext);
@@ -19,6 +23,14 @@ export default function Fields() {
   const [filterCrop, setFilterCrop] = useState(localStorage.getItem('fieldsFilter') || 'All');
   const navigate = useNavigate();
   const [cropTypes, setCropTypes] = useState([]);
+const [rain24Data, setRain24Data] = useState({});
+
+const getRainBadgeColor = (inches) => {
+  if (inches >= 1.0) return 'bg-red-100 text-red-700';
+  if (inches >= 0.5) return 'bg-yellow-100 text-yellow-700';
+  if (inches > 0) return 'bg-sky-100 text-sky-700';
+  return 'bg-gray-100 text-gray-500';
+};
 
   useEffect(() => {
     const stored = localStorage.getItem('fieldsExpanded');
@@ -43,6 +55,24 @@ export default function Fields() {
     };
     fetchFields();
   }, []);
+useEffect(() => {
+  const loadRain24 = async () => {
+    const dayAgo = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+    const q = query(collection(db, 'rainfallLogs'), where('date', '==', dayAgo));
+    const snap = await getDocs(q);
+    const data = {};
+
+    snap.docs.forEach(doc => {
+      const log = doc.data();
+      data[log.fieldId] = (data[log.fieldId] || 0) + (log.inches || 0);
+    });
+
+    setRain24Data(data);
+  };
+
+  loadRain24();
+}, []);
 
   useEffect(() => {
     localStorage.setItem('fieldsSearch', search);
@@ -307,9 +337,29 @@ export default function Fields() {
                         className="px-4 py-3 hover:bg-blue-50 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
-                          <div className="font-medium text-sm text-gray-800">
-                            {field.fieldName} <span className="ml-2">{icon} {crop}</span>
-                          </div>
+                         <div className="font-medium text-sm text-gray-800">
+  {field.fieldName}
+  <div className="flex items-center gap-2 mt-0.5">
+    <span>{icon} {crop}</span>
+  </div>
+  {rain24Data[field.id] !== undefined && (
+    <div className="mt-1">
+      <Link
+        to="/rainfall"
+        title="View rainfall log"
+        className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full w-fit
+          ${getRainBadgeColor(rain24Data[field.id])}
+        `}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CloudRain className="w-3 h-3" />
+        {rain24Data[field.id].toFixed(2)} in
+      </Link>
+    </div>
+  )}
+</div>
+
+
                           {renderMiniPreview(field)}
                         </div>
                       </div>

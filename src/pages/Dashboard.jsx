@@ -7,6 +7,7 @@ import {
   BarChart2,
   Activity
 } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -37,6 +38,22 @@ export default function Dashboard() {
       icon: <Activity className="w-6 h-6 text-red-600" />,
       onClick: () => navigate('/metrics'),
     },
+    {
+  title: 'Calendar',
+icon: <CalendarDays className="w-6 h-6 text-teal-600" />,
+  onClick: () => navigate('/calendar'),
+},
+{
+  title: 'Crop Maps',
+  icon: <MapPin className="w-6 h-6 text-yellow-600" />, // or swap icon if you'd rather
+  onClick: () => navigate('/crop-maps'),
+},
+{
+  title: 'Rainfall',
+  icon: <Activity className="w-6 h-6 text-sky-600" />,
+  onClick: () => navigate('/rainfall'),
+},
+
   ];
 
   return (

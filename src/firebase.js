@@ -1,7 +1,7 @@
-// src/firebase.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth'; // 👈 ADD THIS LINE
+import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBYzAhsCVeIH-Fh1HBTrjpl-r8pkS-h1TY",
@@ -14,6 +14,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // 👈 ADD THIS TOO
+const auth = getAuth(app);
 
-export { db, auth }; // 👈 MAKE SURE THIS IS HERE
+// ✅ FORCE USE OF THE BUCKET YOU SET CORS ON
+const storage = getStorage(app, 'gs://farm-job.firebasestorage.app');
+
+export { db, auth, storage };

@@ -1,8 +1,12 @@
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import { MapContainer, TileLayer, Polygon, Marker, LayersControl } from 'react-leaflet';
+
 import 'leaflet/dist/leaflet.css';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
+import { getAuth } from 'firebase/auth';
 import { centroid } from '@turf/turf';
 import L from 'leaflet';
 import Draggable from 'react-draggable';
@@ -11,6 +15,106 @@ import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import download from 'downloadjs';
 import { useMap } from 'react-leaflet';
+import '@geoman-io/leaflet-geoman-free';
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
+import * as turf from '@turf/turf';
+
+function GeomanControls({ enabled }) {
+  const map = useMap();
+  const { cropYear } = useContext(CropYearContext); // use this if not already inside
+
+  useEffect(() => {
+    if (!map) return;
+
+    if (enabled) {
+      map.pm.addControls({
+        position: 'topleft',
+        drawCircle: false,
+        drawMarker: false,
+        drawPolyline: false,
+        drawCircleMarker: false,
+      });
+
+     map.on('pm:create', async (e) => {
+  const layer = e.layer;
+  const geo = layer.toGeoJSON();
+
+  const techLabel = prompt('Enter technology (Enlist, Xtend, etc):');
+  const cropLabel = prompt('Enter crop (Soybeans, Rice - Long Grain, etc):');
+
+  if (!techLabel && !cropLabel) {
+    alert('❌ Must enter at least a crop or tech.');
+    return;
+  }
+
+  try {
+    const cleanedGeometry = {
+      type: geo.geometry.type,
+      coordinates: geo.geometry.coordinates.map(ring =>
+        ring.map(coord => [...coord])
+      ),
+    };
+
+    await addDoc(collection(db, 'neighborPolygons'), {
+      geometry: JSON.stringify(cleanedGeometry),
+
+      labelsByYear: {
+        [cropYear]: {
+          tech: techLabel || null,
+          crop: cropLabel || null,
+        },
+      },
+      createdAt: serverTimestamp()
+    });
+// 🧠 Determine which label to use
+const labelValue =
+  colorMode === 'tech'
+    ? (cropLabel === 'Soybeans' ? 'SB' :
+       cropLabel === 'Rice - Long Grain' ? 'RLG' :
+       cropLabel === 'Rice - Medium Grain' ? 'RMG' :
+       cropLabel === 'Corn' ? 'CRN' :
+       cropLabel === 'Wheat' ? 'WHT' :
+       '')
+    : (techLabel === 'Roundup Ready' ? 'RR' :
+       techLabel === 'Enlist' ? 'E' :
+       techLabel === 'Xtend' ? 'X' :
+       techLabel === 'Conventional' ? 'C' :
+       techLabel === 'Clearfield/Fullpage' ? 'CF' :
+       techLabel === 'Provisia/MaxAce' ? 'PV' :
+       '');
+
+// 🧭 Find centroid
+const center = turf.centroid(geo).geometry.coordinates;
+const [lng, lat] = center;
+
+// const [lng, lat] = center;
+// L.marker([lat, lng], {
+//   icon: L.divIcon({
+//     className: 'polygon-label',
+//     html: `<div style="font-size:18px;font-weight:bold;color:black;text-shadow:1px 1px white">${labelValue}</div>`,
+//     iconSize: [50, 20],
+//     iconAnchor: [25, 10],
+//   })
+// }).addTo(map);
+
+
+    alert('✅ Polygon saved successfully');
+  } catch (err) {
+    console.error('🧨 Error saving polygon:', err.message, err.stack);
+    alert(`❌ Failed to save polygon: ${err.message}`);
+  }
+});
+
+
+    } else {
+      map.pm.removeControls();
+    }
+  }, [enabled, map]);
+
+  return null;
+}
+
+
 const cropColors = {
   'Rice - Long Grain': '#facc15',
   'Rice - Medium Grain': '#fb923c',
@@ -21,13 +125,16 @@ const cropColors = {
   default: '#a3a3a3'
 };
 const techColors = {
-  "Conventional": "#ef4444",            // Red
-  "Clearfield/Fullpage": "#facc15",     // Yellow
-  "Provisa/MaxAce": "#a855f7",          // Purple
-  "Roundup Ready": "#ffffff",           // White
-  "Enlist": "#14b8a6",                  // Teal
-  "Xtend": "#111111",                   // Charcoal
-  default: "#a3a3a3"                    // Gray fallback
+  "Roundup Ready": "#ffffff",         // White
+  "Enlist": "#14b8a6",                // Teal
+  "Xtend": "#111111",                 // Charcoal
+  "Clearfield/Fullpage": "#facc15",   // Yellow
+  "Provisia/MaxAce": "#a855f7",       // Purple
+
+  "Conventional": "#ef4444",          // 🔴 Red for rice
+  "Conventional (Soybeans)": "#ec4899", // 🌸 Pink for beans
+
+  default: "#a3a3a3"                  // Gray fallback
 };
 
 export default function MapLabelTester() {
@@ -35,6 +142,7 @@ export default function MapLabelTester() {
   const [fields, setFields] = useState([]);
   const [varietyMap, setVarietyMap] = useState({});
   const [productMap, setProductMap] = useState({});
+  const [showDrawingTools, setShowDrawingTools] = useState(false);
 
   const [mapReady, setMapReady] = useState(false);
   const [labelFontSize, setLabelFontSize] = useState(12);
@@ -46,6 +154,9 @@ export default function MapLabelTester() {
 const [dragLabelsMode, setDragLabelsMode] = useState(false);
   const [mapTitle, setMapTitle] = useState('Map Title');
 const [mapRenderTick, setMapRenderTick] = useState(0);
+const [neighborPolygons, setNeighborPolygons] = useState([]);
+const [showNeighborZones, setShowNeighborZones] = useState(false);
+const [colorBy, setColorBy] = useState('tech'); // or 'crop'
 
   const { cropYear } = useContext(CropYearContext);
 
@@ -79,7 +190,63 @@ function MapReadySetter({ setMapReady, mapRef }) {
     return null;
   }
 
- 
+ useEffect(() => {
+  const loadPolygons = async () => {
+    const snap = await getDocs(collection(db, 'neighborPolygons'));
+    const data = snap.docs.map(doc => {
+      const raw = doc.data();
+      return {
+        id: doc.id,
+        geometry: JSON.parse(raw.geometry),
+        labelsByYear: raw.labelsByYear || {},
+      };
+    });
+    setNeighborPolygons(data);
+  };
+
+  loadPolygons();
+}, []);
+useEffect(() => {
+  if (!showNeighborZones || !mapRef.current) return;
+
+  neighborPolygons.forEach(polygon => {
+    const labelData = polygon.labelsByYear?.[cropYear] || {};
+    const tech = labelData.tech;
+    const crop = labelData.crop;
+
+    const label =
+      colorMode === 'tech'
+        ? (crop === 'Soybeans' ? 'SB' :
+           crop === 'Rice - Long Grain' ? 'RLG' :
+           crop === 'Rice - Medium Grain' ? 'RMG' :
+           crop === 'Corn' ? 'CRN' :
+           crop === 'Wheat' ? 'WHT' :
+           '')
+        : (tech === 'Roundup Ready' ? 'RR' :
+           tech === 'Enlist' ? 'E' :
+           tech === 'Xtend' ? 'X' :
+           tech === 'Conventional' ? 'C' :
+           tech === 'Clearfield/Fullpage' ? 'CF' :
+           tech === 'Provisia/MaxAce' ? 'PV' :
+           '');
+
+    if (!label) return;
+
+    const center = turf.centroid(polygon.geometry).geometry.coordinates;
+    const [lng, lat] = center;
+
+  // L.marker([lat, lng], {
+//   icon: L.divIcon({
+//     className: 'polygon-label',
+//     html: `<div style="font-size:18px;font-weight:bold;color:black;text-shadow:1px 1px white">${label}</div>`,
+//     iconSize: [50, 20],
+//     iconAnchor: [25, 10],
+//   })
+// }).addTo(mapRef.current);
+
+  });
+}, [neighborPolygons, showNeighborZones, cropYear, colorMode]);
+
 
 useEffect(() => {
   const fetchFields = async () => {
@@ -112,12 +279,12 @@ useEffect(() => {
     const fetchVarietyInfo = async () => {
       const snapshot = await getDocs(collection(db, 'jobsByField'));
       const allJobs = snapshot.docs.map(doc => doc.data());
-      const seedingJobs = allJobs.filter(job =>
-        (job.jobType === 'Seeding' || job.parentJobType === 'Seeding') &&
-        job.cropYear === cropYear &&
-        job.fieldId &&
-        Array.isArray(job.products)
-      );
+  const seedingJobs = allJobs.filter(job =>
+  job.jobType?.parentName === 'Seeding' &&
+  job.cropYear === cropYear &&
+  job.fieldId &&
+  Array.isArray(job.products)
+);
 
       const newMap = {};
       seedingJobs.forEach(job => {
@@ -228,6 +395,58 @@ const exportPDF = async () => {
     console.error('PDF export failed', err);
   }
 };
+const saveSnapshotToFirebase = async () => {
+  const node = document.getElementById('map-export-area');
+  
+console.log('🔥 Current Firebase user:', getAuth().currentUser);
+
+const user = getAuth().currentUser;
+if (!user) {
+  alert('You must be logged in to save a snapshot.');
+  return;
+}
+
+  if (!node) return;
+
+  try {
+    const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 2 });
+
+    // Convert base64 to Blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    // Upload to Firebase Storage (modern way)
+const fileName = `mapSnapshots/${cropYear}/${Date.now()}.png`;
+const user = getAuth().currentUser;
+const token = await user.getIdToken();
+
+const storageRef = ref(storage, fileName);
+console.log('📦 Uploading to:', storageRef.fullPath, storageRef.bucket);
+
+// Upload blob using Firebase SDK
+await uploadBytes(storageRef, blob);
+
+// Get the download URL
+const downloadUrl = await getDownloadURL(storageRef);
+
+
+
+    // Save Firestore record
+    await addDoc(collection(db, 'maps'), {
+
+      cropYear,
+      title: mapTitle,
+      imageUrl: downloadUrl,
+      createdAt: new Date()
+    });
+
+    alert('✅ Snapshot saved to Firebase!');
+  } catch (err) {
+console.error('❌ Snapshot save failed:', err.message, err.stack);
+    alert('Snapshot failed to save.');
+  }
+};
+
 
 useEffect(() => {
   const map = mapRef.current;
@@ -371,6 +590,31 @@ useEffect(() => {
     >
       🧾 Export PDF
     </button>
+<button
+  onClick={saveSnapshotToFirebase}
+  className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
+>
+  💾 Save Snapshot
+</button>
+
+<div className="mb-4">
+  <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+    <input
+      type="checkbox"
+      checked={showDrawingTools}
+      onChange={(e) => setShowDrawingTools(e.target.checked)}
+    />
+    Show Drawing Tools
+  </label>
+</div>
+<label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 mb-4 mr-6">
+  <input
+    type="checkbox"
+    checked={showNeighborZones}
+    onChange={(e) => setShowNeighborZones(e.target.checked)}
+  />
+  Show Neighbor Zones
+</label>
   </div>
 </div>
 
@@ -404,7 +648,7 @@ useEffect(() => {
 
 
 
-
+<div className="w-full max-w-screen-xl mx-auto px-4"></div>
   <MapContainer
     center={[35.5, -91]}
     zoom={12}
@@ -445,6 +689,42 @@ useEffect(() => {
     <TileLayer url="" />
   </LayersControl.BaseLayer>
 </LayersControl>
+<GeomanControls enabled={showDrawingTools} />
+
+
+
+{showNeighborZones &&
+  neighborPolygons.map(polygon => {
+    const label = polygon.labelsByYear?.[cropYear] || {};
+    const tech = label.tech;
+    const crop = label.crop;
+
+    const fillColor =
+  colorMode === 'crop'
+    ? getCropColor(crop)
+    : colorMode === 'tech'
+      ? getTechColor(tech)
+      : '#cccccc';
+
+
+    const positions = polygon.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
+
+    return (
+      <Polygon
+key={`${polygon.id}-${colorMode}`}
+        positions={positions}
+        pathOptions={{
+          fillColor,
+          color: '#374151',
+          fillOpacity: 0.5,
+          weight: 1.5,
+        }}
+      />
+    );
+  })}
+
+
+
 
 
 {fields
@@ -621,6 +901,24 @@ useEffect(() => {
 
 
 {/* LEGEND */}
+{showNeighborZones ? (
+  <div className="bg-white bg-opacity-95 shadow border border-gray-300 rounded-md px-4 py-3 w-[400px] text-sm mx-auto">
+    <div className="font-semibold mb-2">
+      {colorMode === 'tech' ? 'Technology Legend' : 'Crop Legend'}
+    </div>
+    <div className="grid grid-cols-2 gap-y-1">
+      {(colorMode === 'tech' ? Object.entries(techColors) : Object.entries(cropColors))
+        .filter(([key]) => key !== 'default')
+        .map(([label, color]) => (
+          <div key={label} className="flex items-center space-x-2">
+            <div className="w-4 h-4 rounded-sm shrink-0" style={{ backgroundColor: color }}></div>
+            <span className="truncate">{label}</span>
+          </div>
+        ))}
+    </div>
+  </div>
+) : (
+
 <div
   className="bg-white bg-opacity-95 shadow border border-gray-300 rounded-md px-4 py-3 w-[500px] text-sm mx-auto"
   style={{
@@ -706,11 +1004,14 @@ useEffect(() => {
 
   <div style={{ height: '1px' }} /> {/* Keeps PDF from slicing the bottom */}
 </div>
+)}
+
 
 
 
 
       </div>
     </div>
+
   );
 }

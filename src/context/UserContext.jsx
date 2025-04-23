@@ -31,9 +31,20 @@ export function UserProvider({ children }) {
 
     return () => unsubscribe();
   }, []);
+const refreshUserData = async () => {
+  if (auth.currentUser) {
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      setUser({ uid: auth.currentUser.uid, ...data });
+      setRole(data.role || null);
+    }
+  }
+};
 
   return (
-    <UserContext.Provider value={{ user, role, loading }}>
+<UserContext.Provider value={{ user, role, loading, refreshUserData }}>
       {children}
     </UserContext.Provider>
   );

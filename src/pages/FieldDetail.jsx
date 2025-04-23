@@ -1,5 +1,6 @@
 // src/pages/FieldDetail.jsx
 import React, { useEffect, useState } from 'react';
+import { useUser } from '../context/UserContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -12,6 +13,8 @@ export default function FieldDetail() {
   const { fieldId } = useParams();
   const navigate = useNavigate();
   const { cropYear, setCropYear } = useCropYear();
+  const { role, loading } = useUser();
+if (loading || !role) return null;
 
   const [field, setField] = useState(null);
   const [updatedField, setUpdatedField] = useState({});
@@ -125,6 +128,13 @@ export default function FieldDetail() {
   const handleUpdate = async () => {
     const ref = doc(db, 'fields', fieldId);
     const clean = { ...updatedField };
+
+// 🚫 Prevent sending geojson if not editing boundary
+if (clean.boundary?.geojson && typeof clean.boundary.geojson === 'object') {
+  delete clean.boundary;
+}
+
+// 🧠 Auto-fill bean levee acres if blank
 if (
   (clean.beanLeveeAcres === undefined || clean.beanLeveeAcres === '') &&
   clean.riceLeveeAcres &&
@@ -133,13 +143,28 @@ if (
   clean.beanLeveeAcres = +(clean.riceLeveeAcres * 0.5).toFixed(2);
 }
 
+await updateDoc(ref, clean);
 
-    await updateDoc(ref, clean);
-    const updatedSnap = await getDoc(ref);
-    const updatedData = { id: fieldId, ...updatedSnap.data() };
-    setField(updatedData);
-    setUpdatedField(updatedData);
-    setEditMode(false);
+const updatedSnap = await getDoc(ref);
+const updatedData = { id: fieldId, ...updatedSnap.data() };
+
+// ✅ Patch crash: safely re-parse boundary.geojson
+if (
+  updatedData.boundary?.geojson &&
+  typeof updatedData.boundary.geojson === 'string'
+) {
+  try {
+    updatedData.boundary.geojson = JSON.parse(updatedData.boundary.geojson);
+  } catch {
+    console.warn('Failed to parse boundary after update');
+    updatedData.boundary.geojson = null;
+  }
+}
+
+setField(updatedData);
+setUpdatedField(updatedData);
+setEditMode(false);
+
   };
 
   const handleCancel = () => {
@@ -341,25 +366,28 @@ value={updatedField[key] !== undefined ? updatedField[key] : ''}
 
       {/* Edit Buttons */}
       <div className="mb-6">
-        {editMode ? (
-          <>
-            <button onClick={handleUpdate} className="bg-green-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
-              Save Changes
-            </button>
-            <button onClick={handleCancel} className="bg-gray-500 text-white text-sm px-4 py-2 rounded shadow">
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => setEditMode(true)} className="bg-blue-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
-              Edit Field Info
-            </button>
-            <button onClick={() => navigate('/')} className="bg-gray-400 text-white text-sm px-4 py-2 rounded shadow">
-              ← Back to Fields
-            </button>
-          </>
-        )}
+       {editMode ? (
+  <>
+    <button onClick={handleUpdate} className="bg-green-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
+      Save Changes
+    </button>
+    <button onClick={handleCancel} className="bg-gray-500 text-white text-sm px-4 py-2 rounded shadow">
+      Cancel
+    </button>
+  </>
+) : (
+  <>
+    {role !== 'viewer' && (
+      <button onClick={() => setEditMode(true)} className="bg-blue-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
+        Edit Field Info
+      </button>
+    )}
+    <button onClick={() => navigate('/')} className="bg-gray-400 text-white text-sm px-4 py-2 rounded shadow">
+      ← Back to Fields
+    </button>
+  </>
+)}
+
       </div>
 
       {/* Boundary Viewer */}
@@ -369,22 +397,28 @@ value={updatedField[key] !== undefined ? updatedField[key] : ''}
           <>
             <div id="boundary-preview-map" className="h-52 w-full rounded border" />
 
-            <button
-              onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
-              className="text-sm text-blue-600 underline mt-2"
-            >
-              📝 Edit Boundary
-            </button>
+           {role !== 'viewer' && (
+  <button
+    onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
+    className="text-sm text-blue-600 underline mt-2"
+  >
+    📝 Edit Boundary
+  </button>
+)}
+
           </>
         ) : (
           <>
             <p className="text-sm italic text-gray-500">No boundary assigned to this field yet.</p>
-            <button
-              onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
-              className="text-sm text-blue-600 underline mt-2"
-            >
-              ➕ Add Boundary
-            </button>
+          {role !== 'viewer' && (
+  <button
+    onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
+    className="text-sm text-blue-600 underline mt-2"
+  >
+    ➕ Add Boundary
+  </button>
+)}
+
           </>
         )}
       </div>
@@ -424,39 +458,42 @@ value={updatedField[key] !== undefined ? updatedField[key] : ''}
     </div>
 
 
-    <div className="flex gap-2">
-      <button
-        onClick={() => navigate(`/jobs/field/${job.id}`)}
-        className="text-gray-500 hover:text-gray-700"
-        title="View/Edit Job"
-      >
-        <Pencil size={16} />
-      </button>
-      <button
-        onClick={() => setConfirmDeleteId(job.id)}
-        className="text-gray-500 hover:text-gray-700"
-        title="Delete Job"
-      >
-        <Trash2 size={16} />
-      </button>
-      <button
-        onClick={async () => {
-          const { generatePDFBlob } = await import('../utils/generatePDF');
-          const blob = await generatePDFBlob(job);
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `JobOrder_${job.jobType}_${job.cropYear}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }}
-        className="text-gray-500 hover:text-gray-700"
-        title="Download PDF"
-      >
-        <FileText size={16} />
-      </button>
-    </div>
+    {role !== 'viewer' && (
+  <div className="flex gap-2">
+    <button
+      onClick={() => navigate(`/jobs/field/${job.id}`)}
+      className="text-gray-500 hover:text-gray-700"
+      title="View/Edit Job"
+    >
+      <Pencil size={16} />
+    </button>
+    <button
+      onClick={() => setConfirmDeleteId(job.id)}
+      className="text-gray-500 hover:text-gray-700"
+      title="Delete Job"
+    >
+      <Trash2 size={16} />
+    </button>
+    <button
+      onClick={async () => {
+        const { generatePDFBlob } = await import('../utils/generatePDF');
+        const blob = await generatePDFBlob(job);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `JobOrder_${job.jobType}_${job.cropYear}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }}
+      className="text-gray-500 hover:text-gray-700"
+      title="Download PDF"
+    >
+      <FileText size={16} />
+    </button>
+  </div>
+)}
+
   </div>
 </li>
 

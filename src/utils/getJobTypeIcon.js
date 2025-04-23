@@ -7,7 +7,9 @@ import Tillage from '../assets/icons/Tillage.svg';
 import Custom from '../assets/icons/Custom.svg';
 
 export const getJobTypeIcon = (type = '') => {
-  const name = type.toLowerCase();
+  const name = typeof type === 'string'
+    ? type.toLowerCase()
+    : type?.name?.toLowerCase?.() || '';
 
   if (name.includes('aerial')) return AerialSpraying;
   if (name.includes('ground')) return GroundSpraying;
@@ -20,3 +22,4 @@ export const getJobTypeIcon = (type = '') => {
 
   return Custom;
 };
+

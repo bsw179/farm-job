@@ -19,17 +19,19 @@ export default function LoginPage() {
     }
   }, [user, navigate]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/'); // go to dashboard or wherever you want
-    } catch (err) {
-      console.error(err);
-      setError('Invalid login. Please check your email and password.');
-    }
-  };
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError('');
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    console.log('✅ Firebase login successful:', result.user);
+    navigate('/');
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    setError('Invalid login. Please check your email and password.');
+  }
+};
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">

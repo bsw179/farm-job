@@ -11,21 +11,34 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const sections = [
   {
-    title: 'Farm',
-    links: [
-      { label: 'Dashboard', icon: LayoutDashboard },
-      { label: 'Fields', icon: Layers3 },
-      { label: 'Jobs', icon: ClipboardList },
-      { label: 'Reports', icon: FileText },
-      { label: 'Field Metrics', icon: FileText },
-    ],
-  },
-  {
-    title: 'Mapping',
-    links: [
-      { label: 'Map Viewer', icon: Map },
-    ],
-  },
+  title: 'Farm',
+  links: [
+    { label: 'Dashboard', icon: LayoutDashboard },
+    { label: 'Fields', icon: Layers3 },
+    { label: 'Jobs', icon: ClipboardList },
+    { label: 'Reports', icon: FileText },
+    { label: 'Field Metrics', icon: FileText },
+    { label: 'Inputs', icon: FileText }, // ← ADD THIS
+  ],
+},
+{
+  title: 'Financial',
+  links: [
+    { label: 'Products', icon: FileText },
+    { label: 'Log Purchase', icon: FileText },
+    { label: 'Ledger', icon: FileText },
+
+  ],
+},
+
+ {
+  title: 'Mapping',
+  links: [
+    { label: 'Map Viewer', icon: Map },
+    { label: 'Crop Maps', icon: Map }, // you can swap Map for Image or FileText if you want
+  ],
+},
+
 ];
 
 export default function Sidebar({ onNavigate }) {
@@ -38,6 +51,11 @@ export default function Sidebar({ onNavigate }) {
     if (path.includes('/reports')) return 'Reports';
     if (path.includes('/metrics')) return 'Field Metrics';
     if (path.includes('/map-viewer')) return 'Map Viewer';
+    if (path.includes('/financial/log')) return 'Log Purchase';
+    if (path.includes('/financial/products')) return 'Products';
+    if (path.includes('/financial/ledger')) return 'Ledger';
+    if (path.includes('/crop-maps')) return 'Crop Maps';
+
     return 'Dashboard';
   };
 
@@ -49,6 +67,12 @@ export default function Sidebar({ onNavigate }) {
       case 'Reports': return '/reports';
       case 'Map Viewer': return '/map-viewer';
       case 'Field Metrics': return '/metrics';
+      case 'Inputs': return '/inputs';
+      case 'Log Purchase': return '/financial/log';
+      case 'Products': return '/financial/products';
+      case 'Ledger': return '/financial/ledger';
+      case 'Crop Maps': return '/crop-maps';
+
       default: return '/';
     }
   };

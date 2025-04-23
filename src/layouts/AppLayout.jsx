@@ -5,6 +5,11 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { CropYearProvider } from "@/context/CropYearContext";
 import { UserProvider } from "@/context/UserContext";
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { auth } from '../firebase';
+
+
+console.log('👤 Current user:', auth.currentUser);
 
 // Page imports
 import Dashboard from "@pages/Dashboard";
@@ -31,6 +36,16 @@ import AdminCleanupTools from "../pages/AdminCleanupTools";
 import RequireRole from "@/components/RequireRole"; // add this at the top
 import RequireLogin from "@/components/RequireLogin";
 import LoginPage from '@/pages/LoginPage';
+import InputsPage from '@/pages/InputsPage'; // make sure path matches
+import LogProductPurchase from '@/pages/LogProductPurchase';
+import ProductsTracker from '@/pages/ProductsTracker';
+import ProductLedger from '@/pages/ProductLedger';
+import JobsCalendar from "@/pages/JobsCalendar";
+import CropMaps from '@/pages/CropMaps';
+import RainfallPage from '@/pages/RainfallPage';
+
+// Then inside <Routes>
+<Route path="/inputs" element={<InputsPage />} />
 
 export default function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -112,58 +127,185 @@ export default function AppLayout() {
                 }
               />
 
-             <Routes>
- <Route path="/login" element={<LoginPage />} />
+           <Routes>
+  <Route path="/login" element={<LoginPage />} />
 
-<Route
-  path="*"
-  element={
-    <RequireLogin>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/fields" element={<Fields />} />
-        <Route path="/fields/:fieldId" element={<FieldDetail />} />
-        <Route path="/fields/:fieldId/boundary-editor" element={<FieldBoundaryEditor />} />
-        <Route path="/map-viewer" element={<MapViewer />} />
-        <Route path="/profile-settings" element={<ProfileSettings />} />
-       <Route path="/manage-users" element={<ManageUsers />} />
+  <Route
+    path="*"
+    element={
+      <RequireLogin>
+        <Routes>
+          {/* Public Pages */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/fields" element={<Fields />} />
+          <Route path="/profile-settings" element={<ProfileSettings />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/seeding" element={<SeedingReport />} />
+          <Route path="/metrics" element={<FieldMetrics />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/calendar" element={<JobsCalendar />} />
+          <Route path="/fields/:fieldId" element={<FieldDetail />} />
+          <Route path="/crop-maps" element={<CropMaps />} />
+          <Route path="/rainfall" element={<RainfallPage />} />
 
-        <Route path="/products" element={<Products />} />
-
-       <Route path="/manage-partners" element={<ManagePartners />} />
-
-      <Route path="/setup/manage-crop-types" element={<ManageCropTypes />} />
-
-       <Route path="/setup/import-boundaries" element={<BoundaryUploadMapbox />} />
-
-       <Route path="/setup/manage-job-types" element={<ManageJobTypes />} />
-
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/reports/seeding" element={<SeedingReport />} />
-        <Route path="/metrics" element={<FieldMetrics />} />
-        <Route path="/admin-tools" element={
-          <RequireRole role="admin">
-            <AdminCleanupTools />
-          </RequireRole>
-        } />
-       <Route path="/jobs" element={<Jobs />} />
-
-
-       <Route path="/jobs/create" element={<CreateJobPage />} />
-
+          {/* Protected Pages */}
       
-       <Route path="/jobs/summary" element={<JobSummaryPage />} />
+          <Route
+            path="/jobs/field/:jobId"
+            element={
+              <ProtectedRoute path="/jobs/field/:jobId">
+                <FieldJobSummaryPage />
+              </ProtectedRoute>
+            }
+          />
 
-       <Route path="/jobs/edit-area/:fieldId" element={<EditJobPolygon />} />
+          <Route
+            path="/map-viewer"
+            element={
+              <ProtectedRoute path="/map-viewer">
+                <MapViewer />
+              </ProtectedRoute>
+            }
+          />
 
-      <Route path="/jobs/field/:jobId" element={<FieldJobSummaryPage />} />
-
-      </Routes>
-    </RequireLogin>
+          <Route
+            path="/fields/:fieldId/boundary-editor"
+            element={
+              <ProtectedRoute path="/fields/:fieldId/boundary-editor">
+                <FieldBoundaryEditor />
+              </ProtectedRoute>
+            }
+          />
+<Route
+  path="/financial/products"
+  element={
+    <ProtectedRoute path="/financial/products">
+      <ProductsTracker />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/financial/ledger"
+  element={
+    <ProtectedRoute path="/financial/ledger">
+      <ProductLedger />
+    </ProtectedRoute>
   }
 />
 
+          <Route
+            path="/manage-users"
+            element={
+              <ProtectedRoute path="/manage-users">
+                <ManageUsers />
+              </ProtectedRoute>
+            }
+          />
+import LogProductPurchase from './pages/LogProductPurchase';
+
+<Route
+  path="/financial/log"
+  element={
+    <ProtectedRoute path="/financial/log">
+      <LogProductPurchase />
+    </ProtectedRoute>
+  }
+/>
+
+          <Route
+            path="/products"
+            element={
+              <ProtectedRoute path="/products">
+                <Products />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/manage-partners"
+            element={
+              <ProtectedRoute path="/manage-partners">
+                <ManagePartners />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/setup/manage-crop-types"
+            element={
+              <ProtectedRoute path="/setup/manage-crop-types">
+                <ManageCropTypes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/setup/import-boundaries"
+            element={
+              <ProtectedRoute path="/setup/import-boundaries">
+                <BoundaryUploadMapbox />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/setup/manage-job-types"
+            element={
+              <ProtectedRoute path="/setup/manage-job-types">
+                <ManageJobTypes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin-tools"
+            element={
+              <ProtectedRoute path="/admin-tools">
+                <AdminCleanupTools />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/jobs/create"
+            element={
+              <ProtectedRoute path="/jobs/create">
+                <CreateJobPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/jobs/summary"
+            element={
+              <ProtectedRoute path="/jobs/summary">
+                <JobSummaryPage />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/inputs"
+            element={
+              <ProtectedRoute path="/inputs">
+               <InputsPage />
+             </ProtectedRoute>
+           }
+         />
+
+          <Route
+            path="/jobs/edit-area/:fieldId"
+            element={
+              <ProtectedRoute path="/jobs/edit-area/:fieldId">
+                <EditJobPolygon />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </RequireLogin>
+    }
+  />
 </Routes>
+
 
             </main>
           </div>

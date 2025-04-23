@@ -2,7 +2,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { doc, getDoc, updateDoc, collection, getDocs, query, where, setDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+  setDoc,
+  deleteDoc,              // ✅ Add this here
+  serverTimestamp         // ✅ You can move this up to combine
+} from 'firebase/firestore';
 
 function FieldJobSummaryPage() {
   const { jobId } = useParams();
@@ -11,6 +22,8 @@ const [field, setField] = useState(null);
 const [notes, setNotes] = useState('');
 
   const [job, setJob] = useState(null);
+  const [jobType, setJobType] = useState(null);
+
   const [usedProductIds, setUsedProductIds] = useState([]);
 
   const [productsList, setProductsList] = useState([]);
@@ -23,6 +36,10 @@ const [fieldBoundary, setFieldBoundary] = useState(null);
 const [waterVolume, setWaterVolume] = useState(null);
 const [jobTypesList, setJobTypesList] = useState([]);
 const [passes, setPasses] = useState(1);
+const [jobStatus, setJobStatus] = useState('Planned');
+const [vendor, setVendor] = useState('');
+const [applicator, setApplicator] = useState('');
+const [editableProducts, setEditableProducts] = useState([]);
 
 const isLeveeJob = job?.jobType?.name?.toLowerCase().includes('levee') || job?.jobType?.name?.toLowerCase().includes('pack');
 
@@ -48,6 +65,21 @@ useEffect(() => {
   loadJobTypes();
 }, []);
 
+useEffect(() => {
+  if (job) {
+    setJobStatus(job.status || 'Planned');
+    setJobType(job.jobType || null);
+    setVendor(job.vendor || '');
+    setApplicator(job.applicator || '');
+    setEditableProducts(job.products || []);
+  }
+}, [job]);
+
+useEffect(() => {
+  if (job?.jobType) {
+    setJobType(job.jobType);
+  }
+}, [job]);
 
   useEffect(() => {
   const loadVendorsAndApplicators = async () => {
@@ -64,6 +96,7 @@ useEffect(() => {
 useEffect(() => {
   const loadUsedProducts = async () => {
     if (!job?.jobType || !job?.cropYear) return;
+console.log('🔗 linkedToJobId:', job.linkedToJobId);
 
     const q = query(
       collection(db, 'jobs'),
@@ -183,11 +216,75 @@ if (!shouldBreakFromGroup) {
     ? JSON.stringify(job.drawnPolygon)
     : job.drawnPolygon;
 
-await updateDoc(doc(db, 'jobsByField', job.id), {
-  ...job,
-  drawnPolygon: cleanedDrawnPolygon,
-  waterVolume: waterVolume || 0,
-});
+const isAttached = job.linkedToJobId;
+
+if (isAttached) {
+  const newJobRef = doc(collection(db, 'jobsByField'));
+
+// 🧹 Delete the field-level job first
+await deleteDoc(doc(db, 'jobsByField', job.id));
+
+// 🔍 Then re-check for any remaining linked field jobs
+const linkedToJobId = job.linkedToJobId;
+const q = query(
+  collection(db, 'jobsByField'),
+  where('linkedToJobId', '==', linkedToJobId)
+);
+const snap = await getDocs(q);
+
+if (snap.size === 1) {
+  // If only one remains, unlink and detach it
+  const leftoverDoc = snap.docs[0];
+  console.log('🧹 Clearing linkedToJobId on last field job:', leftoverDoc.id);
+  await updateDoc(leftoverDoc.ref, {
+    linkedToJobId: null,
+    isDetachedFromGroup: true
+  });
+
+  // Then delete the grouped job
+  await deleteDoc(doc(db, 'jobs', linkedToJobId));
+}
+
+
+
+  await setDoc(newJobRef, {
+    ...job,
+    status: jobStatus,
+    jobType,
+    vendor,
+    applicator,
+    products: editableProducts,
+    drawnPolygon: cleanedDrawnPolygon,
+    waterVolume: waterVolume || 0,
+    ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+    notes,
+    linkedToJobId: null,
+    isDetachedFromGroup: true,
+    id: newJobRef.id,
+    timestamp: serverTimestamp()
+  });
+
+  navigate('/jobs');
+} else {
+  await updateDoc(doc(db, 'jobsByField', job.id), {
+    ...job,
+    status: jobStatus,
+    jobType,
+    vendor,
+    applicator,
+    products: editableProducts,
+    drawnPolygon: cleanedDrawnPolygon,
+    waterVolume: waterVolume || 0,
+    ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+    notes,
+    timestamp: serverTimestamp()
+  });
+
+  navigate('/jobs');
+}
+
+
+
 
 
 
@@ -202,12 +299,14 @@ await updateDoc(doc(db, 'jobsByField', job.id), {
       const updatedFields = (groupData.fields || []).map(f => {
         if (f.id !== job.fieldId) return f;
 
-        return {
-          ...f,
-          drawnPolygon: cleanedDrawnPolygon,
-          drawnAcres: job.drawnAcres || f.drawnAcres,
-          acres: job.acres || f.acres
-        };
+       return {
+  ...f,
+  status: job.status || 'Planned',
+  drawnPolygon: cleanedDrawnPolygon,
+  drawnAcres: job.drawnAcres || f.drawnAcres,
+  acres: job.acres || f.acres
+};
+
       });
 
       await setDoc(groupRef, {
@@ -265,6 +364,48 @@ const blob = await generatePDFBlob(fullJob);
   navigate('/jobs');
   return;
 }
+// 🆕 Handle breakaway from group
+const newGroupedId = `${job.id}_solo`; // unique ID to avoid conflict
+const newGroupedJob = {
+  jobId: newGroupedId,
+  jobType: job.jobType,
+  vendor: job.vendor,
+  applicator: job.applicator,
+  jobDate: job.jobDate,
+  cropYear: job.cropYear,
+  products: job.products,
+  
+  status: job.status,
+  notes,
+  passes: job?.jobType?.parentName === 'Tillage' ? passes : undefined,
+  waterVolume,
+  fieldIds: [job.fieldId],
+  fields: [
+    {
+      id: job.fieldId,
+      fieldName: job.fieldName,
+      drawnPolygon: job.drawnPolygon ?? null,
+      acres: job.drawnAcres ?? job.acres ?? 0,
+      crop: job.crop ?? '',
+      riceLeveeAcres: job.riceLeveeAcres ?? null,
+      beanLeveeAcres: job.beanLeveeAcres ?? null
+    }
+  ],
+  acres: {
+    [job.fieldId]: job.drawnAcres ?? job.acres ?? 0
+  },
+  timestamp: Date.now()
+};
+
+await setDoc(doc(db, 'jobs', newGroupedId), newGroupedJob);
+
+await updateDoc(doc(db, 'jobsByField', job.id), {
+  ...job,
+  linkedToJobId: newGroupedId,
+  notes,
+  passes: job?.jobType?.parentName === 'Tillage' ? passes : undefined,
+  waterVolume
+});
 
 const handleSave = async () => {
   setSaving(true);
@@ -662,16 +803,19 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
     className="text-sm text-blue-600 underline"
     onClick={() =>
       navigate(`/jobs/edit-area/${job.fieldId}`, {
-        state: {
-          field: {
-            id: job.fieldId,
-            fieldName: job.fieldName,
-            boundary: fieldBoundary
-          },
-          cropYear: job.cropYear,
-          drawnPolygon: job.drawnPolygon,
-          drawnAcres: job.drawnAcres
-        }
+     state: {
+  field: {
+    id: job.fieldId,
+    fieldName: job.fieldName,
+    boundary: fieldBoundary,
+    drawnPolygon: typeof job.drawnPolygon === 'string'
+      ? JSON.parse(job.drawnPolygon)
+      : job.drawnPolygon,
+    drawnAcres: job.drawnAcres
+  },
+  cropYear: job.cropYear
+}
+
       })
     }
   >

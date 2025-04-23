@@ -25,6 +25,8 @@ import ProductComboBox from '../components/ProductComboBox';
 function JobSummaryPage() {
   const navigate = useNavigate();
   const location = useLocation();
+ 
+
   const {
     jobType: initialJobType,
     cropYear = new Date().getFullYear(),
@@ -36,29 +38,16 @@ const [jobType, setJobType] = useState(() => {
 });
 
 const [fields, setFields] = useState([]);
-useEffect(() => {
-  const updated = location.state?.updatedField;
-  if (updated) {
-    const parsedPolygon = typeof updated.drawnPolygon === 'string'
-      ? JSON.parse(updated.drawnPolygon)
-      : updated.drawnPolygon;
 
-    setFields(prevFields =>
-      prevFields.map(f =>
-        f.id === updated.id
-          ? { ...f, ...updated, drawnPolygon: parsedPolygon }
-          : f
-      )
-    );
-  }
-}, [location.state]);
+
+
 
   const [usedProductIds, setUsedProductIds] = useState([]);
 
 const [jobDate, setJobDate] = useState('');
   const [jobStatus, setJobStatus] = useState('Planned');
   const [saving, setSaving] = useState(false);
-  const [shouldGeneratePDF, setShouldGeneratePDF] = useState(true);
+  const [shouldGeneratePDF, setShouldGeneratePDF] = useState(false);
   const [vendor, setVendor] = useState(location.state?.vendor || '');
   const [applicator, setApplicator] = useState(location.state?.applicator || '');
   const [vendors, setVendors] = useState([]);
@@ -79,17 +68,24 @@ const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";
 const isLeveeJob = jobType?.name?.toLowerCase().includes('levee') || jobType?.name?.toLowerCase().includes('pack');
 
 const totalJobAcres = fields.reduce((sum, f) => {
+  const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+
   if (isLeveeJob) {
-    const crop = f.crop || f.crops?.[cropYear]?.crop || '';
-    if (crop === 'Rice' && f.riceLeveeAcres) {
-      return sum + parseFloat(f.riceLeveeAcres);
-    }
-    if (crop === 'Soybeans' && f.beanLeveeAcres) {
-      return sum + parseFloat(f.beanLeveeAcres);
-    }
+    if (crop === 'Rice') return sum + (parseFloat(f.riceLeveeAcres) || 0);
+    if (crop === 'Soybeans') return sum + (parseFloat(f.beanLeveeAcres) || 0);
   }
-  return sum + (f.drawnAcres ?? f.gpsAcres ?? 0);
+
+  return sum + (
+    !isNaN(parseFloat(f.acres)) ? parseFloat(f.acres)
+    : !isNaN(parseFloat(f.drawnAcres)) ? parseFloat(f.drawnAcres)
+    : !isNaN(parseFloat(f.gpsAcres)) ? parseFloat(f.gpsAcres)
+    : 0
+  );
 }, 0);
+
+
+
+
 
 
 const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(
@@ -182,7 +178,7 @@ useEffect(() => {
 
     if (!editing || !jobId) return;
 
-    setIsEditing(true); // ✅ keeps it locked in state
+    setIsEditing(true);
 
     const jobDoc = await getDoc(doc(db, 'jobs', jobId));
     if (!jobDoc.exists()) return;
@@ -195,18 +191,20 @@ useEffect(() => {
     setJobStatus(jobData.status || 'Planned');
     setEditableProducts(jobData.products || []);
     setWaterVolume(jobData.waterVolume || '');
-    setFields(
-  (jobData.fields || []).map(f => ({
-    ...f,
-    drawnPolygon: typeof f.drawnPolygon === 'string'
-      ? JSON.parse(f.drawnPolygon)
-      : f.drawnPolygon
-  }))
-);
-
-    setIsEditing(true);
-    setJobId(jobId); // keeps the ID locked
+    setJobId(jobId);
     setNotes(jobData.notes || '');
+
+    // 🛠 Fetch attached fields from jobsByField
+    const q = query(
+      collection(db, 'jobsByField'),
+      where('linkedToJobId', '==', jobId),
+      where('isDetachedFromGroup', '!=', true)
+    );
+    const snap = await getDocs(q);
+    const fieldJobs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    setFields(fieldJobs);
+    
 
   };
 
@@ -215,36 +213,47 @@ useEffect(() => {
 
 
 
- useEffect(() => {
-  const updated = location.state?.updatedField;
-  if (!updated && location.state?.selectedFields?.length) {
-    setFields(location.state.selectedFields);
-  }
-}, [location.key]);
+
+
+
+
+
+
 
 useEffect(() => {
-  const updated = location.state?.updatedField;
   const selected = location.state?.selectedFields || [];
 
-  if (updated) {
-    const parsedPolygon = typeof updated.drawnPolygon === 'string'
-      ? JSON.parse(updated.drawnPolygon)
-      : updated.drawnPolygon;
+  if (fields.length || !selected.length) return;
 
-    const alreadyIncluded = selected.some(f => f.id === updated.id);
-    const mergedFields = alreadyIncluded
-      ? selected.map(f =>
-          f.id === updated.id
-            ? { ...f, ...updated, drawnPolygon: parsedPolygon }
-            : f
-        )
-      : [...selected, { ...updated, drawnPolygon: parsedPolygon }];
+  const loadBoundaries = async () => {
+    const enriched = await Promise.all(
+      selected.map(async (f) => {
+        const ref = doc(db, 'fields', f.fieldId || f.id);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return f;
 
-    setFields(mergedFields);
-  } else if (selected.length) {
-    setFields(selected);
-  }
-}, [location.key]);
+        let geo = snap.data()?.boundary?.geojson;
+        if (typeof geo === 'string') {
+          try {
+            geo = JSON.parse(geo);
+          } catch {
+            geo = null;
+          }
+        }
+
+        return {
+          ...f,
+          boundary: { geojson: geo }
+        };
+      })
+    );
+
+    setFields(enriched);
+  };
+
+  loadBoundaries();
+}, []);
+
 
 
   const handleProductChange = (index, field, value) => {
@@ -354,6 +363,8 @@ useEffect(() => {
   }
 
  try {
+  await new Promise(res => setTimeout(res, 200)); // wait 200ms before starting create
+
   const updatedFields = await Promise.all(fields.map(async (field) => {
     const ref = document.getElementById(`field-canvas-${field.id}`);
     if (!ref) return field;
@@ -411,18 +422,17 @@ const cleanedProducts = editableProducts.map(p => ({
   applicator: applicator || '',
   products: cleanedProducts,
   cropYear,
-  jobDate: jobDate || new Date().toISOString().split('T')[0],
+jobDate,
   status: jobStatus,
-  fieldIds: updatedFieldsWithAcres.map(f => f.id),
+fieldIds: updatedFieldsWithAcres
+  .filter(f => !f.isDetachedFromGroup)
+  .map(f => f.id),
   waterVolume: jobType?.parentName === 'Spraying' ? waterVolume : '',
-  fields: updatedFieldsWithAcres,
-  acres: Object.fromEntries(updatedFieldsWithAcres.map(f => [f.id, f.acres])),
   notes,
   timestamp: serverTimestamp()
 };
 
 
-console.log('📦 Saving master job:', masterJob);
 
   await setDoc(doc(db, 'jobs', jobId), masterJob); // ← final and only call to save job
 
@@ -432,20 +442,32 @@ console.log('📦 Saving master job:', masterJob);
   await Promise.all(existing.docs.map(docSnap => deleteDoc(doc(db, 'jobsByField', docSnap.id))));
 }
 
-  const jobsByFieldPromises = updatedFieldsWithAcres.map(field => {
-      const jobEntry = {
-       jobId,
-       linkedToJobId: jobId, // 🔥 new field here
-       fieldId: field.id,
-      fieldName: field.fieldName,
-      cropYear,
-      crop: field.crop || field.crops?.[cropYear]?.crop || '',
-      acres: field.acres,
-      drawnAcres: field.drawnAcres ?? null,
-      drawnPolygon: field.drawnPolygon ?? null,
-      vendor: vendor || '',
-      applicator: applicator || '',
-...(() => {
+const jobsByFieldPromises = updatedFieldsWithAcres.map(async (field) => {
+  if (field.isDetachedFromGroup) {
+    console.log(`⛔ Skipping detached field: ${field.fieldName}`);
+    return;
+  }
+
+  const fieldJobRef = doc(db, 'jobsByField', `${jobId}_${field.id}`);
+
+  console.log('🛠 Creating jobsByField for field:', field.id, 'linkedToJobId:', jobId);
+
+  const jobEntry = {
+    jobId: fieldJobRef.id,
+    linkedToJobId: jobId,
+
+  fieldId: field.id,
+  fieldName: field.fieldName,
+  cropYear,
+  crop: field.crop || field.crops?.[cropYear]?.crop || '',
+  acres: field.acres,
+  drawnAcres: field.drawnAcres ?? null,
+  drawnPolygon: field.drawnPolygon ?? null,
+  status: jobStatus, // ✅ this line
+  vendor: vendor || '',
+  applicator: applicator || '',
+  ...
+(() => {
   const crop = field.crop || field.crops?.[cropYear]?.crop || '';
   if (crop.includes('Rice')) {
     return { riceLeveeAcres: field.riceLeveeAcres ?? null };
@@ -466,7 +488,7 @@ console.log('📦 Saving master job:', masterJob);
   ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
  // 👈 here
 
-      jobDate: jobDate || new Date().toISOString().split('T')[0],
+jobDate,
       notes,
 
       products: cleanedProducts,
@@ -474,8 +496,18 @@ console.log('📦 Saving master job:', masterJob);
       waterVolume: requiresWater ? waterVolume : '',
       timestamp: serverTimestamp()
     };
-console.log('💾 jobEntry:', jobEntry);
-    return setDoc(doc(db, 'jobsByField', `${jobId}_${field.id}`), jobEntry);
+
+
+
+
+const existingFieldJob = await getDoc(fieldJobRef);
+
+if (existingFieldJob.exists() && existingFieldJob.data()?.isDetachedFromGroup) {
+
+  return;
+}
+
+return setDoc(fieldJobRef, jobEntry);
   });
 
   await Promise.all(jobsByFieldPromises);
@@ -507,7 +539,7 @@ const jobObj = {
 
     navigate('/jobs');
 } catch (error) {
-  console.error('🔥 SAVE ERROR:', error);
+  
   alert('Failed to save job.');
 }
 
@@ -719,8 +751,9 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
 
 <div className="mb-6">
 <h3 className="text-lg font-semibold mb-2">
-  Fields ({fields.length}) – {totalJobAcres.toFixed(2)} acres total
+  {totalJobAcres.toFixed(2)}
 </h3>
+
 
 
 
@@ -729,7 +762,8 @@ className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:out
   // rest of your render logic
 
   const isPartial = field.drawnPolygon && field.drawnAcres;
-const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
+const displayAcres = field.acres ?? (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
+
   const crop = field.crop || field.crops?.[cropYear]?.crop || '—';
 
   let parsedGeo = field.boundary?.geojson;
@@ -762,7 +796,18 @@ const displayAcres = (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
 >
 
 
-{renderBoundarySVG(parsedGeo, field.drawnPolygon)}
+{(() => {
+  let overlay = field.drawnPolygon;
+  if (typeof overlay === 'string') {
+    try {
+      overlay = JSON.parse(overlay);
+    } catch {
+      overlay = null;
+    }
+  }
+  return renderBoundarySVG(parsedGeo, overlay);
+})()}
+
 
 
 
