@@ -4,7 +4,7 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { format, subDays } from 'date-fns';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { CloudRain } from 'lucide-react';
 import { getDisplayCrop } from '@/lib/utils'; // if you already use this
