@@ -202,13 +202,45 @@ const handleSave = async () => {
   }
 console.log('🌾 Saving polygon:', JSON.stringify(drawnPolygon, null, 2));
 
+if (location.pathname.includes('/jobs/field/')) {
+  // Editing a field-level job directly → go back to field job
+const realJobId = field.jobId || (location.state?.linkedToJobId ? `${location.state.linkedToJobId}_${field.id}` : null);
+
+if (!realJobId) {
+  console.error('❌ Could not figure out real jobId. Field or linked job missing.');
+  return;
+}
+
+navigate(`/jobs/field/${realJobId}`, { replace: true });
+
+} else if (linkedToJobId) {
+  // Editing grouped job → go back to job summary
   navigate('/jobs/summary', {
     state: {
       ...previousState,
-      selectedFields,
-      updatedField,
-    },
+      updatedField: {
+        id: field.id,
+        fieldId: field.fieldId || field.id,
+        jobId: field.jobId || `${linkedToJobId}_${field.id}`,
+        drawnPolygon: drawnPolygon,
+        drawnAcres: parseFloat(drawnAcres)
+      }
+    }
   });
+} else {
+  // New job creation → go back to job summary
+  navigate('/jobs/summary', {
+    state: {
+      ...previousState,
+      selectedFields: selectedFields
+    }
+  });
+}
+
+
+
+
+
 };
 
 return (

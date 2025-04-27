@@ -1,0 +1,689 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red89\green138\blue67;\red24\green24\blue24;\red193\green193\blue193;
+\red183\green111\blue179;\red140\green211\blue254;\red194\green126\blue101;\red70\green137\blue204;\red212\green214\blue154;
+\red202\green202\blue202;\red66\green179\blue255;\red67\green192\blue160;\red167\green197\blue152;\red109\green109\blue109;
+}
+{\*\expandedcolortbl;;\cssrgb\c41569\c60000\c33333;\cssrgb\c12157\c12157\c12157;\cssrgb\c80000\c80000\c80000;
+\cssrgb\c77255\c52549\c75294;\cssrgb\c61176\c86275\c99608;\cssrgb\c80784\c56863\c47059;\cssrgb\c33725\c61176\c83922;\cssrgb\c86275\c86275\c66667;
+\cssrgb\c83137\c83137\c83137;\cssrgb\c30980\c75686\c100000;\cssrgb\c30588\c78824\c69020;\cssrgb\c70980\c80784\c65882;\cssrgb\c50196\c50196\c50196;
+}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 // \uc0\u55357 \u56633  Imports\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 React\cf4 \strokec4 , \{ \cf6 \strokec6 useEffect\cf4 \strokec4 , \cf6 \strokec6 useState\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'react'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 useLocation\cf4 \strokec4 , \cf6 \strokec6 useNavigate\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'react-router-dom'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 db\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../firebase'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf6 \strokec6 collection\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 getDocs\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 doc\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 getDoc\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 query\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 where\cf4 \strokec4 ,\cb1 \
+\cb3 \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'firebase/firestore'\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 saveJob\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../utils/saveJob'\cf4 \strokec4 ; \cf2 \strokec2 // NEW!\cf4 \cb1 \strokec4 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 Select\cf4 \strokec4  \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'react-select'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 ProductComboBox\cf4 \strokec4  \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../components/ProductComboBox'\cf4 \strokec4 ;\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 \cb3 \strokec2 // \uc0\u55357 \u56633  Component Setup\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 export\cf4 \strokec4  \cf5 \strokec5 default\cf4 \strokec4  \cf8 \strokec8 function\cf4 \strokec4  \cf9 \strokec9 JobSummaryPage\cf4 \strokec4 () \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf9 \strokec9 navigate\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useNavigate\cf4 \strokec4 ();\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useLocation\cf4 \strokec4 ();\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \{\cb1 \
+\cb3     \cf6 \strokec6 jobType\cf4 \strokec4 : \cf11 \strokec11 initialJobType\cf4 \strokec4 ,\cb1 \
+\cb3     \cf11 \strokec11 cropYear\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf8 \strokec8 new\cf4 \strokec4  \cf12 \strokec12 Date\cf4 \strokec4 ().\cf9 \strokec9 getFullYear\cf4 \strokec4 (),\cb1 \
+\cb3     \cf11 \strokec11 selectedFields\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  []\cb1 \
+\cb3   \} \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \{\};\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 jobType\cf4 \strokec4 , \cf9 \strokec9 setJobType\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (() \cf8 \strokec8 =>\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 isEditing\cf4 \strokec4  \cf10 \strokec10 ?\cf4 \strokec4  \cf11 \strokec11 initialJobType\cf4 \strokec4  \cf10 \strokec10 :\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 fields\cf4 \strokec4 , \cf9 \strokec9 setFields\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 jobDate\cf4 \strokec4 , \cf9 \strokec9 setJobDate\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 jobStatus\cf4 \strokec4 , \cf9 \strokec9 setJobStatus\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf7 \strokec7 'Planned'\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 saving\cf4 \strokec4 , \cf9 \strokec9 setSaving\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 shouldGeneratePDF\cf4 \strokec4 , \cf9 \strokec9 setShouldGeneratePDF\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 vendor\cf4 \strokec4 , \cf9 \strokec9 setVendor\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 vendor\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 applicator\cf4 \strokec4 , \cf9 \strokec9 setApplicator\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 applicator\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 vendors\cf4 \strokec4 , \cf9 \strokec9 setVendors\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 applicators\cf4 \strokec4 , \cf9 \strokec9 setApplicators\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 editableProducts\cf4 \strokec4 , \cf9 \strokec9 setEditableProducts\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 products\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  []);\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 productsList\cf4 \strokec4 , \cf9 \strokec9 setProductsList\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 jobTypesList\cf4 \strokec4 , \cf9 \strokec9 setJobTypesList\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 waterVolume\cf4 \strokec4 , \cf9 \strokec9 setWaterVolume\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 isEditing\cf4 \strokec4 , \cf9 \strokec9 setIsEditing\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 isEditing\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 jobId\cf4 \strokec4 , \cf9 \strokec9 setJobId\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 jobId\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf9 \strokec9 doc\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'jobs'\cf4 \strokec4 )).\cf6 \strokec6 id\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 notes\cf4 \strokec4 , \cf9 \strokec9 setNotes\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 notes\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 passes\cf4 \strokec4 , \cf9 \strokec9 setPasses\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 useState\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 passes\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf13 \strokec13 1\cf4 \strokec4 );\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 baseButton\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf7 \strokec7 "inline-flex items-center px-4 py-2 rounded shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1"\cf4 \strokec4 ;\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 primaryBtn\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 baseButton\cf8 \strokec8 \}\cf7 \strokec7  bg-green-600 text-white hover:bg-green-700`\cf4 \strokec4 ;\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 blueLinkBtn\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf7 \strokec7 "text-blue-600 hover:text-blue-800 underline text-sm"\cf4 \strokec4 ;\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 redLinkBtn\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf7 \strokec7 "text-red-600 hover:text-red-800 underline text-sm"\cf4 \strokec4 ;  \cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 isLeveeJob\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4 ?.\cf9 \strokec9 toLowerCase\cf4 \strokec4 ().\cf9 \strokec9 includes\cf4 \strokec4 (\cf7 \strokec7 'levee'\cf4 \strokec4 ) \cf10 \strokec10 ||\cf4 \strokec4  \cf11 \strokec11 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4 ?.\cf9 \strokec9 toLowerCase\cf4 \strokec4 ().\cf9 \strokec9 includes\cf4 \strokec4 (\cf7 \strokec7 'pack'\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 totalJobAcres\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 fields\cf4 \strokec4 .\cf9 \strokec9 reduce\cf4 \strokec4 ((\cf6 \strokec6 sum\cf4 \strokec4 , \cf6 \strokec6 f\cf4 \strokec4 ) \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 crop\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 crop\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 crops\cf4 \strokec4 ?.[\cf11 \strokec11 cropYear\cf4 \strokec4 ]?.\cf6 \strokec6 crop\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 isLeveeJob\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 crop\cf4 \strokec4  \cf10 \strokec10 ===\cf4 \strokec4  \cf7 \strokec7 'Rice'\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4  \cf6 \strokec6 sum\cf4 \strokec4  \cf10 \strokec10 +\cf4 \strokec4  (\cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 riceLeveeAcres\cf4 \strokec4 ) \cf10 \strokec10 ||\cf4 \strokec4  \cf13 \strokec13 0\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 crop\cf4 \strokec4  \cf10 \strokec10 ===\cf4 \strokec4  \cf7 \strokec7 'Soybeans'\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4  \cf6 \strokec6 sum\cf4 \strokec4  \cf10 \strokec10 +\cf4 \strokec4  (\cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 beanLeveeAcres\cf4 \strokec4 ) \cf10 \strokec10 ||\cf4 \strokec4  \cf13 \strokec13 0\cf4 \strokec4 );\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf5 \strokec5 return\cf4 \strokec4  \cf6 \strokec6 sum\cf4 \strokec4  \cf10 \strokec10 +\cf4 \strokec4  (\cb1 \
+\cb3       \cf10 \strokec10 !\cf9 \strokec9 isNaN\cf4 \strokec4 (\cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 acres\cf4 \strokec4 )) \cf10 \strokec10 ?\cf4 \strokec4  \cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 acres\cf4 \strokec4 )\cb1 \
+\cb3       \cf10 \strokec10 :\cf4 \strokec4  \cf10 \strokec10 !\cf9 \strokec9 isNaN\cf4 \strokec4 (\cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4 )) \cf10 \strokec10 ?\cf4 \strokec4  \cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4 )\cb1 \
+\cb3       \cf10 \strokec10 :\cf4 \strokec4  \cf10 \strokec10 !\cf9 \strokec9 isNaN\cf4 \strokec4 (\cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 gpsAcres\cf4 \strokec4 )) \cf10 \strokec10 ?\cf4 \strokec4  \cf9 \strokec9 parseFloat\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 gpsAcres\cf4 \strokec4 )\cb1 \
+\cb3       \cf10 \strokec10 :\cf4 \strokec4  \cf13 \strokec13 0\cf4 \cb1 \strokec4 \
+\cb3     );\cb1 \
+\cb3   \}, \cf13 \strokec13 0\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 requiresProducts\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  [\cf7 \strokec7 'Seeding'\cf4 \strokec4 , \cf7 \strokec7 'Spraying'\cf4 \strokec4 , \cf7 \strokec7 'Fertilizing'\cf4 \strokec4 ].\cf9 \strokec9 includes\cf4 \strokec4 (\cb1 \
+\cb3     \cf11 \strokec11 jobType\cf4 \strokec4 ?.\cf6 \strokec6 parentName\cf4 \cb1 \strokec4 \
+\cb3   );\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 selectedProductType\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 jobType\cf4 \strokec4 ?.\cf6 \strokec6 productType\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 requiresWater\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 jobType\cf4 \strokec4 ?.\cf6 \strokec6 parentName\cf4 \strokec4  \cf10 \strokec10 ===\cf4 \strokec4  \cf7 \strokec7 'Spraying'\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf9 \strokec9 useEffect\cf4 \strokec4 (() \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 !\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 isEditing\cf4 \strokec4  \cf10 \strokec10 &&\cf4 \strokec4  \cf10 \strokec10 !\cf11 \strokec11 jobDate\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 today\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf8 \strokec8 new\cf4 \strokec4  \cf12 \strokec12 Date\cf4 \strokec4 ().\cf9 \strokec9 toISOString\cf4 \strokec4 ().\cf9 \strokec9 split\cf4 \strokec4 (\cf7 \strokec7 'T'\cf4 \strokec4 )[\cf13 \strokec13 0\cf4 \strokec4 ];\cb1 \
+\cb3       \cf9 \strokec9 setJobDate\cf4 \strokec4 (\cf11 \strokec11 today\cf4 \strokec4 );\cb1 \
+\cb3     \}\cb1 \
+\cb3   \}, [\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 , \cf11 \strokec11 jobDate\cf4 \strokec4 ]);\cb1 \
+\
+\cb3     \cf9 \strokec9 useEffect\cf4 \strokec4 (() \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf9 \strokec9 loadData\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf8 \strokec8 async\cf4 \strokec4  () \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  [\cf11 \strokec11 vendorSnap\cf4 \strokec4 , \cf11 \strokec11 applicatorSnap\cf4 \strokec4 , \cf11 \strokec11 productSnap\cf4 \strokec4 , \cf11 \strokec11 jobTypeSnap\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf12 \strokec12 Promise\cf4 \strokec4 .\cf9 \strokec9 all\cf4 \strokec4 ([\cb1 \
+\cb3         \cf9 \strokec9 getDocs\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'vendors'\cf4 \strokec4 )),\cb1 \
+\cb3         \cf9 \strokec9 getDocs\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'applicators'\cf4 \strokec4 )),\cb1 \
+\cb3         \cf9 \strokec9 getDocs\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'products'\cf4 \strokec4 )),\cb1 \
+\cb3         \cf9 \strokec9 getDocs\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'jobTypes'\cf4 \strokec4 ))\cb1 \
+\cb3       ]);\cb1 \
+\
+\cb3       \cf9 \strokec9 setVendors\cf4 \strokec4 (\cf11 \strokec11 vendorSnap\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 doc\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 ().\cf6 \strokec6 name\cf4 \strokec4 ));\cb1 \
+\cb3       \cf9 \strokec9 setApplicators\cf4 \strokec4 (\cf11 \strokec11 applicatorSnap\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 doc\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 ().\cf6 \strokec6 name\cf4 \strokec4 ));\cb1 \
+\cb3       \cf9 \strokec9 setProductsList\cf4 \strokec4 (\cf11 \strokec11 productSnap\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 doc\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  (\{ \cf6 \strokec6 id:\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 , \cf10 \strokec10 ...\cf6 \strokec6 doc\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 () \})));\cb1 \
+\
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 rawTypes\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 jobTypeSnap\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 doc\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  (\{ \cf6 \strokec6 id:\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 , \cf10 \strokec10 ...\cf6 \strokec6 doc\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 () \}));\cb1 \
+\
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 flattenedTypes\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 rawTypes\cf4 \strokec4 .\cf9 \strokec9 flatMap\cf4 \strokec4 (\cf6 \strokec6 type\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \cb1 \strokec4 \
+\cb3         (\cf6 \strokec6 type\cf4 \strokec4 .\cf6 \strokec6 subTypes\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  []).\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 sub\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  (\{\cb1 \
+\cb3           \cf10 \strokec10 ...\cf6 \strokec6 sub\cf4 \strokec4 ,\cb1 \
+\cb3           \cf6 \strokec6 parentName:\cf4 \strokec4  \cf6 \strokec6 type\cf4 \strokec4 .\cf6 \strokec6 name\cf4 \cb1 \strokec4 \
+\cb3         \}))\cb1 \
+\cb3       );\cb1 \
+\
+\cb3       \cf9 \strokec9 setJobTypesList\cf4 \strokec4 (\cf11 \strokec11 flattenedTypes\cf4 \strokec4 );\cb1 \
+\
+\cb3       \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 initialJobType\cf4 \strokec4 ) \{\cb1 \
+\cb3         \cf9 \strokec9 setJobType\cf4 \strokec4 (\cf11 \strokec11 initialJobType\cf4 \strokec4 );\cb1 \
+\cb3       \}\cb1 \
+\cb3     \};\cb1 \
+\
+\cb3     \cf9 \strokec9 loadData\cf4 \strokec4 ();\cb1 \
+\cb3   \}, []);\cb1 \
+\
+\cb3     \cf9 \strokec9 useEffect\cf4 \strokec4 (() \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf9 \strokec9 loadJob\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf8 \strokec8 async\cf4 \strokec4  () \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 jobId\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 jobId\cf4 \strokec4 ;\cb1 \
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 editing\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 isEditing\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 !\cf11 \strokec11 editing\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf10 \strokec10 !\cf11 \strokec11 jobId\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf9 \strokec9 setIsEditing\cf4 \strokec4 (\cf8 \strokec8 true\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 jobDoc\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 getDoc\cf4 \strokec4 (\cf9 \strokec9 doc\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'jobs'\cf4 \strokec4 , \cf11 \strokec11 jobId\cf4 \strokec4 ));\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 !\cf11 \strokec11 jobDoc\cf4 \strokec4 .\cf9 \strokec9 exists\cf4 \strokec4 ()) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 jobData\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 jobDoc\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 ();\cb1 \
+\cb3     \cf9 \strokec9 setJobType\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setJobDate\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 jobDate\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setVendor\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 vendor\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setApplicator\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 applicator\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setJobStatus\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 status\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 'Planned'\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setEditableProducts\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 products\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  []);\cb1 \
+\cb3     \cf9 \strokec9 setWaterVolume\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 waterVolume\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setJobId\cf4 \strokec4 (\cf11 \strokec11 jobId\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 setNotes\cf4 \strokec4 (\cf11 \strokec11 jobData\cf4 \strokec4 .\cf6 \strokec6 notes\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf2 \strokec2 // \uc0\u9989  Patch this in\cf4 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 !\cf11 \strokec11 fields\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4  \cf10 \strokec10 &&\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 selectedFields\cf4 \strokec4 ?.\cf6 \strokec6 length\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 setFields\cf4 \strokec4 (\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 .\cf6 \strokec6 selectedFields\cf4 \strokec4 );\cb1 \
+\cb3     \}\cb1 \
+\cb3   \};\cb1 \
+\
+\cb3   \cf9 \strokec9 loadJob\cf4 \strokec4 ();\cb1 \
+\cb3 \}, [\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ]);\cb1 \
+\
+\
+\cb3     \cf9 \strokec9 useEffect\cf4 \strokec4 (() \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 selected\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 selectedFields\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  [];\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 fields\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf10 \strokec10 !\cf11 \strokec11 selected\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf9 \strokec9 loadBoundaries\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf8 \strokec8 async\cf4 \strokec4  () \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 enriched\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf12 \strokec12 Promise\cf4 \strokec4 .\cf9 \strokec9 all\cf4 \strokec4 (\cb1 \
+\cb3         \cf11 \strokec11 selected\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf8 \strokec8 async\cf4 \strokec4  (\cf6 \strokec6 f\cf4 \strokec4 ) \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3           \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 ref\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf9 \strokec9 doc\cf4 \strokec4 (\cf11 \strokec11 db\cf4 \strokec4 , \cf7 \strokec7 'fields'\cf4 \strokec4 , \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 );\cb1 \
+\cb3           \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 snap\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 getDoc\cf4 \strokec4 (\cf11 \strokec11 ref\cf4 \strokec4 );\cb1 \
+\cb3           \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 !\cf11 \strokec11 snap\cf4 \strokec4 .\cf9 \strokec9 exists\cf4 \strokec4 ()) \cf5 \strokec5 return\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 ;\cb1 \
+\
+\cb3           \cf8 \strokec8 let\cf4 \strokec4  \cf6 \strokec6 geo\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 snap\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 ()?.\cf6 \strokec6 boundary\cf4 \strokec4 ?.\cf6 \strokec6 geojson\cf4 \strokec4 ;\cb1 \
+\cb3           \cf5 \strokec5 if\cf4 \strokec4  (\cf8 \strokec8 typeof\cf4 \strokec4  \cf6 \strokec6 geo\cf4 \strokec4  \cf10 \strokec10 ===\cf4 \strokec4  \cf7 \strokec7 'string'\cf4 \strokec4 ) \{\cb1 \
+\cb3             \cf5 \strokec5 try\cf4 \strokec4  \{\cb1 \
+\cb3               \cf6 \strokec6 geo\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf6 \strokec6 JSON\cf4 \strokec4 .\cf9 \strokec9 parse\cf4 \strokec4 (\cf6 \strokec6 geo\cf4 \strokec4 );\cb1 \
+\cb3             \} \cf5 \strokec5 catch\cf4 \strokec4  \{\cb1 \
+\cb3               \cf6 \strokec6 geo\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ;\cb1 \
+\cb3             \}\cb1 \
+\cb3           \}\cb1 \
+\
+\cb3           \cf5 \strokec5 return\cf4 \strokec4  \{\cb1 \
+\cb3             \cf10 \strokec10 ...\cf6 \strokec6 f\cf4 \strokec4 ,\cb1 \
+\cb3             \cf6 \strokec6 boundary:\cf4 \strokec4  \{ \cf6 \strokec6 geojson:\cf4 \strokec4  \cf6 \strokec6 geo\cf4 \strokec4  \}\cb1 \
+\cb3           \};\cb1 \
+\cb3         \})\cb1 \
+\cb3       );\cb1 \
+\
+\cb3       \cf9 \strokec9 setFields\cf4 \strokec4 (\cf11 \strokec11 enriched\cf4 \strokec4 );\cb1 \
+\cb3     \};\cb1 \
+\
+\cb3     \cf9 \strokec9 loadBoundaries\cf4 \strokec4 ();\cb1 \
+\cb3   \}, []);\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf9 \strokec9 handleProductChange\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  (\cf6 \strokec6 index\cf4 \strokec4 , \cf6 \strokec6 field\cf4 \strokec4 , \cf6 \strokec6 value\cf4 \strokec4 ) \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  [\cf10 \strokec10 ...\cf11 \strokec11 editableProducts\cf4 \strokec4 ];\cb1 \
+\cb3     \cf11 \strokec11 updated\cf4 \strokec4 [\cf6 \strokec6 index\cf4 \strokec4 ][\cf6 \strokec6 field\cf4 \strokec4 ] \cf10 \strokec10 =\cf4 \strokec4  \cf6 \strokec6 value\cf4 \strokec4 ;\cb1 \
+\cb3     \cf9 \strokec9 setEditableProducts\cf4 \strokec4 (\cf11 \strokec11 updated\cf4 \strokec4 );\cb1 \
+\cb3   \};\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf9 \strokec9 handleAddProduct\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  () \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf9 \strokec9 setEditableProducts\cf4 \strokec4 (\cf6 \strokec6 prev\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  [\cf10 \strokec10 ...\cf6 \strokec6 prev\cf4 \strokec4 , \{ \cf6 \strokec6 productId:\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 , \cf6 \strokec6 productName:\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 , \cf6 \strokec6 rate:\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 , \cf6 \strokec6 unit:\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4  \}]);\cb1 \
+\cb3   \};\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf2 \cb3 \strokec2 // \uc0\u55357 \u56633  Patch polygon updates from Edit Area\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf9 \cb3 \strokec9 useEffect\cf4 \strokec4 (() \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4  \cf10 \strokec10 =\cf4 \strokec4  \cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ?.\cf6 \strokec6 updatedField\cf4 \strokec4 ;\cb1 \
+\
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 updated\cf4 \strokec4 ?.\cf6 \strokec6 id\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 ?.\cf6 \strokec6 fieldId\cf4 \strokec4 ) \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf9 \cb3 \strokec9 setFields\cf4 \strokec4 (\cf6 \strokec6 prev\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf6 \strokec6 prev\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \cb1 \strokec4 \
+\cb3     (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf10 \strokec10 ===\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4  \cf10 \strokec10 ===\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4 )\cb1 \
+\cb3       \cf10 \strokec10 ?\cf4 \strokec4  \{\cb1 \
+\cb3           \cf10 \strokec10 ...\cf6 \strokec6 f\cf4 \strokec4 ,\cb1 \
+\cb3           \cf6 \strokec6 drawnPolygon:\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 drawnPolygon\cf4 \strokec4 ,\cb1 \
+\cb3           \cf6 \strokec6 drawnAcres:\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4 ,\cb1 \
+\cb3           \cf6 \strokec6 acres:\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4  \cf10 \strokec10 ??\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 acres\cf4 \strokec4 ,\cb1 \
+\cb3           \cf6 \strokec6 boundary:\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 boundary\cf4 \strokec4 ,          \cf2 \strokec2 // \uc0\u9989  keep existing boundary\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 jobId:\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 jobId\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 jobId\cf4 \strokec4 ,\cb1 \
+\cb3           \cf6 \strokec6 fieldId:\cf4 \strokec4  \cf11 \strokec11 updated\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4  \cf10 \strokec10 ||\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \cb1 \strokec4 \
+\cb3         \}\cb1 \
+\cb3       \cf10 \strokec10 :\cf4 \strokec4  \cf6 \strokec6 f\cf4 \cb1 \strokec4 \
+\cb3   )\cb1 \
+\cb3 );\cb1 \
+\
+\cb3   \}\cb1 \
+\cb3 \}, [\cf11 \strokec11 location\cf4 \strokec4 .\cf6 \strokec6 state\cf4 \strokec4 ]);\cb1 \
+\
+\
+\cb3   \cf2 \strokec2 // \uc0\u55357 \u56633  Early Exit if No Job Types\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 !\cf11 \strokec11 jobTypesList\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ;\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 \cb3 \strokec2 // \uc0\u55357 \u56633  Begin Page Layout\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 return\cf4 \strokec4  (\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "p-6"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Job Type Selector */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "mb-4"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Job Type\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf8 \strokec8 \{\cf11 \strokec11 jobTypesList\cf10 \strokec10 .\cf6 \strokec6 length\cf10 \strokec10  > \cf13 \strokec13 0\cf10 \strokec10  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 select\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 jobType\cf10 \strokec10 ?.\cf6 \strokec6 name\cf10 \strokec10  || \cf7 \strokec7 ''\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 selected\cf10 \strokec10  = \cf11 \strokec11 jobTypesList\cf10 \strokec10 .\cf9 \strokec9 find\cf10 \strokec10 (\cf6 \strokec6 t\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf6 \strokec6 t\cf10 \strokec10 .\cf6 \strokec6 name\cf10 \strokec10  === \cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 setJobType\cf10 \strokec10 (\cf11 \strokec11 selected\cf10 \strokec10  || \cf7 \strokec7 ''\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \}\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf10 \strokec10  \cf6 \strokec6 value\cf10 \strokec10 =\cf7 \strokec7 ""\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10 Select Job Type\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf8 \strokec8 \{\cf11 \strokec11 jobTypesList\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 (\cf6 \strokec6 type\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 type\cf10 \strokec10 .\cf6 \strokec6 name\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 type\cf10 \strokec10 .\cf6 \strokec6 name\cf8 \strokec8 \}\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf8 \strokec8 \{\cf6 \strokec6 type\cf10 \strokec10 .\cf6 \strokec6 name\cf8 \strokec8 \}\cf10 \strokec10  \cf8 \strokec8 \{\cf6 \strokec6 type\cf10 \strokec10 .\cf6 \strokec6 parentName\cf10 \strokec10  ? \cf7 \strokec7 `(\cf8 \strokec8 $\{\cf6 \strokec6 type\cf10 \strokec10 .\cf6 \strokec6 parentName\cf8 \strokec8 \}\cf7 \strokec7 )`\cf10 \strokec10  : \cf7 \strokec7 ''\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 select\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Date, Vendor, Applicator, Status */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "grid grid-cols-2 gap-4 mb-4"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Job Date\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 input\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 type\cf10 \strokec10 =\cf7 \strokec7 "date"\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 jobDate\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setJobDate\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Vendor\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 select\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 vendor\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setVendor\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf4 \strokec4  \cf6 \strokec6 value\cf10 \strokec10 =\cf7 \strokec7 ""\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Select Vendor\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3           \cf8 \strokec8 \{\cf11 \strokec11 vendors\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 (\cf6 \strokec6 v\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 v\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 v\cf8 \strokec8 \}\cf14 \cb3 \strokec14 >\cf8 \cb3 \strokec8 \{\cf6 \strokec6 v\cf8 \strokec8 \}\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3         \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 select\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Applicator\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 select\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 applicator\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setApplicator\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf4 \strokec4  \cf6 \strokec6 value\cf10 \strokec10 =\cf7 \strokec7 ""\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Select Applicator\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3           \cf8 \strokec8 \{\cf11 \strokec11 applicators\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 (\cf6 \strokec6 a\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 a\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 a\cf8 \strokec8 \}\cf14 \cb3 \strokec14 >\cf8 \cb3 \strokec8 \{\cf6 \strokec6 a\cf8 \strokec8 \}\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3         \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 select\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Job Status\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 select\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 jobStatus\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setJobStatus\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf4 \strokec4  \cf6 \strokec6 value\cf10 \strokec10 =\cf7 \strokec7 "Planned"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Planned\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf4 \strokec4  \cf6 \strokec6 value\cf10 \strokec10 =\cf7 \strokec7 "Completed"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Completed\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 select\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Products Section */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf8 \strokec8 \{\cf6 \strokec6 requiresProducts\cf10 \strokec10  && \cf6 \strokec6 editableProducts\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 ((\cf6 \strokec6 p\cf10 \strokec10 , \cf6 \strokec6 i\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 i\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3 items-center"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf12 \cb3 \strokec12 ProductComboBox\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 productType\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 selectedProductType\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 allProducts\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 productsList\cf10 \strokec10 .\cf9 \strokec9 filter\cf10 \strokec10 (\cf6 \strokec6 p\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 parent\cf10 \strokec10  = \cf6 \strokec6 jobType\cf10 \strokec10 ?.\cf6 \strokec6 parentName\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf5 \strokec5 if\cf10 \strokec10  (\cf6 \strokec6 parent\cf10 \strokec10  === \cf7 \strokec7 'Seeding'\cf10 \strokec10 ) \cf5 \strokec5 return\cf10 \strokec10  \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 type\cf10 \strokec10  === \cf7 \strokec7 'Seed'\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf5 \strokec5 if\cf10 \strokec10  (\cf6 \strokec6 parent\cf10 \strokec10  === \cf7 \strokec7 'Spraying'\cf10 \strokec10 ) \cf5 \strokec5 return\cf10 \strokec10  \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 type\cf10 \strokec10  === \cf7 \strokec7 'Chemical'\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf5 \strokec5 if\cf10 \strokec10  (\cf6 \strokec6 parent\cf10 \strokec10  === \cf7 \strokec7 'Fertilizer'\cf10 \strokec10 ) \cf5 \strokec5 return\cf10 \strokec10  \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 type\cf10 \strokec10  === \cf7 \strokec7 'Fertilizer'\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf5 \strokec5 return\cf10 \strokec10  \cf8 \strokec8 true\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \})\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 usedProductIds\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 []\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 \{ \cf6 \strokec6 id:\cf10 \strokec10  \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 productId\cf10 \strokec10 , \cf6 \strokec6 name:\cf10 \strokec10  \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 productName\cf10 \strokec10  \}\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 (\cf6 \strokec6 selected\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'productId'\cf10 \strokec10 , \cf6 \strokec6 selected\cf10 \strokec10 .\cf6 \strokec6 id\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'productName'\cf10 \strokec10 , \cf6 \strokec6 selected\cf10 \strokec10 .\cf6 \strokec6 name\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'crop'\cf10 \strokec10 , \cf6 \strokec6 selected\cf10 \strokec10 .\cf6 \strokec6 crop\cf10 \strokec10  || \cf7 \strokec7 ''\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 rateType\cf10 \strokec10  = \cf6 \strokec6 selected\cf10 \strokec10 ?.\cf6 \strokec6 rateType\cf10 \strokec10 ?.\cf9 \strokec9 toLowerCase\cf10 \strokec10 ();\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 cleanUnit\cf10 \strokec10  =\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf6 \strokec6 rateType\cf10 \strokec10  === \cf7 \strokec7 'weight'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 ? \cf7 \strokec7 'lbs/acre'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 : \cf6 \strokec6 rateType\cf10 \strokec10  === \cf7 \strokec7 'population'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 ? \cf7 \strokec7 'seeds/acre'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 : \cf6 \strokec6 selected\cf10 \strokec10 .\cf6 \strokec6 unit\cf10 \strokec10  || \cf7 \strokec7 ''\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'unit'\cf10 \strokec10 , \cf11 \strokec11 cleanUnit\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'rateType'\cf10 \strokec10 , \cf6 \strokec6 selected\cf10 \strokec10 .\cf6 \strokec6 rateType\cf10 \strokec10  || \cf7 \strokec7 ''\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \}\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 input\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 type\cf10 \strokec10 =\cf7 \strokec7 "number"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 placeholder\cf10 \strokec10 =\cf7 \strokec7 "Rate"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 rate\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'rate'\cf10 \strokec10 , \cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 select\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border p-2 rounded w-full"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 unit\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 handleProductChange\cf10 \strokec10 (\cf6 \strokec6 i\cf10 \strokec10 , \cf7 \strokec7 'unit'\cf10 \strokec10 , \cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf10 \strokec10  \cf6 \strokec6 value\cf10 \strokec10 =\cf7 \strokec7 ""\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10 Select Unit\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf8 \strokec8 \{\cf10 \strokec10 [\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf7 \strokec7 'fl oz/acre'\cf10 \strokec10 , \cf7 \strokec7 'pt/acre'\cf10 \strokec10 , \cf7 \strokec7 'qt/acre'\cf10 \strokec10 , \cf7 \strokec7 'gal/acre'\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf7 \strokec7 'lbs/acre'\cf10 \strokec10 , \cf7 \strokec7 'oz dry/acre'\cf10 \strokec10 , \cf7 \strokec7 'tons/acre'\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf7 \strokec7 'seeds/acre'\cf10 \strokec10 , \cf7 \strokec7 'units/acre'\cf10 \strokec10 , \cf7 \strokec7 '%v/v'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           ].\cf9 \strokec9 map\cf10 \strokec10 (\cf6 \strokec6 unit\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 option\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 unit\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 unit\cf8 \strokec8 \}\cf14 \cb3 \strokec14 >\cf8 \cb3 \strokec8 \{\cf6 \strokec6 unit\cf8 \strokec8 \}\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 option\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 select\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 button\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 className\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 redLinkBtn\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onClick\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 () \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setEditableProducts\cf10 \strokec10 (\cf6 \strokec6 prev\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf6 \strokec6 prev\cf10 \strokec10 .\cf9 \strokec9 filter\cf10 \strokec10 ((\cf6 \strokec6 _\cf10 \strokec10 , \cf6 \strokec6 idx\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \cf6 \strokec6 idx\cf10 \strokec10  !== \cf6 \strokec6 i\cf10 \strokec10 ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \uc0\u55357 \u56785 \u65039  Remove\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 button\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf8 \strokec8 \{\cf11 \strokec11 requiresProducts\cf10 \strokec10  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 button\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf6 \strokec6 onClick\cf10 \strokec10 =\cf8 \strokec8 \{\cf9 \strokec9 handleAddProduct\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition mb-4"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         + Add Product\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 button\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Number of Passes (Tillage Only) */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf8 \strokec8 \{\cf11 \strokec11 jobType\cf10 \strokec10 ?.\cf6 \strokec6 parentName\cf10 \strokec10  === \cf7 \strokec7 'Tillage'\cf10 \strokec10  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "mb-4"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10 Number of Passes\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 input\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 type\cf10 \strokec10 =\cf7 \strokec7 "number"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 min\cf10 \strokec10 =\cf8 \strokec8 \{\cf13 \strokec13 1\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 passes\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setPasses\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-md px-3 py-2 w-32 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Water Volume (Spraying Only) */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf8 \strokec8 \{\cf11 \strokec11 jobType\cf10 \strokec10 ?.\cf6 \strokec6 parentName\cf10 \strokec10  === \cf7 \strokec7 'Spraying'\cf10 \strokec10  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "mb-4"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium"\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10 Water Volume (gal/acre)\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 input\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 type\cf10 \strokec10 =\cf7 \strokec7 "number"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border rounded p-2 w-48"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 waterVolume\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setWaterVolume\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Fields List Section */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "mb-6"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 h3\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "text-lg font-semibold mb-2"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf8 \strokec8 \{\cf11 \strokec11 totalJobAcres\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \strokec4  acres total\cb1 \
+\cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 h3\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3       \cf8 \strokec8 \{\cf11 \strokec11 fields\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 ((\cf6 \strokec6 field\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10         \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 isPartial\cf10 \strokec10  = \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 drawnPolygon\cf10 \strokec10  && \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 drawnAcres\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 displayAcres\cf10 \strokec10  = \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 acres\cf10 \strokec10  ?? (\cf11 \strokec11 isPartial\cf10 \strokec10  ? \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 drawnAcres\cf10 \strokec10  : \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 gpsAcres\cf10 \strokec10 ) ?? \cf13 \strokec13 0\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 crop\cf10 \strokec10  = \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 crop\cf10 \strokec10  || \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 crops\cf10 \strokec10 ?.[\cf11 \strokec11 cropYear\cf10 \strokec10 ]?.\cf6 \strokec6 crop\cf10 \strokec10  || \cf7 \strokec7 '\'97'\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10         \cf8 \strokec8 let\cf10 \strokec10  \cf6 \strokec6 parsedGeo\cf10 \strokec10  = \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 boundary\cf10 \strokec10 ?.\cf6 \strokec6 geojson\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf5 \strokec5 if\cf10 \strokec10  (\cf8 \strokec8 typeof\cf10 \strokec10  \cf6 \strokec6 parsedGeo\cf10 \strokec10  === \cf7 \strokec7 'string'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf5 \strokec5 try\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 parsedGeo\cf10 \strokec10  = \cf6 \strokec6 JSON\cf10 \strokec10 .\cf9 \strokec9 parse\cf10 \strokec10 (\cf6 \strokec6 parsedGeo\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 catch\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 parsedGeo\cf10 \strokec10  = \cf8 \strokec8 null\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \}\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10         \cf5 \strokec5 return\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 id\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "border border-gray-300 rounded-xl bg-white p-4 shadow-sm mb-6"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 p\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 strong\cf14 \cb3 \strokec14 >\cf8 \cb3 \strokec8 \{\cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 fieldName\cf8 \strokec8 \}\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 strong\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10  \'96\cf8 \strokec8 \{\cf7 \strokec7 ' '\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf8 \strokec8 \{\cf11 \strokec11 isLeveeJob\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 ? \cf7 \strokec7 `\cf8 \strokec8 $\{\cf10 \strokec10 ((\cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 crop\cf10 \strokec10  || \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 crops\cf10 \strokec10 ?.[\cf11 \strokec11 cropYear\cf10 \strokec10 ]?.\cf6 \strokec6 crop\cf10 \strokec10  || \cf7 \strokec7 ''\cf10 \strokec10 ).\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'Rice'\cf10 \strokec10 )\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     ? \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 riceLeveeAcres\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     : \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 beanLeveeAcres\cf10 \strokec10 ) || \cf13 \strokec13 0\cf8 \strokec8 \}\cf7 \strokec7  acres (Levee \'96 \cf8 \strokec8 $\{\cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 crop\cf10 \strokec10  || \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 crops\cf10 \strokec10 ?.[\cf11 \strokec11 cropYear\cf10 \strokec10 ]?.\cf6 \strokec6 crop\cf10 \strokec10  || \cf7 \strokec7 '\'97'\cf8 \strokec8 \}\cf7 \strokec7 )`\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 : \cf7 \strokec7 `\cf8 \strokec8 $\{\cf12 \strokec12 Number\cf10 \strokec10 (\cf11 \strokec11 displayAcres\cf10 \strokec10 ).\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  acres \'96 \cf8 \strokec8 $\{\cf11 \strokec11 isPartial\cf10 \strokec10  ? \cf7 \strokec7 'partial'\cf10 \strokec10  : \cf7 \strokec7 'full'\cf8 \strokec8 \}\cf7 \strokec7 `\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 p\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 p\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10 Crop: \cf8 \strokec8 \{\cf11 \strokec11 crop\cf8 \strokec8 \}\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 p\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf6 \strokec6 id\cf10 \strokec10 =\cf8 \strokec8 \{\cf7 \strokec7 `field-canvas-\cf8 \strokec8 $\{\cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 id\cf8 \strokec8 \}\cf7 \strokec7 `\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "bg-white p-2 rounded border shadow-sm mt-4"\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf6 \strokec6 style\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 \{ \cf6 \strokec6 width:\cf10 \strokec10  \cf7 \strokec7 'fit-content'\cf10 \strokec10 , \cf6 \strokec6 margin:\cf10 \strokec10  \cf7 \strokec7 '0 auto'\cf10 \strokec10  \}\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf8 \strokec8 \{\cf10 \strokec10 (() \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 let\cf10 \strokec10  \cf6 \strokec6 overlay\cf10 \strokec10  = \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 drawnPolygon\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf5 \strokec5 if\cf10 \strokec10  (\cf8 \strokec8 typeof\cf10 \strokec10  \cf6 \strokec6 overlay\cf10 \strokec10  === \cf7 \strokec7 'string'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf5 \strokec5 try\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf6 \strokec6 overlay\cf10 \strokec10  = \cf6 \strokec6 JSON\cf10 \strokec10 .\cf9 \strokec9 parse\cf10 \strokec10 (\cf6 \strokec6 overlay\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \} \cf5 \strokec5 catch\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf6 \strokec6 overlay\cf10 \strokec10  = \cf8 \strokec8 null\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \}\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10                 \cf5 \strokec5 if\cf10 \strokec10  (!\cf6 \strokec6 parsedGeo\cf10 \strokec10 ) \cf5 \strokec5 return\cf10 \strokec10  \cf8 \strokec8 null\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 coords\cf10 \strokec10  = \cf6 \strokec6 parsedGeo\cf10 \strokec10 .\cf6 \strokec6 coordinates\cf10 \strokec10 ?.[\cf13 \strokec13 0\cf10 \strokec10 ] || [];\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 bounds\cf10 \strokec10  = \cf6 \strokec6 coords\cf10 \strokec10 .\cf9 \strokec9 reduce\cf10 \strokec10 ((\cf6 \strokec6 acc\cf10 \strokec10 , [\cf6 \strokec6 lng\cf10 \strokec10 , \cf6 \strokec6 lat\cf10 \strokec10 ]) \cf8 \strokec8 =>\cf10 \strokec10  (\{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 minX:\cf10 \strokec10  \cf6 \strokec6 Math\cf10 \strokec10 .\cf9 \strokec9 min\cf10 \strokec10 (\cf6 \strokec6 acc\cf10 \strokec10 .\cf6 \strokec6 minX\cf10 \strokec10 , \cf6 \strokec6 lng\cf10 \strokec10 ),\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 maxX:\cf10 \strokec10  \cf6 \strokec6 Math\cf10 \strokec10 .\cf9 \strokec9 max\cf10 \strokec10 (\cf6 \strokec6 acc\cf10 \strokec10 .\cf6 \strokec6 maxX\cf10 \strokec10 , \cf6 \strokec6 lng\cf10 \strokec10 ),\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 minY:\cf10 \strokec10  \cf6 \strokec6 Math\cf10 \strokec10 .\cf9 \strokec9 min\cf10 \strokec10 (\cf6 \strokec6 acc\cf10 \strokec10 .\cf6 \strokec6 minY\cf10 \strokec10 , \cf6 \strokec6 lat\cf10 \strokec10 ),\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 maxY:\cf10 \strokec10  \cf6 \strokec6 Math\cf10 \strokec10 .\cf9 \strokec9 max\cf10 \strokec10 (\cf6 \strokec6 acc\cf10 \strokec10 .\cf6 \strokec6 maxY\cf10 \strokec10 , \cf6 \strokec6 lat\cf10 \strokec10 ),\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \}), \{ \cf6 \strokec6 minX:\cf10 \strokec10  \cf8 \strokec8 Infinity\cf10 \strokec10 , \cf6 \strokec6 maxX:\cf10 \strokec10  -\cf8 \strokec8 Infinity\cf10 \strokec10 , \cf6 \strokec6 minY:\cf10 \strokec10  \cf8 \strokec8 Infinity\cf10 \strokec10 , \cf6 \strokec6 maxY:\cf10 \strokec10  -\cf8 \strokec8 Infinity\cf10 \strokec10  \});\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 width\cf10 \strokec10  = \cf6 \strokec6 bounds\cf10 \strokec10 .\cf6 \strokec6 maxX\cf10 \strokec10  - \cf6 \strokec6 bounds\cf10 \strokec10 .\cf6 \strokec6 minX\cf10 \strokec10  || \cf13 \strokec13 1\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 height\cf10 \strokec10  = \cf6 \strokec6 bounds\cf10 \strokec10 .\cf6 \strokec6 maxY\cf10 \strokec10  - \cf6 \strokec6 bounds\cf10 \strokec10 .\cf6 \strokec6 minY\cf10 \strokec10  || \cf13 \strokec13 1\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 boxSize\cf10 \strokec10  = \cf13 \strokec13 300\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 margin\cf10 \strokec10  = \cf13 \strokec13 10\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 scale\cf10 \strokec10  = (\cf6 \strokec6 boxSize\cf10 \strokec10  - \cf6 \strokec6 margin\cf10 \strokec10  * \cf13 \strokec13 2\cf10 \strokec10 ) / \cf6 \strokec6 Math\cf10 \strokec10 .\cf9 \strokec9 max\cf10 \strokec10 (\cf6 \strokec6 width\cf10 \strokec10 , \cf6 \strokec6 height\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 xOffset\cf10 \strokec10  = (\cf6 \strokec6 boxSize\cf10 \strokec10  - \cf6 \strokec6 width\cf10 \strokec10  * \cf6 \strokec6 scale\cf10 \strokec10 ) / \cf13 \strokec13 2\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 yOffset\cf10 \strokec10  = (\cf6 \strokec6 boxSize\cf10 \strokec10  - \cf6 \strokec6 height\cf10 \strokec10  * \cf6 \strokec6 scale\cf10 \strokec10 ) / \cf13 \strokec13 2\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf9 \strokec9 project\cf10 \strokec10  = ([\cf6 \strokec6 lng\cf10 \strokec10 , \cf6 \strokec6 lat\cf10 \strokec10 ]) \cf8 \strokec8 =>\cf10 \strokec10  (\{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 x:\cf10 \strokec10  (\cf6 \strokec6 lng\cf10 \strokec10  - \cf6 \strokec6 bounds\cf10 \strokec10 .\cf6 \strokec6 minX\cf10 \strokec10 ) * \cf6 \strokec6 scale\cf10 \strokec10  + \cf6 \strokec6 xOffset\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 y:\cf10 \strokec10  \cf6 \strokec6 boxSize\cf10 \strokec10  - ((\cf6 \strokec6 lat\cf10 \strokec10  - \cf6 \strokec6 bounds\cf10 \strokec10 .\cf6 \strokec6 minY\cf10 \strokec10 ) * \cf6 \strokec6 scale\cf10 \strokec10  + \cf6 \strokec6 yOffset\cf10 \strokec10 ),\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \});\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 basePath\cf10 \strokec10  = \cf6 \strokec6 coords\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 ((\cf6 \strokec6 pt\cf10 \strokec10 , \cf6 \strokec6 i\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf8 \strokec8 const\cf10 \strokec10  \{ \cf11 \strokec11 x\cf10 \strokec10 , \cf11 \strokec11 y\cf10 \strokec10  \} = \cf9 \strokec9 project\cf10 \strokec10 (\cf6 \strokec6 pt\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf5 \strokec5 return\cf10 \strokec10  \cf7 \strokec7 `\cf8 \strokec8 $\{\cf6 \strokec6 i\cf10 \strokec10  === \cf13 \strokec13 0\cf10 \strokec10  ? \cf7 \strokec7 'M'\cf10 \strokec10  : \cf7 \strokec7 'L'\cf8 \strokec8 \}$\{\cf6 \strokec6 x\cf8 \strokec8 \}\cf7 \strokec7 ,\cf8 \strokec8 $\{\cf6 \strokec6 y\cf8 \strokec8 \}\cf7 \strokec7 `\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \}).\cf9 \strokec9 join\cf10 \strokec10 (\cf7 \strokec7 ' '\cf10 \strokec10 ) + \cf7 \strokec7 ' Z'\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 let\cf10 \strokec10  \cf6 \strokec6 overlayPath\cf10 \strokec10  = \cf8 \strokec8 null\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf5 \strokec5 if\cf10 \strokec10  (\cf6 \strokec6 overlay\cf10 \strokec10 ?.\cf6 \strokec6 geometry\cf10 \strokec10 ?.\cf6 \strokec6 coordinates\cf10 \strokec10 ?.[\cf13 \strokec13 0\cf10 \strokec10 ]) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf6 \strokec6 overlayPath\cf10 \strokec10  = \cf6 \strokec6 overlay\cf10 \strokec10 .\cf6 \strokec6 geometry\cf10 \strokec10 .\cf6 \strokec6 coordinates\cf10 \strokec10 [\cf13 \strokec13 0\cf10 \strokec10 ].\cf9 \strokec9 map\cf10 \strokec10 ((\cf6 \strokec6 pt\cf10 \strokec10 , \cf6 \strokec6 i\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf8 \strokec8 const\cf10 \strokec10  \{ \cf11 \strokec11 x\cf10 \strokec10 , \cf11 \strokec11 y\cf10 \strokec10  \} = \cf9 \strokec9 project\cf10 \strokec10 (\cf6 \strokec6 pt\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf5 \strokec5 return\cf10 \strokec10  \cf7 \strokec7 `\cf8 \strokec8 $\{\cf6 \strokec6 i\cf10 \strokec10  === \cf13 \strokec13 0\cf10 \strokec10  ? \cf7 \strokec7 'M'\cf10 \strokec10  : \cf7 \strokec7 'L'\cf8 \strokec8 \}$\{\cf6 \strokec6 x\cf8 \strokec8 \}\cf7 \strokec7 ,\cf8 \strokec8 $\{\cf6 \strokec6 y\cf8 \strokec8 \}\cf7 \strokec7 `\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \}).\cf9 \strokec9 join\cf10 \strokec10 (\cf7 \strokec7 ' '\cf10 \strokec10 ) + \cf7 \strokec7 ' Z'\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \}\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10                 \cf5 \strokec5 return\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 svg\cf10 \strokec10  \cf6 \strokec6 viewBox\cf10 \strokec10 =\cf8 \strokec8 \{\cf7 \strokec7 `0 0 \cf8 \strokec8 $\{\cf11 \strokec11 boxSize\cf8 \strokec8 \}\cf7 \strokec7  \cf8 \strokec8 $\{\cf11 \strokec11 boxSize\cf8 \strokec8 \}\cf7 \strokec7 `\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "w-64 h-64 bg-white border rounded shadow mx-auto"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 path\cf10 \strokec10  \cf6 \strokec6 d\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 basePath\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 fill\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 overlayPath\cf10 \strokec10  ? \cf7 \strokec7 '#F87171'\cf10 \strokec10  : \cf7 \strokec7 '#34D399'\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 fillOpacity\cf10 \strokec10 =\cf8 \strokec8 \{\cf13 \strokec13 0.4\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 stroke\cf10 \strokec10 =\cf7 \strokec7 "#4B5563"\cf10 \strokec10  \cf6 \strokec6 strokeWidth\cf10 \strokec10 =\cf7 \strokec7 "1.5"\cf10 \strokec10  \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf8 \strokec8 \{\cf6 \strokec6 overlayPath\cf10 \strokec10  && (\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 path\cf10 \strokec10  \cf6 \strokec6 d\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 overlayPath\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 fill\cf10 \strokec10 =\cf7 \strokec7 "#34D399"\cf10 \strokec10  \cf6 \strokec6 fillOpacity\cf10 \strokec10 =\cf8 \strokec8 \{\cf13 \strokec13 0.6\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 stroke\cf10 \strokec10 =\cf7 \strokec7 "#047857"\cf10 \strokec10  \cf6 \strokec6 strokeWidth\cf10 \strokec10 =\cf7 \strokec7 "2"\cf10 \strokec10  \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 svg\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \})()\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "flex justify-between items-center mt-2 no-print"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 button\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf6 \strokec6 className\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 blueLinkBtn\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf6 \strokec6 onClick\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 () \cf8 \strokec8 =>\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \cf9 \strokec9 navigate\cf10 \strokec10 (\cf7 \strokec7 `/jobs/edit-area/\cf8 \strokec8 $\{\cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 id\cf8 \strokec8 \}\cf7 \strokec7 `\cf10 \strokec10 , \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \cf6 \strokec6 state:\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 field\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 selectedFields:\cf10 \strokec10  \cf11 \strokec11 fields\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 drawnPolygon:\cf10 \strokec10  \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 drawnPolygon\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 jobType\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 vendor\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 applicator\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 products:\cf10 \strokec10  \cf11 \strokec11 editableProducts\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                       \cf6 \strokec6 cropYear\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                     \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                   \})\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \uc0\u9999 \u65039  Edit Area\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 button\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 button\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf6 \strokec6 className\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 blueLinkBtn\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \cf6 \strokec6 onClick\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 () \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setFields\cf10 \strokec10 (\cf6 \strokec6 prev\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf6 \strokec6 prev\cf10 \strokec10 .\cf9 \strokec9 filter\cf10 \strokec10 (\cf6 \strokec6 f\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 id\cf10 \strokec10  !== \cf6 \strokec6 field\cf10 \strokec10 .\cf6 \strokec6 id\cf10 \strokec10 ))\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10                 \uc0\u10060  Remove Field\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 button\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \})\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Notes Section */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "mt-6"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "block text-sm font-medium mb-1"\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Notes\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 textarea\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 value\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 notes\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 e\cf10 \strokec10  \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setNotes\cf10 \strokec10 (\cf6 \strokec6 e\cf10 \strokec10 .\cf6 \strokec6 target\cf10 \strokec10 .\cf6 \strokec6 value\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "w-full border border-gray-300 rounded-md p-2 text-sm resize-none"\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 rows\cf10 \strokec10 =\cf8 \strokec8 \{\cf13 \strokec13 4\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 placeholder\cf10 \strokec10 =\cf7 \strokec7 "Add any notes for this job..."\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Product Totals */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf8 \strokec8 \{\cf11 \strokec11 requiresProducts\cf10 \strokec10  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "mt-6 border-t pt-4"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 h4\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "font-semibold text-sm mb-2"\cf14 \cb3 \strokec14 >\cf10 \cb3 \strokec10 Product Totals\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 h4\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf8 \strokec8 \{\cf11 \strokec11 editableProducts\cf10 \strokec10 .\cf9 \strokec9 map\cf10 \strokec10 ((\cf6 \strokec6 p\cf10 \strokec10 , \cf6 \strokec6 i\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 rate\cf10 \strokec10  = \cf9 \strokec9 parseFloat\cf10 \strokec10 (\cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 rate\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 unit\cf10 \strokec10  = \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 unit\cf10 \strokec10 ?.\cf9 \strokec9 toLowerCase\cf10 \strokec10 () || \cf7 \strokec7 ''\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 crop\cf10 \strokec10  = \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 crop\cf10 \strokec10 ?.\cf9 \strokec9 toLowerCase\cf10 \strokec10 ?.() || \cf7 \strokec7 ''\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10          \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 acres\cf10 \strokec10  = \cf11 \strokec11 fields\cf10 \strokec10 .\cf9 \strokec9 reduce\cf10 \strokec10 ((\cf6 \strokec6 sum\cf10 \strokec10 , \cf6 \strokec6 f\cf10 \strokec10 ) \cf8 \strokec8 =>\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10   \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 isLeveeJob\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 crop\cf10 \strokec10  = \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 crop\cf10 \strokec10  || \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 crops\cf10 \strokec10 ?.[\cf11 \strokec11 cropYear\cf10 \strokec10 ]?.\cf6 \strokec6 crop\cf10 \strokec10  || \cf7 \strokec7 ''\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 crop\cf10 \strokec10 .\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'Rice'\cf10 \strokec10 ) && \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 riceLeveeAcres\cf10 \strokec10 ) \cf5 \strokec5 return\cf10 \strokec10  \cf6 \strokec6 sum\cf10 \strokec10  + \cf9 \strokec9 parseFloat\cf10 \strokec10 (\cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 riceLeveeAcres\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 crop\cf10 \strokec10 .\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'Soybean'\cf10 \strokec10 ) && \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 beanLeveeAcres\cf10 \strokec10 ) \cf5 \strokec5 return\cf10 \strokec10  \cf6 \strokec6 sum\cf10 \strokec10  + \cf9 \strokec9 parseFloat\cf10 \strokec10 (\cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 beanLeveeAcres\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10   \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10   \cf5 \strokec5 return\cf10 \strokec10  \cf6 \strokec6 sum\cf10 \strokec10  + (\cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 acres\cf10 \strokec10  ?? \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 drawnAcres\cf10 \strokec10  ?? \cf6 \strokec6 f\cf10 \strokec10 .\cf6 \strokec6 gpsAcres\cf10 \strokec10  ?? \cf13 \strokec13 0\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10 \}, \cf13 \strokec13 0\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\
+\
+\cf10 \cb3 \strokec10           \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 totalAmount\cf10 \strokec10  = \cf11 \strokec11 rate\cf10 \strokec10  * \cf11 \strokec11 acres\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \cf8 \strokec8 let\cf10 \strokec10  \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 ''\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10           \cf5 \strokec5 if\cf10 \strokec10  ([\cf7 \strokec7 'seeds/acre'\cf10 \strokec10 , \cf7 \strokec7 'population'\cf10 \strokec10 ].\cf9 \strokec9 includes\cf10 \strokec10 (\cf11 \strokec11 unit\cf10 \strokec10 )) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 seedsPerUnit\cf10 \strokec10  = \cf11 \strokec11 crop\cf10 \strokec10 .\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'rice'\cf10 \strokec10 ) ? \cf13 \strokec13 900000\cf10 \strokec10  : \cf11 \strokec11 crop\cf10 \strokec10 .\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'soybean'\cf10 \strokec10 ) ? \cf13 \strokec13 140000\cf10 \strokec10  : \cf13 \strokec13 1000000\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 totalSeeds\cf10 \strokec10  = \cf11 \strokec11 rate\cf10 \strokec10  * \cf11 \strokec11 acres\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 units\cf10 \strokec10  = \cf11 \strokec11 totalSeeds\cf10 \strokec10  / \cf11 \strokec11 seedsPerUnit\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 units\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 1\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  units (\cf8 \strokec8 $\{\cf11 \strokec11 seedsPerUnit\cf10 \strokec10 .\cf9 \strokec9 toLocaleString\cf10 \strokec10 ()\cf8 \strokec8 \}\cf7 \strokec7  seeds/unit)`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  ([\cf7 \strokec7 'lbs/acre'\cf10 \strokec10 ].\cf9 \strokec9 includes\cf10 \strokec10 (\cf11 \strokec11 unit\cf10 \strokec10 )) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 lbsPerBushel\cf10 \strokec10  = \cf11 \strokec11 crop\cf10 \strokec10 .\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'rice'\cf10 \strokec10 ) ? \cf13 \strokec13 45\cf10 \strokec10  : \cf11 \strokec11 crop\cf10 \strokec10 .\cf9 \strokec9 includes\cf10 \strokec10 (\cf7 \strokec7 'soybean'\cf10 \strokec10 ) ? \cf13 \strokec13 60\cf10 \strokec10  : \cf13 \strokec13 50\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 bushels\cf10 \strokec10  = \cf11 \strokec11 totalAmount\cf10 \strokec10  / \cf11 \strokec11 lbsPerBushel\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 bushels\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 1\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  bushels`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  ([\cf7 \strokec7 'fl oz/acre'\cf10 \strokec10 , \cf7 \strokec7 'oz/acre'\cf10 \strokec10 ].\cf9 \strokec9 includes\cf10 \strokec10 (\cf11 \strokec11 unit\cf10 \strokec10 )) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 gal\cf10 \strokec10  = \cf11 \strokec11 totalAmount\cf10 \strokec10  / \cf13 \strokec13 128\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 gal\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  gallons`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 unit\cf10 \strokec10  === \cf7 \strokec7 'pt/acre'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 gal\cf10 \strokec10  = \cf11 \strokec11 totalAmount\cf10 \strokec10  / \cf13 \strokec13 8\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 gal\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  gallons`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 unit\cf10 \strokec10  === \cf7 \strokec7 'qt/acre'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 gal\cf10 \strokec10  = \cf11 \strokec11 totalAmount\cf10 \strokec10  / \cf13 \strokec13 4\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 gal\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  gallons`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 unit\cf10 \strokec10  === \cf7 \strokec7 'oz dry/acre'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 lbs\cf10 \strokec10  = \cf11 \strokec11 totalAmount\cf10 \strokec10  / \cf13 \strokec13 16\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 lbs\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  lbs`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 unit\cf10 \strokec10  === \cf7 \strokec7 '%v/v'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 water\cf10 \strokec10  = \cf9 \strokec9 parseFloat\cf10 \strokec10 (\cf11 \strokec11 waterVolume\cf10 \strokec10  || \cf13 \strokec13 0\cf10 \strokec10 );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf8 \strokec8 const\cf10 \strokec10  \cf11 \strokec11 gal\cf10 \strokec10  = (\cf11 \strokec11 rate\cf10 \strokec10  / \cf13 \strokec13 100\cf10 \strokec10 ) * \cf11 \strokec11 water\cf10 \strokec10  * \cf11 \strokec11 acres\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 gal\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  gallons`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \cf5 \strokec5 if\cf10 \strokec10  (\cf11 \strokec11 unit\cf10 \strokec10  === \cf7 \strokec7 'tons/acre'\cf10 \strokec10 ) \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 totalAmount\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 2\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  tons`\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \} \cf5 \strokec5 else\cf10 \strokec10  \{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 display\cf10 \strokec10  = \cf7 \strokec7 `\cf8 \strokec8 $\{\cf11 \strokec11 totalAmount\cf10 \strokec10 .\cf9 \strokec9 toFixed\cf10 \strokec10 (\cf13 \strokec13 1\cf10 \strokec10 )\cf8 \strokec8 \}\cf7 \strokec7  \cf8 \strokec8 $\{\cf11 \strokec11 unit\cf10 \strokec10 .\cf9 \strokec9 replace\cf10 \strokec10 (\cf7 \strokec7 '/acre'\cf10 \strokec10 , \cf7 \strokec7 ''\cf10 \strokec10 ).\cf9 \strokec9 trim\cf10 \strokec10 ()\cf8 \strokec8 \}\cf7 \strokec7 `\cf10 \strokec10 ;\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \}\cf4 \cb1 \strokec4 \
+\
+\cf10 \cb3 \strokec10           \cf5 \strokec5 return\cf10 \strokec10  (\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf10 \strokec10  \cf6 \strokec6 key\cf10 \strokec10 =\cf8 \strokec8 \{\cf6 \strokec6 i\cf8 \strokec8 \}\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "text-sm text-gray-700"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10               \cf8 \strokec8 \{\cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 productName\cf10 \strokec10  || \cf6 \strokec6 p\cf10 \strokec10 .\cf6 \strokec6 name\cf10 \strokec10  || \cf7 \strokec7 'Unnamed'\cf8 \strokec8 \}\cf10 \strokec10  \uc0\u8594  \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 span\cf10 \strokec10  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "font-mono"\cf14 \cb3 \strokec14 >\cf8 \cb3 \strokec8 \{\cf6 \strokec6 display\cf8 \strokec8 \}\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 span\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           );\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \})\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10     )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf8 \strokec8 \{\cf2 \strokec2 /* \uc0\u55357 \u56633  Save Button */\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 div\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "flex justify-between items-center mt-6"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 label\cf4 \strokec4  \cf6 \strokec6 className\cf10 \strokec10 =\cf7 \strokec7 "flex items-center gap-2"\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 input\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 type\cf10 \strokec10 =\cf7 \strokec7 "checkbox"\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 checked\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 shouldGeneratePDF\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3           \cf6 \strokec6 onChange\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 () \cf8 \strokec8 =>\cf10 \strokec10  \cf9 \strokec9 setShouldGeneratePDF\cf10 \strokec10 (!\cf11 \strokec11 shouldGeneratePDF\cf10 \strokec10 )\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 />\cf4 \cb1 \strokec4 \
+\cb3         \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 span\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4 Generate PDF after saving\cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 span\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 label\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3       \cf14 \cb3 \strokec14 <\cf8 \cb3 \strokec8 button\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 className\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 primaryBtn\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 onClick\cf10 \strokec10 =\cf8 \strokec8 \{\cf10 \strokec10 () \cf8 \strokec8 =>\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10           \cf9 \strokec9 saveJob\cf10 \strokec10 (\{\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 jobType\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 fields\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 editableProducts\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 vendor\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 applicator\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 cropYear\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 jobDate\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 jobStatus\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 jobId\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 notes\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 shouldGeneratePDF\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 waterVolume\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf6 \strokec6 isEditing\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 navigate\cf10 \strokec10 ,\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             \cf9 \strokec9 setSaving\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           \})\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10         \cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3         \cf6 \strokec6 disabled\cf10 \strokec10 =\cf8 \strokec8 \{\cf11 \strokec11 saving\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\cb3       \cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3         \cf8 \strokec8 \{\cf11 \strokec11 saving\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10           ? \cf7 \strokec7 'Saving...'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10           : \cf11 \strokec11 isEditing\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             ? \cf7 \strokec7 'Update Job'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10             : \cf7 \strokec7 'Save Final Job'\cf8 \strokec8 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3       \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 button\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\cb3     \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb1 \strokec4 \
+\
+\cb3    \cf14 \cb3 \strokec14 </\cf8 \cb3 \strokec8 div\cf14 \cb3 \strokec14 >\cf4 \cb3 \strokec4  \cb1 \
+\cb3   ); \cf2 \strokec2 // \uc0\u9989  This closes the return\cf4 \cb1 \strokec4 \
+\cb3 \} \cf2 \strokec2 // \uc0\u9989  This closes the function\cf4 \cb1 \strokec4 \
+\
+\
+\
+}

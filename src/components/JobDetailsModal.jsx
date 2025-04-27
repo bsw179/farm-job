@@ -50,41 +50,55 @@ useEffect(() => {
   const loadAllBoundaries = async () => {
     if (!Array.isArray(job.fields)) return;
 
-    const boundaries = await Promise.all(
+    const boundaries = [];
+    const polygons = [];
+
+    await Promise.all(
       job.fields.map(async (f) => {
         try {
-          const snap = await getDoc(doc(db, 'fields', f.id));
-          if (!snap.exists()) return null;
-
-          let geo = snap.data()?.boundary?.geojson;
-          if (typeof geo === 'string') {
-            try {
-              geo = JSON.parse(geo);
-            } catch {
-              return null;
+          // 🔵 Pull static boundary from Fields
+          const fieldSnap = await getDoc(doc(db, 'fields', f.fieldId || f.id));
+          if (fieldSnap.exists()) {
+            let geo = fieldSnap.data()?.boundary?.geojson || fieldSnap.data()?.boundary;
+            if (typeof geo === 'string') {
+              try { geo = JSON.parse(geo); } catch { geo = null; }
             }
+            if (geo?.type === 'Feature') geo = geo.geometry;
+            if (geo) boundaries.push(geo);
           }
 
-          if (geo?.type === 'Feature') geo = geo.geometry;
-          return geo;
-        } catch {
-          return null;
+          // 🟢 Pull drawn polygon from JobsByField
+          const jobByFieldId = f.jobId || `${job.id}_${f.fieldId || f.id}`;
+          const jobFieldSnap = await getDoc(doc(db, 'jobsByField', jobByFieldId));
+          if (jobFieldSnap.exists()) {
+            let drawn = jobFieldSnap.data()?.drawnPolygon;
+            if (typeof drawn === 'string') {
+              try { drawn = JSON.parse(drawn); } catch { drawn = null; }
+            }
+            if (drawn?.type === 'Feature') drawn = drawn.geometry;
+            if (drawn?.type === 'Polygon') polygons.push(drawn);
+          }
+
+        } catch (err) {
+          console.error('❌ Error loading field or polygon', err);
         }
       })
     );
 
-    setFieldBoundaries(boundaries.filter(Boolean));
+    setFieldBoundaries(boundaries);
+    setParsedPolygons(polygons);
   };
 
   loadAllBoundaries();
 }, [job]);
+
 
   // 🧾 Parse Drawn Polygon + Boundary
 let parsedPolygons = [];
 
 try {
   if (Array.isArray(job.fields)) {
-    job.fields.forEach((f, i) => {
+    job.fields.forEach((f) => {
       let poly = f.drawnPolygon;
       if (typeof poly === 'string') {
         try {
@@ -100,10 +114,25 @@ try {
         parsedPolygons.push(poly);
       }
     });
+  } else if (job.drawnPolygon) {
+    let poly = job.drawnPolygon;
+    if (typeof poly === 'string') {
+      try {
+        poly = JSON.parse(poly);
+      } catch {
+        poly = null;
+      }
+    }
+    if (poly?.type === 'Feature') {
+      parsedPolygons.push(poly.geometry);
+    } else if (poly?.type === 'Polygon') {
+      parsedPolygons.push(poly);
+    }
   }
 } catch {
-  console.warn('Failed to parse multiple drawnPolygons');
+  console.warn('Failed to parse drawnPolygon');
 }
+
 
 
   // 🖼️ Modal Layout
@@ -119,7 +148,12 @@ try {
 
         {/* 📌 Header */}
         <h2 className="text-lg font-semibold mb-2">{getJobTypeName(job)}</h2>
-        <p className="text-sm text-gray-600 mb-1">{job.cropYear} • {job.fieldName}</p>
+        <p className="text-sm text-gray-600 mb-1">
+  {job.cropYear} • {Array.isArray(job.fields)
+    ? job.fields.map(f => f.fieldName).filter(Boolean).join(', ')
+    : job.fieldName || 'Unnamed Field'}
+</p>
+
 
         {/* 📅 Date + Status */}
         <div className="text-xs text-gray-600 mb-2 space-x-2">
@@ -156,29 +190,30 @@ try {
 
         {/* 📐 Acres + Passes */}
         <div className="text-xs text-gray-600 mb-4 space-y-1">
-          <p>
-            {(() => {
-              const isLeveeJob = (job.jobType?.name || '').toLowerCase().includes('levee') ||
-                                 (job.jobType?.name || '').toLowerCase().includes('pack');
+         <p>
+  {(() => {
+    const isLeveeJob = (job.jobType?.name || '').toLowerCase().includes('levee') ||
+                       (job.jobType?.name || '').toLowerCase().includes('pack');
 
-              if (isLeveeJob && Array.isArray(job.fields)) {
-                let total = 0;
-                job.fields.forEach(f => {
-                  const crop = f.crop || f.crops?.[job.cropYear]?.crop || '';
-                  if (crop.includes('Rice')) total += parseFloat(f.riceLeveeAcres || 0);
-                  else if (crop.includes('Soybean')) total += parseFloat(f.beanLeveeAcres || 0);
-                });
-                return `${total.toFixed(2)} acres (Levee)`;
-              }
+    if (isLeveeJob && Array.isArray(job.fields)) {
+      let total = 0;
+      job.fields.forEach(f => {
+        const crop = f.crop || f.crops?.[job.cropYear]?.crop || '';
+        if (crop.includes('Rice')) total += parseFloat(f.riceLeveeAcres || 0);
+        else if (crop.includes('Soybean')) total += parseFloat(f.beanLeveeAcres || 0);
+      });
+      return `${total.toFixed(2)} acres (Levee)`;
+    }
 
-              if (typeof job.acres === 'object') {
-                const total = Object.values(job.acres).reduce((sum, val) => sum + (val || 0), 0);
-                return `${total.toFixed(2)} acres`;
-              }
+    if (Array.isArray(job.fields)) {
+      const total = job.fields.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0);
+      return `${total.toFixed(2)} acres`;
+    }
 
-              return `${job.acres || job.drawnAcres || '—'} acres`;
-            })()}
-          </p>
+    return `${job.acres ?? job.drawnAcres ?? '—'} acres`;
+  })()}
+</p>
+
 
           {job.jobType?.parentName === 'Tillage' && job.passes && (
             <p>Passes: {job.passes}</p>
@@ -186,10 +221,17 @@ try {
         </div>
 
         {/* 🗺️ Map */}
-        <div className="mt-4">
-          {renderBoundarySVG(fieldBoundaries, parsedPolygons)}
+       <div className="mt-4">
+  {(() => {
+    const cleanedFieldBoundaries = fieldBoundaries.filter(b => b?.type === 'Polygon' && Array.isArray(b.coordinates));
+    const cleanedParsedPolygons = parsedPolygons.filter(p => p?.type === 'Polygon' && Array.isArray(p.coordinates));
 
-        </div>
+    return (cleanedFieldBoundaries.length > 0 || cleanedParsedPolygons.length > 0)
+      ? renderBoundarySVG(cleanedFieldBoundaries, cleanedParsedPolygons)
+      : <div className="text-gray-400 text-sm text-center">No map available</div>;
+  })()}
+</div>
+
 
         {/* 📝 Notes */}
         <div className="mt-4">
@@ -207,7 +249,10 @@ try {
               const rate = parseFloat(p.rate);
               const unit = p.unit?.toLowerCase() || '';
               const crop = p.crop?.toLowerCase?.() || '';
-              const acres = job.acres || job.drawnAcres || 0;
+              const acres = Array.isArray(job.fields)
+  ? job.fields.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0)
+  : (job.acres || job.drawnAcres || 0);
+
               const totalAmount = rate * acres;
               let display = '';
 
@@ -262,7 +307,11 @@ function renderBoundarySVG(baseGeometries, overlayGeoJSONList) {
   const boxSize = 300;
   const margin = 10;
 
-  const allCoords = baseGeometries.flatMap(g => g?.coordinates?.[0] || []);
+  const allCoords = [
+  ...baseGeometries.flatMap(g => g?.coordinates?.[0] || []),
+  ...(overlayGeoJSONList || []).flatMap(g => g?.coordinates?.[0] || [])
+];
+
 
   const bounds = allCoords.reduce((acc, [lng, lat]) => ({
     minX: Math.min(acc.minX, lng),

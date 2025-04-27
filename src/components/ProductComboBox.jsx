@@ -7,7 +7,13 @@ function ProductComboBox({ value, onChange, productType, allProducts = [], usedP
   const filtered = useMemo(() => {
   const filteredProducts = allProducts
     .filter(p => !search || p.name?.toLowerCase().includes(search.toLowerCase()))
-    .filter(p => productType ? p.type?.toLowerCase() === productType.toLowerCase() : true)
+.filter(p => {
+  if (!productType) return true;
+  if (productType === 'Seeding') return p.type === 'Seed';
+  if (productType === 'Spraying') return p.type === 'Chemical';
+  if (productType === 'Fertilizing') return p.type === 'Fertilizer';
+  return true;
+})
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const used = filteredProducts.filter(p => usedProductIds.includes(p.id));

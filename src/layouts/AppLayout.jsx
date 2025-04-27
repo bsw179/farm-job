@@ -29,7 +29,8 @@ import BoundaryUploadMapbox from "@/pages/BoundaryUploadMapbox";
 import ManageJobTypes from "@/pages/Setup/ManageJobTypes";
 import JobSummaryPage from "@/pages/JobSummaryPage";
 import CreateJobPage from "@/pages/CreateJobPage";
-import EditJobPolygon from "../pages/EditJobPolygon";
+import EditJobPolygonForCreate from "../pages/EditJobPolygonForCreate";
+import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
 import FieldJobSummaryPage from "../pages/FieldJobSummaryPage";
 import SeedingReport from "../pages/Reports/SeedingReport";
 import AdminCleanupTools from "../pages/AdminCleanupTools";
@@ -293,13 +294,22 @@ import LogProductPurchase from './pages/LogProductPurchase';
          />
 
           <Route
-            path="/jobs/edit-area/:fieldId"
-            element={
-              <ProtectedRoute path="/jobs/edit-area/:fieldId">
-                <EditJobPolygon />
-              </ProtectedRoute>
-            }
-          />
+  path="/jobs/edit-area/create/:fieldId"
+  element={
+    <ProtectedRoute path="/jobs/edit-area/create/:fieldId">
+      <EditJobPolygonForCreate />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/jobs/edit-area/field-job/:fieldId"
+  element={
+    <ProtectedRoute path="/jobs/edit-area/field-job/:fieldId">
+      <EditJobPolygonForFieldJob />
+    </ProtectedRoute>
+  }
+/>
+
         </Routes>
       </RequireLogin>
     }

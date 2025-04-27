@@ -14,6 +14,8 @@ import {
   deleteDoc,              // ✅ Add this here
   serverTimestamp         // ✅ You can move this up to combine
 } from 'firebase/firestore';
+import EditAreaModal from "../components/EditAreaModal";
+import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
 
 function FieldJobSummaryPage() {
   const { jobId } = useParams();
@@ -39,12 +41,49 @@ const [passes, setPasses] = useState(1);
 const [jobStatus, setJobStatus] = useState('Planned');
 const [vendor, setVendor] = useState('');
 const [applicator, setApplicator] = useState('');
-const [editableProducts, setEditableProducts] = useState([]);
+const [showEditAreaModal, setShowEditAreaModal] = useState(false);
+const [fieldToEdit, setFieldToEdit] = useState(null);
 
 const isLeveeJob = job?.jobType?.name?.toLowerCase().includes('levee') || job?.jobType?.name?.toLowerCase().includes('pack');
+const handleProductChange = (index, field, value) => {
+  setJob(prev => {
+    const updatedProducts = [...prev.products];
+    updatedProducts[index][field] = value;
+    return { ...prev, products: updatedProducts };
+  });
+};
 
 const getJobTypeName = (job) =>
   typeof job.jobType === 'string' ? job.jobType : job.jobType?.name || '';
+useEffect(() => {
+  console.log("🌾 Loaded Field Boundary:", fieldBoundary);
+}, [fieldBoundary]);
+
+const fetchUpdatedFieldJob = async () => {
+  const jobSnap = await getDoc(doc(db, 'jobsByField', jobId));
+  if (jobSnap.exists()) {
+    const jobData = { id: jobSnap.id, ...jobSnap.data() };
+
+    const parsedPolygon = typeof jobData.drawnPolygon === 'string'
+      ? JSON.parse(jobData.drawnPolygon)
+      : jobData.drawnPolygon;
+
+    const normalizedJobType = typeof jobData.jobType === 'string'
+      ? { name: jobData.jobType }
+      : jobData.jobType;
+
+    setJob({
+      ...jobData,
+      jobType: normalizedJobType,
+      drawnPolygon: parsedPolygon,
+    });
+  }
+};
+
+const handleCloseEditAreaModal = async () => {
+  await fetchUpdatedFieldJob();
+  setShowEditAreaModal(false);
+};
 
 useEffect(() => {
   const loadJobTypes = async () => {
@@ -71,9 +110,10 @@ useEffect(() => {
     setJobType(job.jobType || null);
     setVendor(job.vendor || '');
     setApplicator(job.applicator || '');
-    setEditableProducts(job.products || []);
+    // ❌ DO NOT setEditableProducts here anymore
   }
 }, [job]);
+
 
 useEffect(() => {
   if (job?.jobType) {
@@ -123,58 +163,86 @@ console.log('🔗 linkedToJobId:', job.linkedToJobId);
 
  useEffect(() => {
   const fetchData = async () => {
-const jobSnap = await getDoc(doc(db, 'jobsByField', jobId));
-if (jobSnap.exists()) {
-  const jobData = { id: jobSnap.id, ...jobSnap.data() };
-setPasses(jobData.passes || 1);
+    const jobSnap = await getDoc(doc(db, 'jobsByField', jobId));
+    if (jobSnap.exists()) {
+      console.log('🔥 LOADING JOB FROM FIRESTORE:', jobId);
 
-  const parsedPolygon = typeof jobData.drawnPolygon === 'string'
-    ? JSON.parse(jobData.drawnPolygon)
-    : jobData.drawnPolygon;
+      const jobData = { id: jobSnap.id, ...jobSnap.data() };
+      setPasses(jobData.passes || 1);
 
-  const normalizedJobType = typeof jobData.jobType === 'string'
-    ? { name: jobData.jobType }
-    : jobData.jobType;
+      const parsedPolygon = typeof jobData.drawnPolygon === 'string'
+        ? JSON.parse(jobData.drawnPolygon)
+        : jobData.drawnPolygon;
 
-  setJob({
-    ...jobData,
-    jobType: normalizedJobType,
-    drawnPolygon: parsedPolygon,
-  });
+      const normalizedJobType = typeof jobData.jobType === 'string'
+        ? { name: jobData.jobType }
+        : jobData.jobType;
 
-  setNotes(jobData.notes || '');
-  setWaterVolume(jobData.waterVolume || 0);
-  setOriginalJob(jobData);
+      setJob({
+        ...jobData,
+        jobType: normalizedJobType,
+        drawnPolygon: parsedPolygon,
+      });
 
-
-
+      setNotes(jobData.notes || '');
+      setWaterVolume(jobData.waterVolume || 0);
+      setOriginalJob(jobData);
 
       // 👇 Fetch the full field boundary based on fieldId
       const fieldSnap = await getDoc(doc(db, 'fields', jobData.fieldId));
       if (fieldSnap.exists()) {
-  const fieldData = { id: fieldSnap.id, ...fieldSnap.data() };
-  setField(fieldData);
+        const fieldData = { id: fieldSnap.id, ...fieldSnap.data() };
+        setField(fieldData);
 
-  // 🛠️ Parse geojson safely
-  let geo = fieldData.boundary?.geojson || null;
-  if (typeof geo === 'string') {
-    try {
-      geo = JSON.parse(geo);
-    } catch {
-      geo = null;
-    }
-  }
-  setFieldBoundary(geo);
-}
+        // 🛠️ Parse geojson safely
+        let geo = null;
 
+        if (fieldData.boundary?.geojson) {
+          try {
+            geo = typeof fieldData.boundary.geojson === 'string'
+              ? JSON.parse(fieldData.boundary.geojson)
+              : fieldData.boundary.geojson;
+          } catch {
+            geo = null;
+          }
+        }
+
+        setFieldBoundary(geo);
+
+        if (fieldData?.crop) {
+          setJob(prev => ({
+            ...prev,
+            crop: fieldData.crop
+          }));
+        }
+      }
     }
 
     const productsSnap = await getDocs(collection(db, 'products'));
     setProductsList(productsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
   };
 
-  fetchData();
-}, [jobId]);
+  const updated = location.state?.updatedField;
+
+  if (updated) {
+    console.log('📥 Applying updatedField from location.state:', updated);
+
+    const parsedPolygon = typeof updated.drawnPolygon === 'string'
+      ? JSON.parse(updated.drawnPolygon)
+      : updated.drawnPolygon;
+
+    setJob(prev => ({
+      ...prev,
+      drawnPolygon: parsedPolygon,
+      drawnAcres: updated.drawnAcres,
+      acres: updated.drawnAcres
+    }));
+  } else {
+    console.log('🔥 No updatedField — reloading job from Firestore:', jobId);
+    fetchData();
+  }
+}, [location.key]);
+
 
 useEffect(() => {
   const updated = location.state?.updatedField;
@@ -197,261 +265,122 @@ useEffect(() => {
 
 
 
-  const handleProductChange = (index, field, value) => {
-    const updated = [...job.products];
-    updated[index][field] = value;
-    setJob(prev => ({ ...prev, products: updated }));
-  };
 
-  const handleSave = async () => {
-    setSaving(true);
-    const shouldBreakFromGroup = (
-  originalJob.vendor !== job.vendor ||
-  originalJob.applicator !== job.applicator ||
-  originalJob.jobDate !== job.jobDate ||
-  JSON.stringify(originalJob.products) !== JSON.stringify(job.products)
-);
-if (!shouldBreakFromGroup) {
+
+  
+
+
+ const handleSave = async () => {
+  setSaving(true);
+
   const cleanedDrawnPolygon = typeof job.drawnPolygon === 'object'
     ? JSON.stringify(job.drawnPolygon)
     : job.drawnPolygon;
 
-const isAttached = job.linkedToJobId;
-
-if (isAttached) {
-  const newJobRef = doc(collection(db, 'jobsByField'));
-
-// 🧹 Delete the field-level job first
-await deleteDoc(doc(db, 'jobsByField', job.id));
-
-// 🔍 Then re-check for any remaining linked field jobs
-const linkedToJobId = job.linkedToJobId;
-const q = query(
-  collection(db, 'jobsByField'),
-  where('linkedToJobId', '==', linkedToJobId)
-);
-const snap = await getDocs(q);
-
-if (snap.size === 1) {
-  // If only one remains, unlink and detach it
-  const leftoverDoc = snap.docs[0];
-  console.log('🧹 Clearing linkedToJobId on last field job:', leftoverDoc.id);
-  await updateDoc(leftoverDoc.ref, {
-    linkedToJobId: null,
-    isDetachedFromGroup: true
-  });
-
-  // Then delete the grouped job
-  await deleteDoc(doc(db, 'jobs', linkedToJobId));
-}
-
-
-
-  await setDoc(newJobRef, {
-    ...job,
-    status: jobStatus,
-    jobType,
-    vendor,
-    applicator,
-    products: editableProducts,
-    drawnPolygon: cleanedDrawnPolygon,
-    waterVolume: waterVolume || 0,
-    ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
-    notes,
-    linkedToJobId: null,
-    isDetachedFromGroup: true,
-    id: newJobRef.id,
-    timestamp: serverTimestamp()
-  });
-
-  navigate('/jobs');
-} else {
-  await updateDoc(doc(db, 'jobsByField', job.id), {
-    ...job,
-    status: jobStatus,
-    jobType,
-    vendor,
-    applicator,
-    products: editableProducts,
-    drawnPolygon: cleanedDrawnPolygon,
-    waterVolume: waterVolume || 0,
-    ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
-    notes,
-    timestamp: serverTimestamp()
-  });
-
-  navigate('/jobs');
-}
-
-
-
-
-
-
-
-  // 👇 Keep master group job in sync
-  if (job.linkedToJobId) {
-    const groupRef = doc(db, 'jobs', job.linkedToJobId);
-    const groupSnap = await getDoc(groupRef);
-    if (groupSnap.exists()) {
-      const groupData = groupSnap.data();
-
-      const updatedFields = (groupData.fields || []).map(f => {
-        if (f.id !== job.fieldId) return f;
-
-       return {
-  ...f,
-  status: job.status || 'Planned',
-  drawnPolygon: cleanedDrawnPolygon,
-  drawnAcres: job.drawnAcres || f.drawnAcres,
-  acres: job.acres || f.acres
-};
-
-      });
-
-      await setDoc(groupRef, {
-  ...groupData,
-  fields: updatedFields.map(f => ({
-    ...f,
-    drawnPolygon: f.drawnPolygon ?? null,
-    drawnAcres: f.drawnAcres ?? null,
-    acres: f.acres ?? 0,
-    crop: f.crop ?? '',
-    fieldName: f.fieldName ?? '',
-  }))
-});
-
-    }
-  }
-if (generatePdf) {
   try {
-    const { generatePDFBlob } = await import('../utils/generatePDF');
-const fieldSnap = await getDoc(doc(db, 'fields', job.fieldId));
-const fieldData = fieldSnap.exists() ? fieldSnap.data() : {};
+    const newFieldJobRef = doc(collection(db, 'jobsByField'));
 
-const fullJob = {
-  ...job,
-  notes,
-
-  fields: [
-    {
-      id: job.fieldId,
-      fieldName: job.fieldName,
-      acres: job.acres,
-      drawnAcres: job.drawnAcres,
-      drawnPolygon: job.drawnPolygon,
-      ...fieldData,
-    }
-  ],
-  acres: { [job.fieldId]: job.acres },
-  fieldIds: [job.fieldId],
-};
-
-const blob = await generatePDFBlob(fullJob);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `FieldJob_${job.fieldName || job.id}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } catch (err) {
-    console.error('PDF generation failed:', err);
-    alert('Job saved, but PDF failed to generate.');
-  }
-}
-
-  navigate('/jobs');
-  return;
-}
-// 🆕 Handle breakaway from group
-const newGroupedId = `${job.id}_solo`; // unique ID to avoid conflict
-const newGroupedJob = {
-  jobId: newGroupedId,
-  jobType: job.jobType,
-  vendor: job.vendor,
-  applicator: job.applicator,
-  jobDate: job.jobDate,
-  cropYear: job.cropYear,
-  products: job.products,
-  
-  status: job.status,
-  notes,
-  passes: job?.jobType?.parentName === 'Tillage' ? passes : undefined,
-  waterVolume,
-  fieldIds: [job.fieldId],
-  fields: [
-    {
-      id: job.fieldId,
-      fieldName: job.fieldName,
-      drawnPolygon: job.drawnPolygon ?? null,
-      acres: job.drawnAcres ?? job.acres ?? 0,
-      crop: job.crop ?? '',
-      riceLeveeAcres: job.riceLeveeAcres ?? null,
-      beanLeveeAcres: job.beanLeveeAcres ?? null
-    }
-  ],
-  acres: {
-    [job.fieldId]: job.drawnAcres ?? job.acres ?? 0
-  },
-  timestamp: Date.now()
-};
-
-await setDoc(doc(db, 'jobs', newGroupedId), newGroupedJob);
-
-await updateDoc(doc(db, 'jobsByField', job.id), {
-  ...job,
-  linkedToJobId: newGroupedId,
-  notes,
-  passes: job?.jobType?.parentName === 'Tillage' ? passes : undefined,
-  waterVolume
-});
-
-const handleSave = async () => {
-  setSaving(true);
-
-  const shouldBreakFromGroup = (
-    originalJob.vendor !== job.vendor ||
-    originalJob.applicator !== job.applicator ||
-    originalJob.jobDate !== job.jobDate ||
-    JSON.stringify(originalJob.products) !== JSON.stringify(job.products)
-  );
-
-  if (!shouldBreakFromGroup) {
-    await updateDoc(doc(db, 'jobsByField', job.id), {
-      ...job
+    await setDoc(newFieldJobRef, {
+      ...job,
+      id: newFieldJobRef.id,
+      status: job.status || 'Planned',
+      jobType,
+      vendor: job.vendor || '',
+      applicator: job.applicator || '',
+      products: job.products || [],
+      notes: notes || '',
+      ...(job?.jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+      waterVolume: job?.jobType?.parentName === 'Spraying' ? waterVolume : '',
+      drawnPolygon: cleanedDrawnPolygon,
+      drawnAcres: job.drawnAcres ?? null,
+      acres: job.acres ?? null,
+      linkedToJobId: null,
+      isDetachedFromGroup: true,
+      timestamp: serverTimestamp()
     });
-    navigate('/jobs');
+
+    // 🧹 Delete old jobsByField doc
+    await deleteDoc(doc(db, 'jobsByField', job.id));
+
+    // 🧹 Update or delete grouped job
+    if (job.linkedToJobId) {
+      const groupRef = doc(db, 'jobs', job.linkedToJobId);
+      const groupSnap = await getDoc(groupRef);
+
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data();
+        const remainingFields = (groupData.fields || []).filter(f => f.id !== job.fieldId);
+
+        if (remainingFields.length === 1) {
+          const lastFieldId = remainingFields[0].fieldId || remainingFields[0].id;
+          const lastFieldDoc = doc(db, 'jobsByField', `${job.linkedToJobId}_${lastFieldId}`);
+          await updateDoc(lastFieldDoc, {
+            linkedToJobId: null,
+            isDetachedFromGroup: true
+          });
+          await deleteDoc(groupRef);
+        } else {
+          await setDoc(groupRef, {
+            ...groupData,
+            fields: remainingFields
+          });
+        }
+      }
+    }
+
+    if (generatePdf) {
+      try {
+        const { generatePDFBlob } = await import('../utils/generatePDF');
+        const fieldSnap = await getDoc(doc(db, 'fields', job.fieldId));
+        const fieldData = fieldSnap.exists() ? fieldSnap.data() : {};
+
+        const fullJob = {
+          ...job,
+          notes,
+          fields: [
+            {
+              id: job.fieldId,
+              fieldName: job.fieldName,
+              acres: job.acres,
+              drawnAcres: job.drawnAcres,
+              drawnPolygon: job.drawnPolygon,
+              ...fieldData,
+            }
+          ],
+          acres: { [job.fieldId]: job.acres },
+          fieldIds: [job.fieldId],
+        };
+
+        const blob = await generatePDFBlob(fullJob);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `FieldJob_${job.fieldName || job.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error('PDF generation failed:', err);
+        alert('Job saved, but PDF failed to generate.');
+      }
+    }
+
+navigate('/jobs');
+
+
+
+  } catch (err) {
+    console.error('Error saving field job:', err);
+    alert('Failed to save changes.');
+    setSaving(false);
     return;
   }
-
-  // 🔁 (Then paste the breakaway logic here)
 };
 
-    try {
-     await updateDoc(doc(db, 'jobsByField', job.id), {
-  products: job.products,
-  status: job.status || 'Planned',
-  vendor: job.vendor || '',
-  applicator: job.applicator || '',
-  jobDate: job.jobDate || '',
-  linkedToJobId: job.linkedToJobId || null,
-  notes: notes || '',
-  passes: job?.jobType?.parentName === 'Tillage' ? passes : undefined,
-
-});
 
 
 
 
-      navigate('/jobs');
-    } catch (err) {
-      console.error('Error updating field job:', err);
-      alert('Failed to save changes.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   function renderBoundarySVG(baseGeometry, overlayGeoJSON) {
   if (!baseGeometry) return null;
@@ -515,10 +444,10 @@ const handleSave = async () => {
   );
 }
 
+  if (!job || !fieldBoundary) {
+  return <div className="p-6">Loading Field Data...</div>;
+}
 
-
-
-  if (!job) return <div className="p-6">Loading...</div>;
 
 const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(
   job.jobType?.parentName
@@ -535,12 +464,11 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
   <label className="block text-sm font-medium">Job Type</label>
 <select
   value={job.jobType?.name || ''}
-  onChange={(e) => {
-    const selected = jobTypesList.find(t => t.name === e.target.value);
-    setJob(prev => ({ ...prev, jobType: selected }));
-  }}
-  className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+  disabled={true}  // 🚫 Lock it down
+  onChange={(e) => {}}  // 🚫 No-op onChange
+  className="border border-gray-300 rounded-md px-3 py-2 bg-gray-100 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-not-allowed"
 >
+
   <option value="">Select Job Type</option>
   {jobTypesList.map(type => (
     <option key={type.name} value={type.name}>
@@ -627,47 +555,84 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
   key={i}
   className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2"
 >
-          <select
+         <select
   className="border p-2 rounded"
   value={p.productName || ''}
- onChange={(e) => {
-  const productName = e.target.value;
-  const matched = productsList.find(prod => prod.name === productName);
+  onChange={(e) => {
+    const productName = e.target.value;
+    const matched = productsList.find(prod => prod.name === productName);
 
-  handleProductChange(i, 'productName', productName);
+    handleProductChange(i, 'productName', productName);
 
-  if (matched) {
-    const rateType = matched?.rateType?.toLowerCase();
-    const cleanUnit =
-      rateType === 'weight'
-        ? 'lbs/acre'
-        : rateType === 'population'
-        ? 'seeds/acre'
-        : matched.unit || '';
+    if (matched) {
+      const rateType = matched?.rateType?.toLowerCase();
+      const cleanUnit =
+        rateType === 'weight'
+          ? 'lbs/acre'
+          : rateType === 'population'
+          ? 'seeds/acre'
+          : matched.unit || '';
 
-    handleProductChange(i, 'unit', cleanUnit);
-    handleProductChange(i, 'rateType', matched.rateType || '');
-    handleProductChange(i, 'productId', matched.id);
-    handleProductChange(i, 'crop', matched.crop || '');
-  }
-}}
-
+      handleProductChange(i, 'unit', cleanUnit);
+      handleProductChange(i, 'rateType', matched.rateType || '');
+      handleProductChange(i, 'productId', matched.id);
+      handleProductChange(i, 'crop', matched.crop || '');
+    }
+  }}
 >
-  <option value="">Select Product</option>
-  {productsList.map(prod => (
-  <option key={prod.id} value={prod.name}>
-    {prod.name}
-  </option>
-))}
-</select>  {/* 👈 properly close the dropdown here */}
+<option value="">Select Product</option>
+
+{/* 🔵 Label for used products */}
+{job.products.length > 0 && (
+  <option disabled>Products Used By You</option>
+)}
+
+{/* 🔵 List used products */}
+{productsList
+  .filter(prod => {
+    const parent = job.jobType?.parentName;
+    if (parent === 'Seeding') return prod.type === 'Seed';
+    if (parent === 'Spraying') return prod.type === 'Chemical';
+    if (parent === 'Fertilizer') return prod.type === 'Fertilizer';
+    return true;
+  })
+  .filter(prod => job.products.some(p => p.productId === prod.id))
+  .map(prod => (
+    <option key={prod.id} value={prod.name}>
+      {prod.name}
+    </option>
+  ))}
+
+{/* 🔵 Label for all other products */}
+<option disabled>All Other Products</option>
+
+{/* 🔵 List available products not yet picked */}
+{productsList
+  .filter(prod => {
+    const parent = job.jobType?.parentName;
+    if (parent === 'Seeding') return prod.type === 'Seed';
+    if (parent === 'Spraying') return prod.type === 'Chemical';
+    if (parent === 'Fertilizer') return prod.type === 'Fertilizer';
+    return true;
+  })
+  .filter(prod => !job.products.some(p => p.productId === prod.id))
+  .map(prod => (
+    <option key={prod.id} value={prod.name}>
+      {prod.name}
+    </option>
+  ))}
 
 
-           <input
+</select>
+
+
+<input
   type="text"
   className="border p-1 rounded"
-  value={p.rate}
+  value={p.rate || ''}
   onChange={e => handleProductChange(i, 'rate', e.target.value)}
 />
+
 
 {(() => {
   const rateType = p.rateType?.toLowerCase() || '';
@@ -771,21 +736,31 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
         className="bg-white p-2 rounded border shadow-sm"
         style={{ width: 'fit-content', margin: '0 auto' }}
       >
-        {(() => {
-          console.log("👁️ Field Boundary:", fieldBoundary);
-          console.log("👁️ Drawn Polygon:", job.drawnPolygon);
+        <div className="border rounded-lg shadow p-4 mt-6">
+  <h3 className="text-lg font-semibold">{job.fieldName}</h3>
+  <p className="text-sm text-gray-600">
+    {job.crop || 'No crop'} • {job.acres?.toFixed(2) || '—'} acres
+  </p>
 
-          return renderBoundarySVG(
-            fieldBoundary,
-            job.drawnPolygon
-          );
-        })()}
-      </div>
+<div className="mt-4">
+  {fieldBoundary ? (
+    renderBoundarySVG(fieldBoundary, job?.drawnPolygon)
+  ) : (
+    <div className="text-center text-gray-400">Loading Map...</div>
+  )}
+</div>
+
+
+
+  </div>
+</div>
+
+      
       <div className="mt-6">
   <label className="block text-sm font-medium mb-1">Notes</label>
-  <textarea
-    value={notes}
-    onChange={(e) => setNotes(e.target.value)}
+<textarea
+  value={job.notes || ''}
+  onChange={(e) => setJob(prev => ({ ...prev, notes: e.target.value }))}
     className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
     rows={4}
     placeholder="Add any notes for this job..."
@@ -801,26 +776,23 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 <div className="mt-2 no-print">
   <button
     className="text-sm text-blue-600 underline"
-    onClick={() =>
-      navigate(`/jobs/edit-area/${job.fieldId}`, {
-     state: {
-  field: {
+onClick={() => {
+  setFieldToEdit({
     id: job.fieldId,
     fieldName: job.fieldName,
     boundary: fieldBoundary,
     drawnPolygon: typeof job.drawnPolygon === 'string'
       ? JSON.parse(job.drawnPolygon)
       : job.drawnPolygon,
-    drawnAcres: job.drawnAcres
-  },
-  cropYear: job.cropYear
-}
+    drawnAcres: job.drawnAcres,
+    jobId: job.id,
+  });
+  setShowEditAreaModal(true);
+}}
+>
+  ✏️ Edit Area
+</button>
 
-      })
-    }
-  >
-    ✏️ Edit Area
-  </button>
 </div>
 
      </div>
@@ -901,9 +873,23 @@ if (isLeveeJob) {
     {saving ? 'Updating...' : 'Update Field Job'}
   </button>
 </div>
+<EditAreaModal
+  isOpen={showEditAreaModal}
+  onClose={handleCloseEditAreaModal}
+>
+  {fieldToEdit && (
+    <EditJobPolygonForFieldJob
+      field={fieldToEdit}
+      onCloseModal={handleCloseEditAreaModal}
+    />
+  )}
+</EditAreaModal>
+
 </div>
 );
 }
 
 export default FieldJobSummaryPage;
+
+
 

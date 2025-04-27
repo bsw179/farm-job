@@ -1,0 +1,224 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red89\green138\blue67;\red24\green24\blue24;\red193\green193\blue193;
+\red183\green111\blue179;\red140\green211\blue254;\red194\green126\blue101;\red70\green137\blue204;\red212\green214\blue154;
+\red66\green179\blue255;\red202\green202\blue202;\red167\green197\blue152;\red67\green192\blue160;}
+{\*\expandedcolortbl;;\cssrgb\c41569\c60000\c33333;\cssrgb\c12157\c12157\c12157;\cssrgb\c80000\c80000\c80000;
+\cssrgb\c77255\c52549\c75294;\cssrgb\c61176\c86275\c99608;\cssrgb\c80784\c56863\c47059;\cssrgb\c33725\c61176\c83922;\cssrgb\c86275\c86275\c66667;
+\cssrgb\c30980\c75686\c100000;\cssrgb\c83137\c83137\c83137;\cssrgb\c70980\c80784\c65882;\cssrgb\c30588\c78824\c69020;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 // \uc0\u55357 \u56633  saveJob.js\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 doc\cf4 \strokec4 , \cf6 \strokec6 setDoc\cf4 \strokec4 , \cf6 \strokec6 getDoc\cf4 \strokec4 , \cf6 \strokec6 getDocs\cf4 \strokec4 , \cf6 \strokec6 deleteDoc\cf4 \strokec4 , \cf6 \strokec6 collection\cf4 \strokec4 , \cf6 \strokec6 serverTimestamp\cf4 \strokec4 , \cf6 \strokec6 query\cf4 \strokec4 , \cf6 \strokec6 where\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'firebase/firestore'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 db\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../firebase'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 html2canvas\cf4 \strokec4  \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'html2canvas'\cf4 \strokec4 ;\cb1 \
+\
+\cf5 \cb3 \strokec5 export\cf4 \strokec4  \cf8 \strokec8 async\cf4 \strokec4  \cf8 \strokec8 function\cf4 \strokec4  \cf9 \strokec9 saveJob\cf4 \strokec4 (\{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf6 \strokec6 jobType\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 fields\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 editableProducts\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 vendor\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 applicator\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 cropYear\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 jobDate\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 jobStatus\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 jobId\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 notes\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 shouldGeneratePDF\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 waterVolume\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 isEditing\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 navigate\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 setSaving\cf4 \cb1 \strokec4 \
+\cb3 \}) \{\cb1 \
+\cb3   \cf9 \strokec9 setSaving\cf4 \strokec4 (\cf8 \strokec8 true\cf4 \strokec4 );\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf8 \cb3 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 jobDocRef\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 isEditing\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf11 \strokec11 ?\cf4 \strokec4  \cf9 \strokec9 doc\cf4 \strokec4 (\cf10 \strokec10 db\cf4 \strokec4 , \cf7 \strokec7 'jobs'\cf4 \strokec4 , \cf6 \strokec6 jobId\cf4 \strokec4 )\cb1 \
+\cb3   \cf11 \strokec11 :\cf4 \strokec4  \cf9 \strokec9 doc\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf10 \strokec10 db\cf4 \strokec4 , \cf7 \strokec7 'jobs'\cf4 \strokec4 )); \cf2 \strokec2 // \uc0\u9989  Firestore will auto-generate new ID if creating\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf8 \cb3 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 finalJobId\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 jobDocRef\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ;\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf5 \strokec5 try\cf4 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 !\cf6 \strokec6 jobType\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 alert\cf4 \strokec4 (\cf7 \strokec7 'Please select a job type before saving.'\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 setSaving\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 fields\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf12 \strokec12 0\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 alert\cf4 \strokec4 (\cf7 \strokec7 'Please add at least one field.'\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 setSaving\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 requiresProducts\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  [\cf7 \strokec7 'Seeding'\cf4 \strokec4 , \cf7 \strokec7 'Spraying'\cf4 \strokec4 , \cf7 \strokec7 'Fertilizing'\cf4 \strokec4 ].\cf9 \strokec9 includes\cf4 \strokec4 (\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 parentName\cf4 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 requiresProducts\cf4 \strokec4  \cf11 \strokec11 &&\cf4 \strokec4  \cf6 \strokec6 editableProducts\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf12 \strokec12 0\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 alert\cf4 \strokec4 (\cf7 \strokec7 'Please add at least one product.'\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 setSaving\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 incompleteProduct\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 editableProducts\cf4 \strokec4 .\cf9 \strokec9 find\cf4 \strokec4 (\cf6 \strokec6 p\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf11 \strokec11 !\cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 productId\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf11 \strokec11 !\cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 rate\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf11 \strokec11 !\cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 unit\cf4 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 incompleteProduct\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 alert\cf4 \strokec4 (\cf7 \strokec7 'Please fill out all product fields (product, rate, and unit).'\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 setSaving\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf2 \strokec2 // Slight delay for UI\cf4 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 new\cf4 \strokec4  \cf13 \strokec13 Promise\cf4 \strokec4 (\cf9 \strokec9 res\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf9 \strokec9 setTimeout\cf4 \strokec4 (\cf9 \strokec9 res\cf4 \strokec4 , \cf12 \strokec12 200\cf4 \strokec4 ));\cb1 \
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 updatedFields\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf13 \strokec13 Promise\cf4 \strokec4 .\cf9 \strokec9 all\cf4 \strokec4 (\cf6 \strokec6 fields\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf8 \strokec8 async\cf4 \strokec4  (\cf6 \strokec6 field\cf4 \strokec4 ) \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 ref\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 document\cf4 \strokec4 .\cf9 \strokec9 getElementById\cf4 \strokec4 (\cf7 \strokec7 `field-canvas-\cf8 \strokec8 $\{\cf6 \strokec6 field\cf11 \strokec11 .\cf6 \strokec6 id\cf8 \strokec8 \}\cf7 \strokec7 `\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 !\cf10 \strokec10 ref\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 ;\cb1 \
+\
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 buttons\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 ref\cf4 \strokec4 .\cf9 \strokec9 querySelectorAll\cf4 \strokec4 (\cf7 \strokec7 '.no-print'\cf4 \strokec4 );\cb1 \
+\cb3       \cf10 \strokec10 buttons\cf4 \strokec4 .\cf9 \strokec9 forEach\cf4 \strokec4 (\cf6 \strokec6 btn\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf6 \strokec6 btn\cf4 \strokec4 .\cf6 \strokec6 style\cf4 \strokec4 .\cf6 \strokec6 display\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf7 \strokec7 'none'\cf4 \strokec4 );\cb1 \
+\
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 canvas\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 html2canvas\cf4 \strokec4 (\cf10 \strokec10 ref\cf4 \strokec4 );\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 imageBase64\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 canvas\cf4 \strokec4 .\cf9 \strokec9 toDataURL\cf4 \strokec4 (\cf7 \strokec7 'image/png'\cf4 \strokec4 );\cb1 \
+\
+\cb3       \cf10 \strokec10 buttons\cf4 \strokec4 .\cf9 \strokec9 forEach\cf4 \strokec4 (\cf6 \strokec6 btn\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf6 \strokec6 btn\cf4 \strokec4 .\cf6 \strokec6 style\cf4 \strokec4 .\cf6 \strokec6 display\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\
+\cb3       \cf5 \strokec5 return\cf4 \strokec4  \{ \cf11 \strokec11 ...\cf6 \strokec6 field\cf4 \strokec4 , \cf6 \strokec6 imageBase64\cf4 \strokec4  \};\cb1 \
+\cb3     \}));\cb1 \
+\
+\cb3    \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 updatedFieldsWithAcres\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 updatedFields\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3   \cf8 \strokec8 let\cf4 \strokec4  \cf6 \strokec6 polygon\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 drawnPolygon\cf4 \strokec4 ;\cb1 \
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 polygon\cf4 \strokec4  \cf11 \strokec11 &&\cf4 \strokec4  \cf8 \strokec8 typeof\cf4 \strokec4  \cf6 \strokec6 polygon\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'object'\cf4 \strokec4  \cf11 \strokec11 &&\cf4 \strokec4  \cf6 \strokec6 polygon\cf4 \strokec4 .\cf6 \strokec6 type\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'Feature'\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf6 \strokec6 polygon\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 JSON\cf4 \strokec4 .\cf9 \strokec9 stringify\cf4 \strokec4 (\cf6 \strokec6 polygon\cf4 \strokec4 );\cb1 \
+\cb3   \}\cb1 \
+\
+\cb3   \cf5 \strokec5 return\cf4 \strokec4  \{\cb1 \
+\cb3     \cf11 \strokec11 ...\cf6 \strokec6 f\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 boundary:\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 boundary\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,  \cf2 \strokec2 // \uc0\u9989  preserve field boundary\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 drawnPolygon:\cf4 \strokec4  \cf6 \strokec6 polygon\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 gpsAcres:\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 gpsAcres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 acres:\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 gpsAcres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 acres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf12 \strokec12 0\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 riceLeveeAcres:\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 ?.\cf6 \strokec6 riceLeveeAcres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 beanLeveeAcres:\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 ?.\cf6 \strokec6 beanLeveeAcres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf8 \strokec8 null\cf4 \cb1 \strokec4 \
+\cb3   \};\cb1 \
+\cb3 \});\cb1 \
+\
+\
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 cleanedProducts\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 editableProducts\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 p\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  (\{\cb1 \
+\cb3       \cf6 \strokec6 productId:\cf4 \strokec4  \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 productId\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 productName:\cf4 \strokec4  \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 productName\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 rate:\cf4 \strokec4  \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 rate\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 unit:\cf4 \strokec4  \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 unit\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 crop:\cf4 \strokec4  \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 crop\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 rateType:\cf4 \strokec4  \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 rateType\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \cb1 \strokec4 \
+\cb3     \}));\cb1 \
+\
+\
+\
+\cb3     \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 masterJob\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \{\cb1 \
+\cb3   \cf6 \strokec6 jobId:\cf4 \strokec4  \cf10 \strokec10 jobDocRef\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ,  \cf2 \strokec2 // \uc0\u9989  <<< RIGHT HERE\cf4 \cb1 \strokec4 \
+\cb3   \cf6 \strokec6 jobType:\cf4 \strokec4  \{\cb1 \
+\cb3     \cf6 \strokec6 name:\cf4 \strokec4  \cf6 \strokec6 jobType\cf4 \strokec4 .\cf6 \strokec6 name\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 icon:\cf4 \strokec4  \cf6 \strokec6 jobType\cf4 \strokec4 .\cf6 \strokec6 icon\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 cost:\cf4 \strokec4  \cf6 \strokec6 jobType\cf4 \strokec4 .\cf6 \strokec6 cost\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf12 \strokec12 0\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 parentName:\cf4 \strokec4  \cf6 \strokec6 jobType\cf4 \strokec4 .\cf6 \strokec6 parentName\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \cb1 \strokec4 \
+\cb3   \},\cb1 \
+\cb3   \cf11 \strokec11 ...\cf4 \strokec4 (\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 parentName\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'Tillage'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \{ \cf6 \strokec6 passes:\cf4 \strokec4  \cf9 \strokec9 parseInt\cf4 \strokec4 (\cf6 \strokec6 passes\cf4 \strokec4 ) \cf11 \strokec11 ||\cf4 \strokec4  \cf12 \strokec12 1\cf4 \strokec4  \} \cf11 \strokec11 :\cf4 \strokec4  \{\}),\cb1 \
+\cb3   \cf6 \strokec6 vendor:\cf4 \strokec4  \cf6 \strokec6 vendor\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 applicator:\cf4 \strokec4  \cf6 \strokec6 applicator\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 products:\cf4 \strokec4  \cf10 \strokec10 cleanedProducts\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 cropYear\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 jobDate\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 status:\cf4 \strokec4  \cf6 \strokec6 jobStatus\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 fieldIds:\cf4 \strokec4  \cf10 \strokec10 updatedFieldsWithAcres\cf4 \cb1 \strokec4 \
+\cb3     .\cf9 \strokec9 filter\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf11 \strokec11 !\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 isDetachedFromGroup\cf4 \strokec4 )\cb1 \
+\cb3     .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ),\cb1 \
+\cb3   \cf6 \strokec6 waterVolume:\cf4 \strokec4  \cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 parentName\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'Spraying'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 waterVolume\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 notes\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 timestamp:\cf4 \strokec4  \cf9 \strokec9 serverTimestamp\cf4 \strokec4 ()\cb1 \
+\cb3 \};\cb1 \
+\
+\
+\cb3   \cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 setDoc\cf4 \strokec4 (\cf10 \strokec10 jobDocRef\cf4 \strokec4 , \cf10 \strokec10 masterJob\cf4 \strokec4 );\cb1 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 isEditing\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 q\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 query\cf4 \strokec4 (\cf9 \strokec9 collection\cf4 \strokec4 (\cf10 \strokec10 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 ), \cf9 \strokec9 where\cf4 \strokec4 (\cf7 \strokec7 'linkedToJobId'\cf4 \strokec4 , \cf7 \strokec7 '=='\cf4 \strokec4 , \cf10 \strokec10 finalJobId\cf4 \strokec4 )\cb1 \
+\cb3 );\cb1 \
+\cb3       \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 existing\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 getDocs\cf4 \strokec4 (\cf10 \strokec10 q\cf4 \strokec4 );\cb1 \
+\cb3       \cf5 \strokec5 await\cf4 \strokec4  \cf13 \strokec13 Promise\cf4 \strokec4 .\cf9 \strokec9 all\cf4 \strokec4 (\cf10 \strokec10 existing\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf6 \strokec6 docSnap\cf4 \strokec4  \cf8 \strokec8 =>\cf4 \strokec4  \cf9 \strokec9 deleteDoc\cf4 \strokec4 (\cf9 \strokec9 doc\cf4 \strokec4 (\cf10 \strokec10 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 , \cf6 \strokec6 docSnap\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ))));\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3    \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 jobsByFieldPromises\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 updatedFieldsWithAcres\cf4 \strokec4 .\cf9 \strokec9 map\cf4 \strokec4 (\cf8 \strokec8 async\cf4 \strokec4  (\cf6 \strokec6 field\cf4 \strokec4 ) \cf8 \strokec8 =>\cf4 \strokec4  \{\cb1 \
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 isDetachedFromGroup\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 fieldJobRef\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 doc\cf4 \strokec4 (\cf10 \strokec10 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 , \cf7 \strokec7 `\cf8 \strokec8 $\{\cf10 \strokec10 finalJobId\cf8 \strokec8 \}\cf7 \strokec7 _\cf8 \strokec8 $\{\cf6 \strokec6 field\cf11 \strokec11 .\cf6 \strokec6 fieldId\cf11 \strokec11  || \cf6 \strokec6 field\cf11 \strokec11 .\cf6 \strokec6 id\cf8 \strokec8 \}\cf7 \strokec7 `\cf4 \strokec4 );\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 jobEntry\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \{\cb1 \
+\cb3     \cf6 \strokec6 jobId:\cf4 \strokec4  \cf10 \strokec10 fieldJobRef\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 linkedToJobId:\cf4 \strokec4  \cf10 \strokec10 finalJobId\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 fieldId:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 fieldName:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 fieldName\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 cropYear\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 crop:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 crop\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 acres:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 acres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf12 \strokec12 0\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 drawnAcres:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4  \cf11 \strokec11 ??\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 drawnPolygon:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 drawnPolygon\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 JSON\cf4 \strokec4 .\cf9 \strokec9 stringify\cf4 \strokec4 (\cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 drawnPolygon\cf4 \strokec4 ) \cf11 \strokec11 :\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 boundary:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 boundary\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 JSON\cf4 \strokec4 .\cf9 \strokec9 stringify\cf4 \strokec4 (\cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 boundary\cf4 \strokec4 ) \cf11 \strokec11 :\cf4 \strokec4  \cf8 \strokec8 null\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 status:\cf4 \strokec4  \cf6 \strokec6 jobStatus\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 vendor:\cf4 \strokec4  \cf6 \strokec6 vendor\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 applicator:\cf4 \strokec4  \cf6 \strokec6 applicator\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 products:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 products\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  [],\cb1 \
+\cb3     \cf6 \strokec6 jobType:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \{\},\cb1 \
+\cb3     \cf6 \strokec6 jobDate:\cf4 \strokec4  \cf6 \strokec6 jobDate\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 notes:\cf4 \strokec4  \cf6 \strokec6 notes\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 waterVolume:\cf4 \strokec4  \cf6 \strokec6 field\cf4 \strokec4 .\cf6 \strokec6 waterVolume\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3     \cf6 \strokec6 timestamp:\cf4 \strokec4  \cf9 \strokec9 serverTimestamp\cf4 \strokec4 ()\cb1 \
+\cb3   \};\cb1 \
+\
+\cb3   \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 existingFieldJob\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 getDoc\cf4 \strokec4 (\cf10 \strokec10 fieldJobRef\cf4 \strokec4 );\cb1 \
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf10 \strokec10 existingFieldJob\cf4 \strokec4 .\cf9 \strokec9 exists\cf4 \strokec4 () \cf11 \strokec11 &&\cf4 \strokec4  \cf10 \strokec10 existingFieldJob\cf4 \strokec4 .\cf9 \strokec9 data\cf4 \strokec4 ()?.\cf6 \strokec6 isDetachedFromGroup\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3   \cf5 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 setDoc\cf4 \strokec4 (\cf10 \strokec10 fieldJobRef\cf4 \strokec4 , \cf10 \strokec10 jobEntry\cf4 \strokec4 );\cb1 \
+\cb3 \});\cb1 \
+\
+\
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf13 \strokec13 Promise\cf4 \strokec4 .\cf9 \strokec9 all\cf4 \strokec4 (\cf10 \strokec10 jobsByFieldPromises\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 shouldGeneratePDF\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf5 \strokec5 try\cf4 \strokec4  \{\cb1 \
+\cb3         \cf8 \strokec8 const\cf4 \strokec4  \{ \cf9 \strokec9 generatePDFBlob\cf4 \strokec4  \} \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 import\cf4 \strokec4 (\cf7 \strokec7 '../utils/generatePDF'\cf4 \strokec4 );\cb1 \
+\cb3         \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 blob\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf9 \strokec9 generatePDFBlob\cf4 \strokec4 (\{ \cf11 \strokec11 ...\cf10 \strokec10 masterJob\cf4 \strokec4 , \cf6 \strokec6 fields:\cf4 \strokec4  \cf10 \strokec10 updatedFieldsWithAcres\cf4 \strokec4  \});\cb1 \
+\cb3         \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 url\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf13 \strokec13 URL\cf4 \strokec4 .\cf9 \strokec9 createObjectURL\cf4 \strokec4 (\cf10 \strokec10 blob\cf4 \strokec4 );\cb1 \
+\cb3         \cf8 \strokec8 const\cf4 \strokec4  \cf10 \strokec10 link\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 document\cf4 \strokec4 .\cf9 \strokec9 createElement\cf4 \strokec4 (\cf7 \strokec7 'a'\cf4 \strokec4 );\cb1 \
+\cb3         \cf10 \strokec10 link\cf4 \strokec4 .\cf6 \strokec6 href\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 url\cf4 \strokec4 ;\cb1 \
+\cb3         \cf10 \strokec10 link\cf4 \strokec4 .\cf6 \strokec6 download\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf7 \strokec7 `JobOrder_\cf8 \strokec8 $\{\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 'Unknown'\cf8 \strokec8 \}\cf7 \strokec7 _\cf8 \strokec8 $\{\cf6 \strokec6 cropYear\cf8 \strokec8 \}\cf7 \strokec7 .pdf`\cf4 \strokec4 ;\cb1 \
+\cb3         \cf6 \strokec6 document\cf4 \strokec4 .\cf6 \strokec6 body\cf4 \strokec4 .\cf9 \strokec9 appendChild\cf4 \strokec4 (\cf10 \strokec10 link\cf4 \strokec4 );\cb1 \
+\cb3         \cf10 \strokec10 link\cf4 \strokec4 .\cf9 \strokec9 click\cf4 \strokec4 ();\cb1 \
+\cb3         \cf6 \strokec6 document\cf4 \strokec4 .\cf6 \strokec6 body\cf4 \strokec4 .\cf9 \strokec9 removeChild\cf4 \strokec4 (\cf10 \strokec10 link\cf4 \strokec4 );\cb1 \
+\cb3       \} \cf5 \strokec5 catch\cf4 \strokec4  (\cf6 \strokec6 err\cf4 \strokec4 ) \{\cb1 \
+\cb3         \cf9 \strokec9 alert\cf4 \strokec4 (\cf7 \strokec7 'Job saved, but PDF failed to generate.'\cf4 \strokec4 );\cb1 \
+\cb3       \}\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf9 \strokec9 navigate\cf4 \strokec4 (\cf7 \strokec7 '/jobs'\cf4 \strokec4 );\cb1 \
+\cb3   \} \cf5 \strokec5 catch\cf4 \strokec4  (\cf6 \strokec6 err\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf6 \strokec6 console\cf4 \strokec4 .\cf9 \strokec9 error\cf4 \strokec4 (\cf6 \strokec6 err\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 alert\cf4 \strokec4 (\cf7 \strokec7 'Failed to save job.'\cf4 \strokec4 );\cb1 \
+\cb3   \} \cf5 \strokec5 finally\cf4 \strokec4  \{\cb1 \
+\cb3     \cf9 \strokec9 setSaving\cf4 \strokec4 (\cf8 \strokec8 false\cf4 \strokec4 );\cb1 \
+\cb3   \}\cb1 \
+\cb3 \}\cb1 \
+\
+}

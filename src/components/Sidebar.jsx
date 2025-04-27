@@ -43,6 +43,7 @@ const sections = [
 
 export default function Sidebar({ onNavigate }) {
   const location = useLocation();
+  
   const navigate = useNavigate();
 
   const getPathLabel = (path) => {

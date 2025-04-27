@@ -29,7 +29,11 @@ const [previewDate, setPreviewDate] = useState(null);
 
     loadJobs();
   }, []);
-
+  const fetchJobs = async () => {
+    const snap = await getDocs(collection(db, 'jobs'));
+    const jobsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setJobs(jobsData);
+  };
   // Group jobs by formatted date
 const filteredJobs = jobs.filter(j => {
   return (

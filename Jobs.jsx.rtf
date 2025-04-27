@@ -1,0 +1,1247 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red89\green138\blue67;\red24\green24\blue24;\red193\green193\blue193;
+\red183\green111\blue179;\red140\green211\blue254;\red194\green126\blue101;\red212\green214\blue154;\red66\green179\blue255;
+\red70\green137\blue204;\red202\green202\blue202;\red67\green192\blue160;\red167\green197\blue152;\red196\green83\blue86;
+\red205\green173\blue106;\red109\green109\blue109;}
+{\*\expandedcolortbl;;\cssrgb\c41569\c60000\c33333;\cssrgb\c12157\c12157\c12157;\cssrgb\c80000\c80000\c80000;
+\cssrgb\c77255\c52549\c75294;\cssrgb\c61176\c86275\c99608;\cssrgb\c80784\c56863\c47059;\cssrgb\c86275\c86275\c66667;\cssrgb\c30980\c75686\c100000;
+\cssrgb\c33725\c61176\c83922;\cssrgb\c83137\c83137\c83137;\cssrgb\c30588\c78824\c69020;\cssrgb\c70980\c80784\c65882;\cssrgb\c81961\c41176\c41176;
+\cssrgb\c84314\c72941\c49020;\cssrgb\c50196\c50196\c50196;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 // src/pages/Jobs.jsx\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 JobDetailsModal\cf4 \strokec4  \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 "@/components/JobDetailsModal"\cf4 \strokec4 ;\cb1 \
+\
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 React\cf4 \strokec4 , \{ \cf6 \strokec6 useState\cf4 \strokec4 , \cf6 \strokec6 useEffect\cf4 \strokec4 , \cf6 \strokec6 useContext\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'react'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 Tabs\cf4 \strokec4 , \cf6 \strokec6 Tab\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@/components/ui/tabs'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 Button\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@/components/ui/button'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 Card\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@/components/ui/Card'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 PageHeader\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@/components/ui/PageHeader'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 Badge\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@/components/ui/Badge'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 Plus\cf4 \strokec4 , \cf6 \strokec6 Pencil\cf4 \strokec4 , \cf6 \strokec6 Trash2\cf4 \strokec4 , \cf6 \strokec6 FileText\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'lucide-react'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 useNavigate\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'react-router-dom'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 db\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../firebase'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf6 \strokec6 collection\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 getDocs\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 deleteDoc\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 doc\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 getDoc\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 setDoc\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 query\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 where\cf4 \strokec4 ,\cb1 \
+\cb3   \cf6 \strokec6 updateDoc\cf4 \strokec4  \cf2 \strokec2 // \uc0\u55357 \u56392  this guy\cf4 \cb1 \strokec4 \
+\cb3 \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'firebase/firestore'\cf4 \strokec4 ;\cb1 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 Menu\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@headlessui/react'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 MoreVertical\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'lucide-react'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 getJobTypeIcon\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../utils/getJobTypeIcon'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 CropYearContext\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../context/CropYearContext'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 MapContainer\cf4 \strokec4 , \cf6 \strokec6 TileLayer\cf4 \strokec4 , \cf6 \strokec6 GeoJSON\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'react-leaflet'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 useUser\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '@/context/UserContext'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf6 \strokec6 L\cf4 \strokec4  \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 'leaflet'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \cf7 \strokec7 'leaflet/dist/leaflet.css'\cf4 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf4 \strokec4  \{ \cf6 \strokec6 auth\cf4 \strokec4  \} \cf5 \strokec5 from\cf4 \strokec4  \cf7 \strokec7 '../firebase'\cf4 \strokec4 ;\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6 console\cf4 \strokec4 .\cf8 \strokec8 log\cf4 \strokec4 (\cf7 \strokec7 '\uc0\u55358 \u56810  LOGGED IN UID:'\cf4 \strokec4 , \cf9 \strokec9 auth\cf4 \strokec4 .\cf9 \strokec9 currentUser\cf4 \strokec4 ?.\cf9 \strokec9 uid\cf4 \strokec4 );\cb1 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 export\cf4 \strokec4  \cf5 \strokec5 default\cf4 \strokec4  \cf10 \strokec10 function\cf4 \strokec4  \cf8 \strokec8 Jobs\cf4 \strokec4 () \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 const\cf4 \strokec4  \{ \cf9 \strokec9 cropYear\cf4 \strokec4  \} \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useContext\cf4 \strokec4 (\cf9 \strokec9 CropYearContext\cf4 \strokec4 );\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \{ \cf9 \strokec9 role\cf4 \strokec4 , \cf9 \strokec9 loading\cf4 \strokec4  \} \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useUser\cf4 \strokec4 ();\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6 console\cf4 \strokec4 .\cf8 \strokec8 log\cf4 \strokec4 (\cf7 \strokec7 '\uc0\u55358 \u56810  loading:'\cf4 \strokec4 , \cf9 \strokec9 loading\cf4 \strokec4 , \cf7 \strokec7 'role:'\cf4 \strokec4 , \cf9 \strokec9 role\cf4 \strokec4 );\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 loading\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf11 \strokec11 !\cf9 \strokec9 role\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4  \cf10 \strokec10 null\cf4 \strokec4 ;\cb1 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 view\cf4 \strokec4 , \cf8 \strokec8 setView\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 'By Field'\cf4 \strokec4 );\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 \cb3 \strokec2 // \uc0\u55357 \u56594  Prevent viewer from switching to Grouped tab\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf8 \cb3 \strokec8 useEffect\cf4 \strokec4 (() \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 role\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'viewer'\cf4 \strokec4  \cf11 \strokec11 &&\cf4 \strokec4  \cf9 \strokec9 view\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'Grouped'\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf8 \strokec8 setView\cf4 \strokec4 (\cf7 \strokec7 'By Field'\cf4 \strokec4 );\cb1 \
+\cb3   \}\cb1 \
+\cb3 \}, [\cf9 \strokec9 role\cf4 \strokec4 , \cf9 \strokec9 view\cf4 \strokec4 ]);\cb1 \
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 jobs\cf4 \strokec4 , \cf8 \strokec8 setJobs\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 fieldJobs\cf4 \strokec4 , \cf8 \strokec8 setFieldJobs\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 ([]);\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 confirmDeleteId\cf4 \strokec4 , \cf8 \strokec8 setConfirmDeleteId\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf10 \strokec10 null\cf4 \strokec4 );\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 viewMode\cf4 \strokec4 , \cf8 \strokec8 setViewMode\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 'cards'\cf4 \strokec4 ); \cf2 \strokec2 // or 'list'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 searchText\cf4 \strokec4 , \cf8 \strokec8 setSearchText\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 sortKey\cf4 \strokec4 , \cf8 \strokec8 setSortKey\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 'date'\cf4 \strokec4 ); \cf2 \strokec2 // or 'type', 'field'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 showFilterPanel\cf4 \strokec4 , \cf8 \strokec8 setShowFilterPanel\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf10 \strokec10 false\cf4 \strokec4 );\cb1 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 filterStatus\cf4 \strokec4 , \cf8 \strokec8 setFilterStatus\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 'All'\cf4 \strokec4 ); \cf2 \strokec2 // 'All', 'Planned', 'Completed'\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 filterType\cf4 \strokec4 , \cf8 \strokec8 setFilterType\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 'All'\cf4 \strokec4 ); \cf2 \strokec2 // or specific job type name\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 sortDirection\cf4 \strokec4 , \cf8 \strokec8 setSortDirection\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf7 \strokec7 'desc'\cf4 \strokec4 ); \cf2 \strokec2 // 'desc' = newest first\cf4 \cb1 \strokec4 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 selectedJob\cf4 \strokec4 , \cf8 \strokec8 setSelectedJob\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 (\cf10 \strokec10 null\cf4 \strokec4 );\cb1 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 selectedJobs\cf4 \strokec4 , \cf8 \strokec8 setSelectedJobs\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useState\cf4 \strokec4 ([]);\cb1 \
+\
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 getJobTypeName\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf6 \strokec6 job\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 typeof\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'string'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 formatShortDate\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf6 \strokec6 isoString\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 !\cf6 \strokec6 isoString\cf4 \strokec4 ) \cf5 \strokec5 return\cf4 \strokec4  \cf7 \strokec7 '\'97'\cf4 \strokec4 ;\cb1 \
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  [\cf9 \strokec9 year\cf4 \strokec4 , \cf9 \strokec9 month\cf4 \strokec4 , \cf9 \strokec9 day\cf4 \strokec4 ] \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 isoString\cf4 \strokec4 .\cf8 \strokec8 split\cf4 \strokec4 (\cf7 \strokec7 '-'\cf4 \strokec4 );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 localDate\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 new\cf4 \strokec4  \cf12 \strokec12 Date\cf4 \strokec4 (\cf12 \strokec12 Number\cf4 \strokec4 (\cf9 \strokec9 year\cf4 \strokec4 ), \cf12 \strokec12 Number\cf4 \strokec4 (\cf9 \strokec9 month\cf4 \strokec4 ) \cf11 \strokec11 -\cf4 \strokec4  \cf13 \strokec13 1\cf4 \strokec4 , \cf12 \strokec12 Number\cf4 \strokec4 (\cf9 \strokec9 day\cf4 \strokec4 ));\cb1 \
+\
+\cb3   \cf5 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 localDate\cf4 \strokec4 .\cf8 \strokec8 toLocaleDateString\cf4 \strokec4 (\cf7 \strokec7 'en-US'\cf4 \strokec4 , \{ \cf6 \strokec6 month:\cf4 \strokec4  \cf7 \strokec7 'short'\cf4 \strokec4 , \cf6 \strokec6 day:\cf4 \strokec4  \cf7 \strokec7 'numeric'\cf4 \strokec4  \});\cb1 \
+\cb3 \};\cb1 \
+\
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 navigate\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 useNavigate\cf4 \strokec4 ();\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 handleExportCSV\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  () \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 headers\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  [\cf7 \strokec7 'Date'\cf4 \strokec4 , \cf7 \strokec7 'Field'\cf4 \strokec4 , \cf7 \strokec7 'Job Type'\cf4 \strokec4 , \cf7 \strokec7 'Status'\cf4 \strokec4 , \cf7 \strokec7 'Vendor'\cf4 \strokec4 , \cf7 \strokec7 'Applicator'\cf4 \strokec4 , \cf7 \strokec7 'Acres'\cf4 \strokec4 , \cf7 \strokec7 'Products'\cf4 \strokec4 ];\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 rows\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 jobsToShow\cf4 \strokec4 .\cf8 \strokec8 map\cf4 \strokec4 (\cf6 \strokec6 job\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 productSummary\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 products\cf4 \strokec4 ?.\cf8 \strokec8 map\cf4 \strokec4 (\cf6 \strokec6 p\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cb3       \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 productName\cf11 \strokec11  || \cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  (\cf10 \strokec10 $\{\cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 rate\cf11 \strokec11  || \cf7 \strokec7 '?'\cf10 \strokec10 \}\cf7 \strokec7  \cf10 \strokec10 $\{\cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 unit\cf11 \strokec11  || \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 )`\cf4 \cb1 \strokec4 \
+\cb3     ).\cf8 \strokec8 join\cf4 \strokec4 (\cf7 \strokec7 '; '\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf5 \strokec5 return\cf4 \strokec4  [\cb1 \
+\cb3       \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobDate\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 fieldName\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf8 \strokec8 getJobTypeName\cf4 \strokec4 (\cf6 \strokec6 job\cf4 \strokec4 ) \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 status\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 vendor\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 applicator\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 acres\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 drawnAcres\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ,\cb1 \
+\cb3       \cf9 \strokec9 productSummary\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \cb1 \strokec4 \
+\cb3     ];\cb1 \
+\cb3   \});\cb1 \
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 csvContent\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  [\cb1 \
+\cb3     \cf9 \strokec9 headers\cf4 \strokec4 .\cf8 \strokec8 join\cf4 \strokec4 (\cf7 \strokec7 ','\cf4 \strokec4 ),\cb1 \
+\cb3     \cf11 \strokec11 ...\cf9 \strokec9 rows\cf4 \strokec4 .\cf8 \strokec8 map\cf4 \strokec4 (\cf6 \strokec6 row\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 row\cf4 \strokec4 .\cf8 \strokec8 map\cf4 \strokec4 (\cf6 \strokec6 field\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \cf7 \strokec7 `"\cf10 \strokec10 $\{\cf12 \strokec12 String\cf11 \strokec11 (\cf6 \strokec6 field\cf11 \strokec11 ).\cf8 \strokec8 replace\cf11 \strokec11 (\cf14 \strokec14 /"/\cf10 \strokec10 g\cf11 \strokec11 , \cf7 \strokec7 '""'\cf11 \strokec11 )\cf10 \strokec10 \}\cf7 \strokec7 "`\cf4 \strokec4 ).\cf8 \strokec8 join\cf4 \strokec4 (\cf7 \strokec7 ','\cf4 \strokec4 ))\cb1 \
+\cb3   ].\cf8 \strokec8 join\cf4 \strokec4 (\cf7 \strokec7 '\cf15 \strokec15 \\n\cf7 \strokec7 '\cf4 \strokec4 );\cb1 \
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 blob\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 new\cf4 \strokec4  \cf12 \strokec12 Blob\cf4 \strokec4 ([\cf9 \strokec9 csvContent\cf4 \strokec4 ], \{ \cf6 \strokec6 type:\cf4 \strokec4  \cf7 \strokec7 'text/csv;charset=utf-8;'\cf4 \strokec4  \});\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 url\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf12 \strokec12 URL\cf4 \strokec4 .\cf8 \strokec8 createObjectURL\cf4 \strokec4 (\cf9 \strokec9 blob\cf4 \strokec4 );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 link\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 document\cf4 \strokec4 .\cf8 \strokec8 createElement\cf4 \strokec4 (\cf7 \strokec7 'a'\cf4 \strokec4 );\cb1 \
+\cb3   \cf9 \strokec9 link\cf4 \strokec4 .\cf6 \strokec6 href\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 url\cf4 \strokec4 ;\cb1 \
+\cb3   \cf9 \strokec9 link\cf4 \strokec4 .\cf8 \strokec8 setAttribute\cf4 \strokec4 (\cf7 \strokec7 'download'\cf4 \strokec4 , \cf7 \strokec7 'FieldJobs.csv'\cf4 \strokec4 );\cb1 \
+\cb3   \cf6 \strokec6 document\cf4 \strokec4 .\cf6 \strokec6 body\cf4 \strokec4 .\cf8 \strokec8 appendChild\cf4 \strokec4 (\cf9 \strokec9 link\cf4 \strokec4 );\cb1 \
+\cb3   \cf9 \strokec9 link\cf4 \strokec4 .\cf8 \strokec8 click\cf4 \strokec4 ();\cb1 \
+\cb3   \cf6 \strokec6 document\cf4 \strokec4 .\cf6 \strokec6 body\cf4 \strokec4 .\cf8 \strokec8 removeChild\cf4 \strokec4 (\cf6 \strokec6 link\cf4 \strokec4 );\cb1 \
+\cb3 \};\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 handleExportPDF\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 async\cf4 \strokec4  () \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 const\cf4 \strokec4  \{ \cf12 \strokec12 jsPDF\cf4 \strokec4  \} \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf10 \strokec10 import\cf4 \strokec4 (\cf7 \strokec7 'jspdf'\cf4 \strokec4 );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 pdf\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 new\cf4 \strokec4  \cf12 \strokec12 jsPDF\cf4 \strokec4 ();\cb1 \
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 titleFontSize\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf13 \strokec13 12\cf4 \strokec4 ;\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 bodyFontSize\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf13 \strokec13 10\cf4 \strokec4 ;\cb1 \
+\cb3   \cf10 \strokec10 let\cf4 \strokec4  \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf13 \strokec13 10\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6 console\cf4 \strokec4 .\cf8 \strokec8 log\cf4 \strokec4 (\cf9 \strokec9 jobsToShow\cf4 \strokec4 )\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf9 \strokec9 jobsToShow\cf4 \strokec4 .\cf8 \strokec8 forEach\cf4 \strokec4 ((\cf6 \strokec6 job\cf4 \strokec4 , \cf6 \strokec6 index\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 index\cf4 \strokec4  \cf11 \strokec11 >\cf4 \strokec4  \cf13 \strokec13 0\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 addPage\cf4 \strokec4 ();\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf13 \strokec13 10\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf2 \strokec2 // Title\cf4 \cb1 \strokec4 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 setFontSize\cf4 \strokec4 (\cf9 \strokec9 titleFontSize\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 `Job: \cf10 \strokec10 $\{\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 ) || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  (\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7 )`\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\
+\cb3     \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 8\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf2 \strokec2 // Meta\cf4 \cb1 \strokec4 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 setFontSize\cf4 \strokec4 (\cf9 \strokec9 bodyFontSize\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 `Field: \cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fieldName\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7 `\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3     \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 6\cf4 \strokec4 ;\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 `Date: \cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobDate\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7 `\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3     \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 6\cf4 \strokec4 ;\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 `Acres: \cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 acres\cf11 \strokec11  || \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 drawnAcres\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7 `\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3     \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 6\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 vendor\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 `Vendor: \cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 vendor\cf10 \strokec10 \}\cf7 \strokec7 `\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 6\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 applicator\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 `Applicator: \cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 applicator\cf10 \strokec10 \}\cf7 \strokec7 `\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 6\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf2 \strokec2 // Products\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 4\cf4 \strokec4 ;\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 setFont\cf4 \strokec4 (\cf10 \strokec10 undefined\cf4 \strokec4 , \cf7 \strokec7 'bold'\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 'Products:'\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3     \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 setFont\cf4 \strokec4 (\cf10 \strokec10 undefined\cf4 \strokec4 , \cf7 \strokec7 'normal'\cf4 \strokec4 );\cb1 \
+\cb3     \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 5\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 products\cf4 \strokec4 ?.\cf8 \strokec8 forEach\cf4 \strokec4 ((\cf6 \strokec6 p\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 line\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 productName\cf11 \strokec11  || \cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  \'96 \cf10 \strokec10 $\{\cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 rate\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  \cf10 \strokec10 $\{\cf6 \strokec6 p\cf11 \strokec11 .\cf6 \strokec6 unit\cf11 \strokec11  || \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf4 \strokec4 ;\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf9 \strokec9 line\cf4 \strokec4 , \cf13 \strokec13 14\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 5\cf4 \strokec4 ;\cb1 \
+\cb3     \});\cb1 \
+\
+\cb3     \cf2 \strokec2 // Notes\cf4 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 notes\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 4\cf4 \strokec4 ;\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 setFont\cf4 \strokec4 (\cf10 \strokec10 undefined\cf4 \strokec4 , \cf7 \strokec7 'bold'\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf7 \strokec7 'Notes:'\cf4 \strokec4 , \cf13 \strokec13 10\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 setFont\cf4 \strokec4 (\cf10 \strokec10 undefined\cf4 \strokec4 , \cf7 \strokec7 'normal'\cf4 \strokec4 );\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf13 \strokec13 5\cf4 \strokec4 ;\cb1 \
+\
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 splitNotes\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 splitTextToSize\cf4 \strokec4 (\cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 notes\cf4 \strokec4 , \cf13 \strokec13 180\cf4 \strokec4 );\cb1 \
+\cb3       \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 text\cf4 \strokec4 (\cf9 \strokec9 splitNotes\cf4 \strokec4 , \cf13 \strokec13 14\cf4 \strokec4 , \cf6 \strokec6 y\cf4 \strokec4 );\cb1 \
+\cb3       \cf6 \strokec6 y\cf4 \strokec4  \cf11 \strokec11 +=\cf4 \strokec4  \cf9 \strokec9 splitNotes\cf4 \strokec4 .\cf6 \strokec6 length\cf4 \strokec4  \cf11 \strokec11 *\cf4 \strokec4  \cf13 \strokec13 5\cf4 \strokec4 ;\cb1 \
+\cb3     \}\cb1 \
+\cb3   \});\cb1 \
+\
+\cb3   \cf9 \strokec9 pdf\cf4 \strokec4 .\cf8 \strokec8 save\cf4 \strokec4 (\cf7 \strokec7 'FieldJobs.pdf'\cf4 \strokec4 );\cb1 \
+\cb3 \};\cb1 \
+\
+\cb3    \cf10 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 fetchJobs\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 async\cf4 \strokec4  () \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 jobsSnapshot\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 getDocs\cf4 \strokec4 (\cf8 \strokec8 collection\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf7 \strokec7 'jobs'\cf4 \strokec4 ));\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 jobsData\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 jobsSnapshot\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf8 \strokec8 map\cf4 \strokec4 ((\cf6 \strokec6 doc\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  (\{ \cf6 \strokec6 id:\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 , \cf11 \strokec11 ...\cf6 \strokec6 doc\cf4 \strokec4 .\cf8 \strokec8 data\cf4 \strokec4 () \}));\cb1 \
+\cb3       \cf8 \strokec8 setJobs\cf4 \strokec4 (\cf9 \strokec9 jobsData\cf4 \strokec4 );\cb1 \
+\
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 fieldJobsSnapshot\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 getDocs\cf4 \strokec4 (\cf8 \strokec8 collection\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 ));\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 fieldJobsData\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 fieldJobsSnapshot\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf8 \strokec8 map\cf4 \strokec4 ((\cf6 \strokec6 doc\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  (\{ \cf6 \strokec6 id:\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 , \cf11 \strokec11 ...\cf6 \strokec6 doc\cf4 \strokec4 .\cf8 \strokec8 data\cf4 \strokec4 () \}));\cb1 \
+\cb3       \cf8 \strokec8 setFieldJobs\cf4 \strokec4 (\cf9 \strokec9 fieldJobsData\cf4 \strokec4 );\cb1 \
+\cb3     \};\cb1 \
+\cb3   \cf8 \strokec8 useEffect\cf4 \strokec4 (() \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf8 \strokec8 fetchJobs\cf4 \strokec4 ();\cb1 \
+\cb3   \}, []);\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 handleDelete\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 async\cf4 \strokec4  (\cf6 \strokec6 jobId\cf4 \strokec4 , \cf6 \strokec6 isFieldJob\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 false\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 ref\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 doc\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf6 \strokec6 isFieldJob\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf7 \strokec7 'jobsByField'\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf7 \strokec7 'jobs'\cf4 \strokec4 , \cf6 \strokec6 jobId\cf4 \strokec4 );\cb1 \
+\
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf6 \strokec6 isFieldJob\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 jobDoc\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 getDoc\cf4 \strokec4 (\cf9 \strokec9 ref\cf4 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 !\cf9 \strokec9 jobDoc\cf4 \strokec4 .\cf8 \strokec8 exists\cf4 \strokec4 ()) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 jobData\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 jobDoc\cf4 \strokec4 .\cf8 \strokec8 data\cf4 \strokec4 ();\cb1 \
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \{ \cf9 \strokec9 linkedToJobId\cf4 \strokec4 , \cf9 \strokec9 fieldId\cf4 \strokec4  \} \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 jobData\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6 console\cf4 \strokec4 .\cf8 \strokec8 log\cf4 \strokec4 (\cf7 \strokec7 '\uc0\u55358 \u56825  Removing fieldId from master job:'\cf4 \strokec4 , \cf9 \strokec9 fieldId\cf4 \strokec4 );\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf2 \strokec2 // Delete the jobsByField doc\cf4 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 deleteDoc\cf4 \strokec4 (\cf9 \strokec9 ref\cf4 \strokec4 );\cb1 \
+\cb3     \cf8 \strokec8 setFieldJobs\cf4 \strokec4 (\cf9 \strokec9 fieldJobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 j\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 j\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf6 \strokec6 jobId\cf4 \strokec4 ));\cb1 \
+\
+\cb3     \cf2 \strokec2 // Now update the master job if linked\cf4 \cb1 \strokec4 \
+\cb3    \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 linkedToJobId\cf4 \strokec4 ) \{\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 masterRef\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 doc\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf7 \strokec7 'jobs'\cf4 \strokec4 , \cf9 \strokec9 linkedToJobId\cf4 \strokec4 );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 masterSnap\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 getDoc\cf4 \strokec4 (\cf9 \strokec9 masterRef\cf4 \strokec4 );\cb1 \
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf11 \strokec11 !\cf9 \strokec9 masterSnap\cf4 \strokec4 .\cf8 \strokec8 exists\cf4 \strokec4 ()) \cf5 \strokec5 return\cf4 \strokec4 ;\cb1 \
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 masterData\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 masterSnap\cf4 \strokec4 .\cf8 \strokec8 data\cf4 \strokec4 ();\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 updatedFields\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf9 \strokec9 masterData\cf4 \strokec4 .\cf6 \strokec6 fields\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  []).\cf8 \strokec8 filter\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf9 \strokec9 fieldId\cf4 \strokec4 );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 updatedFieldIds\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf9 \strokec9 masterData\cf4 \strokec4 .\cf6 \strokec6 fieldIds\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  []).\cf8 \strokec8 filter\cf4 \strokec4 (\cf6 \strokec6 id\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf9 \strokec9 fieldId\cf4 \strokec4 );\cb1 \
+\
+\cb3   \cf2 \strokec2 // Delete the field job\cf4 \cb1 \strokec4 \
+\cb3   \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 deleteDoc\cf4 \strokec4 (\cf9 \strokec9 ref\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 setFieldJobs\cf4 \strokec4 (\cf9 \strokec9 fieldJobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 j\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 j\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf6 \strokec6 jobId\cf4 \strokec4 ));\cb1 \
+\
+\cb3   \cf2 \strokec2 // Re-check what's left in Firestore\cf4 \cb1 \strokec4 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 q\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf8 \strokec8 query\cf4 \strokec4 (\cb1 \
+\cb3     \cf8 \strokec8 collection\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 ),\cb1 \
+\cb3     \cf8 \strokec8 where\cf4 \strokec4 (\cf7 \strokec7 'linkedToJobId'\cf4 \strokec4 , \cf7 \strokec7 '=='\cf4 \strokec4 , \cf9 \strokec9 linkedToJobId\cf4 \strokec4 )\cb1 \
+\cb3   );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 snap\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 getDocs\cf4 \strokec4 (\cf9 \strokec9 q\cf4 \strokec4 );\cb1 \
+\
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 snap\cf4 \strokec4 .\cf6 \strokec6 size\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf13 \strokec13 1\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf2 \strokec2 // Only one job left \'97 unlink it and delete the group\cf4 \cb1 \strokec4 \
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 leftoverDoc\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 snap\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 [\cf13 \strokec13 0\cf4 \strokec4 ];\cb1 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 updateDoc\cf4 \strokec4 (\cf9 \strokec9 leftoverDoc\cf4 \strokec4 .\cf6 \strokec6 ref\cf4 \strokec4 , \{\cb1 \
+\cb3       \cf6 \strokec6 linkedToJobId:\cf4 \strokec4  \cf10 \strokec10 null\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 isDetachedFromGroup:\cf4 \strokec4  \cf10 \strokec10 true\cf4 \cb1 \strokec4 \
+\cb3     \});\cb1 \
+\
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 deleteDoc\cf4 \strokec4 (\cf9 \strokec9 masterRef\cf4 \strokec4 );\cb1 \
+\cb3     \cf8 \strokec8 setJobs\cf4 \strokec4 (\cf9 \strokec9 jobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 j\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 j\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf9 \strokec9 linkedToJobId\cf4 \strokec4 ));\cb1 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 fetchJobs\cf4 \strokec4 ();\cb1 \
+\cb3   \} \cf5 \strokec5 else\cf4 \strokec4  \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 snap\cf4 \strokec4 .\cf6 \strokec6 size\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf13 \strokec13 0\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf2 \strokec2 // No field jobs left \'97 delete group\cf4 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 deleteDoc\cf4 \strokec4 (\cf9 \strokec9 masterRef\cf4 \strokec4 );\cb1 \
+\cb3     \cf8 \strokec8 setJobs\cf4 \strokec4 (\cf9 \strokec9 jobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 j\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 j\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf9 \strokec9 linkedToJobId\cf4 \strokec4 ));\cb1 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 fetchJobs\cf4 \strokec4 ();\cb1 \
+\cb3   \} \cf5 \strokec5 else\cf4 \strokec4  \{\cb1 \
+\cb3     \cf2 \strokec2 // More than one field job left \'97 update group with new field list\cf4 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 setDoc\cf4 \strokec4 (\cf9 \strokec9 masterRef\cf4 \strokec4 , \{\cb1 \
+\cb3       \cf11 \strokec11 ...\cf9 \strokec9 masterData\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 fields:\cf4 \strokec4  \cf9 \strokec9 updatedFields\cf4 \strokec4 ,\cb1 \
+\cb3       \cf6 \strokec6 fieldIds:\cf4 \strokec4  \cf9 \strokec9 updatedFieldIds\cf4 \cb1 \strokec4 \
+\cb3     \});\cb1 \
+\cb3   \}\cb1 \
+\cb3 \}\cb1 \
+\
+\cb3 \} \cf5 \strokec5 else\cf4 \strokec4  \{\cb1 \
+\cb3   \cf2 \strokec2 // \uc0\u55357 \u56613  Delete all field jobs linked to this group\cf4 \cb1 \strokec4 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 fieldJobSnap\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 getDocs\cf4 \strokec4 (\cb1 \
+\cb3     \cf8 \strokec8 collection\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 )\cb1 \
+\cb3   );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 linkedFieldJobs\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 fieldJobSnap\cf4 \strokec4 .\cf6 \strokec6 docs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 (\cb1 \
+\cb3     (\cf6 \strokec6 doc\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 doc\cf4 \strokec4 .\cf8 \strokec8 data\cf4 \strokec4 ().\cf6 \strokec6 linkedToJobId\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf6 \strokec6 jobId\cf4 \cb1 \strokec4 \
+\cb3   );\cb1 \
+\
+\cb3   \cf5 \strokec5 await\cf4 \strokec4  \cf12 \strokec12 Promise\cf4 \strokec4 .\cf8 \strokec8 all\cf4 \strokec4 (\cb1 \
+\cb3     \cf9 \strokec9 linkedFieldJobs\cf4 \strokec4 .\cf8 \strokec8 map\cf4 \strokec4 ((\cf6 \strokec6 docSnap\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cb3       \cf8 \strokec8 deleteDoc\cf4 \strokec4 (\cf8 \strokec8 doc\cf4 \strokec4 (\cf9 \strokec9 db\cf4 \strokec4 , \cf7 \strokec7 'jobsByField'\cf4 \strokec4 , \cf6 \strokec6 docSnap\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4 ))\cb1 \
+\cb3     )\cb1 \
+\cb3   );\cb1 \
+\
+\cb3   \cf2 \strokec2 // \uc0\u55357 \u56785 \u65039  Delete the master job\cf4 \cb1 \strokec4 \
+\cb3   \cf5 \strokec5 await\cf4 \strokec4  \cf8 \strokec8 deleteDoc\cf4 \strokec4 (\cf9 \strokec9 ref\cf4 \strokec4 );\cb1 \
+\cb3   \cf8 \strokec8 setJobs\cf4 \strokec4 (\cf9 \strokec9 jobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 j\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 j\cf4 \strokec4 .\cf6 \strokec6 id\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf6 \strokec6 jobId\cf4 \strokec4 ));\cb1 \
+\cb3   \cf8 \strokec8 setFieldJobs\cf4 \strokec4 ((\cf6 \strokec6 prev\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 prev\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 j\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 j\cf4 \strokec4 .\cf6 \strokec6 linkedToJobId\cf4 \strokec4  \cf11 \strokec11 !==\cf4 \strokec4  \cf6 \strokec6 jobId\cf4 \strokec4 )\cb1 \
+\cb3   );\cb1 \
+\cb3 \}\cb1 \
+\
+\cb3 \};\cb1 \
+\
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 renderJobCard\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf6 \strokec6 job\cf4 \strokec4 , \cf6 \strokec6 isFieldJob\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 false\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  (\cb1 \
+\cb3   \cf16 \strokec16 <\cf12 \strokec12 Card\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 key\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setSelectedJob\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "cursor-pointer hover:shadow-md transition"\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 title\cf11 \strokec11 =\cf7 \strokec7 "Click for details"\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3     \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56523  Header (job type + field name) */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex justify-between items-start"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3       \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-sm font-semibold text-blue-700 flex items-center gap-1"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3           \cf16 \strokec16 <\cf10 \strokec10 img\cf4 \cb1 \strokec4 \
+\cb3             \cf6 \strokec6 src\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 getJobTypeIcon\cf11 \strokec11 (\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 ))\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3             \cf6 \strokec6 alt\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3             \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "w-4 h-4 inline-block"\cf4 \cb1 \strokec4 \
+\cb3           \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cb3           \cf10 \strokec10 \{\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-xs text-gray-500 leading-tight"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 cropYear\cf10 \strokec10 \}\cf4 \strokec4  \'95 \cf10 \strokec10 \{\cf6 \strokec6 isFieldJob\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11     ? \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fieldName\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     : [...\cf10 \strokec10 new\cf11 \strokec11  \cf12 \strokec12 Set\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 ?.\cf8 \strokec8 filter\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  !\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 isDetachedFromGroup\cf11 \strokec11 ).\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 fieldName\cf11 \strokec11 ))].\cf8 \strokec8 join\cf11 \strokec11 (\cf7 \strokec7 ', '\cf11 \strokec11 )\cf4 \cb1 \strokec4 \
+\
+\
+\cf11 \cb3 \strokec11   \cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf16 \strokec16 <\cf10 \strokec10 br\cf4 \strokec4  \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cb3   \cf10 \strokec10 \{\cf8 \strokec8 formatShortDate\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobDate\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3       \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3       \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u57056  Actions (edit/delete/pdf) */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3       \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u57056  Actions (edit/delete/pdf) */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 \{\cf9 \strokec9 role\cf11 \strokec11  !== \cf7 \strokec7 'viewer'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex gap-2"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 size\cf11 \strokec11 =\cf7 \strokec7 "icon"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 variant\cf11 \strokec11 =\cf7 \strokec7 "ghost"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 isFieldJob\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf8 \strokec8 navigate\cf11 \strokec11 (\cf7 \strokec7 `/jobs/field/\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf10 \strokec10 \}\cf7 \strokec7 `\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf8 \strokec8 navigate\cf11 \strokec11 (\cf7 \strokec7 '/jobs/summary'\cf11 \strokec11 , \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 state:\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 isEditing:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 jobId:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 jobType:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 jobDate:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobDate\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 vendor:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 vendor\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 applicator:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 applicator\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf6 \strokec6 products:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 products\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11          \cf6 \strokec6 selectedFields:\cf11 \strokec11  \cf12 \strokec12 Array\cf11 \strokec11 .\cf8 \strokec8 from\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf10 \strokec10 new\cf11 \strokec11  \cf12 \strokec12 Map\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf9 \strokec9 fieldJobs\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       .\cf8 \strokec8 filter\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fieldIds\cf11 \strokec11 ?.\cf8 \strokec8 includes\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 fieldId\cf11 \strokec11 ) && !\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 isDetachedFromGroup\cf11 \strokec11 )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       .\cf8 \strokec8 sort\cf11 \strokec11 ((\cf6 \strokec6 a\cf11 \strokec11 , \cf6 \strokec6 b\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 hasPolyA\cf11 \strokec11  = !!\cf6 \strokec6 a\cf11 \strokec11 .\cf6 \strokec6 drawnPolygon\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 hasPolyB\cf11 \strokec11  = !!\cf6 \strokec6 b\cf11 \strokec11 .\cf6 \strokec6 drawnPolygon\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 hasPolyA\cf11 \strokec11  && !\cf9 \strokec9 hasPolyB\cf11 \strokec11 ) \cf5 \strokec5 return\cf11 \strokec11  -\cf13 \strokec13 1\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf5 \strokec5 if\cf11 \strokec11  (!\cf9 \strokec9 hasPolyA\cf11 \strokec11  && \cf9 \strokec9 hasPolyB\cf11 \strokec11 ) \cf5 \strokec5 return\cf11 \strokec11  \cf13 \strokec13 1\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf5 \strokec5 return\cf11 \strokec11  (\cf6 \strokec6 b\cf11 \strokec11 .\cf6 \strokec6 timestamp\cf11 \strokec11 ?.\cf6 \strokec6 seconds\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 ) - (\cf6 \strokec6 a\cf11 \strokec11 .\cf6 \strokec6 timestamp\cf11 \strokec11 ?.\cf6 \strokec6 seconds\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \})\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  [\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 fieldId\cf11 \strokec11 , \cf6 \strokec6 f\cf11 \strokec11 ])\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   ).\cf8 \strokec8 values\cf11 \strokec11 ()\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 ),\cf4 \cb1 \strokec4 \
+\
+\
+\
+\cf11 \cb3 \strokec11               \cf6 \strokec6 cropYear:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 cropYear\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \});\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf12 \strokec12 Pencil\cf11 \strokec11  \cf6 \strokec6 size\cf11 \strokec11 =\cf10 \strokec10 \{\cf13 \strokec13 16\cf10 \strokec10 \}\cf11 \strokec11  \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 size\cf11 \strokec11 =\cf7 \strokec7 "icon"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 variant\cf11 \strokec11 =\cf7 \strokec7 "ghost"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 e\cf11 \strokec11 .\cf8 \strokec8 stopPropagation\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf8 \strokec8 setConfirmDeleteId\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf12 \strokec12 Trash2\cf11 \strokec11  \cf6 \strokec6 size\cf11 \strokec11 =\cf10 \strokec10 \{\cf13 \strokec13 16\cf10 \strokec10 \}\cf11 \strokec11  \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 size\cf11 \strokec11 =\cf7 \strokec7 "icon"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 variant\cf11 \strokec11 =\cf7 \strokec7 "ghost"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 e\cf11 \strokec11 .\cf8 \strokec8 stopPropagation\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf2 \strokec2 // optional: trigger your PDF logic here\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf12 \strokec12 FileText\cf11 \strokec11  \cf6 \strokec6 size\cf11 \strokec11 =\cf10 \strokec10 \{\cf13 \strokec13 16\cf10 \strokec10 \}\cf11 \strokec11  \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf6 \strokec6 size\cf11 \strokec11 =\cf7 \strokec7 "icon"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf6 \strokec6 variant\cf11 \strokec11 =\cf7 \strokec7 "ghost"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{async\cf11 \strokec11  (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 e\cf11 \strokec11 .\cf8 \strokec8 stopPropagation\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  = \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11  === \cf7 \strokec7 'Planned'\cf11 \strokec11  ? \cf7 \strokec7 'Completed'\cf11 \strokec11  : \cf7 \strokec7 'Planned'\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 isFieldJob\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 ref\cf11 \strokec11  = \cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf9 \strokec9 ref\cf11 \strokec11 , \{ ...\cf6 \strokec6 job\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \});\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf8 \strokec8 setFieldJobs\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  ? \{ ...\cf6 \strokec6 j\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 j\cf11 \strokec11 ))\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf2 \strokec2 // Sync to grouped job if needed\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 groupRef\cf11 \strokec11  = \cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobs'\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 groupSnap\cf11 \strokec11  = \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 getDoc\cf11 \strokec11 (\cf9 \strokec9 groupRef\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 groupSnap\cf11 \strokec11 .\cf8 \strokec8 exists\cf11 \strokec11 ()) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 groupData\cf11 \strokec11  = \cf9 \strokec9 groupSnap\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 updatedFields\cf11 \strokec11  = (\cf9 \strokec9 groupData\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11  || []).\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fieldId\cf11 \strokec11  ? \{ ...\cf6 \strokec6 f\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 f\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf9 \strokec9 groupRef\cf11 \strokec11 , \{ ...\cf9 \strokec9 groupData\cf11 \strokec11 , \cf6 \strokec6 fields:\cf11 \strokec11  \cf9 \strokec9 updatedFields\cf11 \strokec11  \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \});\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 ref\cf11 \strokec11  = \cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobs'\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf9 \strokec9 ref\cf11 \strokec11 , \{ ...\cf6 \strokec6 job\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \});\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf8 \strokec8 setJobs\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  ? \{ ...\cf6 \strokec6 j\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 j\cf11 \strokec11 ))\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf2 \strokec2 // Update field jobs too\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 snap\cf11 \strokec11  = \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 getDocs\cf11 \strokec11 (\cf8 \strokec8 collection\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 ));\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 linked\cf11 \strokec11  = \cf9 \strokec9 snap\cf11 \strokec11 .\cf6 \strokec6 docs\cf11 \strokec11 .\cf8 \strokec8 filter\cf11 \strokec11 (\cf6 \strokec6 doc\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 doc\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 ().\cf6 \strokec6 linkedToJobId\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf5 \strokec5 await\cf11 \strokec11  \cf12 \strokec12 Promise\cf11 \strokec11 .\cf8 \strokec8 all\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf9 \strokec9 linked\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 docSnap\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 , \cf6 \strokec6 docSnap\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ), \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             ...\cf6 \strokec6 docSnap\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 (),\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \})\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf8 \strokec8 setFieldJobs\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  ? \{ ...\cf6 \strokec6 j\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 j\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11  === \cf7 \strokec7 'Planned'\cf11 \strokec11  ? \cf7 \strokec7 '\uc0\u10004 \u65039 '\cf11 \strokec11  : \cf7 \strokec7 '\uc0\u8617 \u65039 '\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf12 \strokec12 Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3     \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u57318  CARD CONTENT (By Field) */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf10 \strokec10 \{\cf6 \strokec6 isFieldJob\cf11 \strokec11  ? (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-sm text-gray-600"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf10 \strokec10 \{\cf11 \strokec11 (() \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 p\cf11 \strokec11  = \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 products\cf11 \strokec11 ?.[\cf13 \strokec13 0\cf11 \strokec11 ];\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf5 \strokec5 if\cf11 \strokec11  (!\cf9 \strokec9 p\cf11 \strokec11 ) \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 '\'97'\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 productName\cf11 \strokec11  || \cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  \'95 \cf10 \strokec10 $\{\cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 rate\cf11 \strokec11  || \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7  \cf10 \strokec10 $\{\cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 unit\cf11 \strokec11  || \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \})()\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex flex-col gap-0.5 text-xs text-gray-500"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11      \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center gap-2 text-xs text-gray-500"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 Badge\cf11 \strokec11  \cf6 \strokec6 variant\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11 ?.\cf8 \strokec8 toLowerCase\cf11 \strokec11 ()\cf10 \strokec10 \}\cf16 \strokec16 >\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf10 \strokec10 \}\cf16 \strokec16 </\cf12 \strokec12 Badge\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11   \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Badge\cf11 \strokec11  \cf6 \strokec6 variant\cf11 \strokec11 =\cf7 \strokec7 "outline"\cf16 \strokec16 >\cf11 \strokec11 \uc0\u55357 \u56599  Grouped\cf16 \strokec16 </\cf12 \strokec12 Badge\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11   \cf10 \strokec10 \{\cf11 \strokec11 (() \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 isLeveeJob\cf11 \strokec11  = (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ).\cf8 \strokec8 toLowerCase\cf11 \strokec11 ().\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'levee'\cf11 \strokec11 ) ||\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                        (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ).\cf8 \strokec8 toLowerCase\cf11 \strokec11 ().\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'pack'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 crop\cf11 \strokec11  = \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 crop\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 isLeveeJob\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 crop\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'Rice'\cf11 \strokec11 )) \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 riceLeveeAcres\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  acres (Levee \'96 Rice)`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 crop\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'Soybean'\cf11 \strokec11 )) \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 beanLeveeAcres\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  acres (Levee \'96 Soybeans)`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 acres\cf11 \strokec11  || \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 drawnAcres\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  acres`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \})()\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11         \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 parentName\cf11 \strokec11  === \cf7 \strokec7 'Tillage'\cf11 \strokec11  && \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 passes\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-xs text-gray-500"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             Passes: \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 passes\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     ) : (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf2 \strokec2 // \uc0\u55357 \u57318  CARD CONTENT (Grouped)\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-sm text-gray-600"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf10 \strokec10 \{\cf11 \strokec11 (() \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 p\cf11 \strokec11  = \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 products\cf11 \strokec11 ?.[\cf13 \strokec13 0\cf11 \strokec11 ];\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf5 \strokec5 if\cf11 \strokec11  (!\cf9 \strokec9 p\cf11 \strokec11 ) \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 '\'97'\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 productName\cf11 \strokec11  || \cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  \'95 \cf10 \strokec10 $\{\cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 rate\cf11 \strokec11  || \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7  \cf10 \strokec10 $\{\cf9 \strokec9 p\cf11 \strokec11 .\cf6 \strokec6 unit\cf11 \strokec11  || \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \})()\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex flex-col gap-0.5 text-xs text-gray-500"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center gap-2"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf16 \strokec16 <\cf12 \strokec12 Badge\cf11 \strokec11  \cf6 \strokec6 variant\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11 ?.\cf8 \strokec8 toLowerCase\cf11 \strokec11 ()\cf10 \strokec10 \}\cf16 \strokec16 >\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf10 \strokec10 \}\cf16 \strokec16 </\cf12 \strokec12 Badge\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf10 \strokec10 \{\cf11 \strokec11 (() \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 isLeveeJob\cf11 \strokec11  = (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ).\cf8 \strokec8 toLowerCase\cf11 \strokec11 ().\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'levee'\cf11 \strokec11 ) ||\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                                  (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ).\cf8 \strokec8 toLowerCase\cf11 \strokec11 ().\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'pack'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 isLeveeJob\cf11 \strokec11  && \cf12 \strokec12 Array\cf11 \strokec11 .\cf8 \strokec8 isArray\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 )) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf10 \strokec10 let\cf11 \strokec11  \cf6 \strokec6 total\cf11 \strokec11  = \cf13 \strokec13 0\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 .\cf8 \strokec8 forEach\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 crop\cf11 \strokec11  = \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 crop\cf11 \strokec11  || \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 crops\cf11 \strokec11 ?.[\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 cropYear\cf11 \strokec11 ]?.\cf6 \strokec6 crop\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 crop\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'Rice'\cf11 \strokec11 )) \cf6 \strokec6 total\cf11 \strokec11  += \cf8 \strokec8 parseFloat\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 riceLeveeAcres\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf5 \strokec5 else\cf11 \strokec11  \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 crop\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'Soybean'\cf11 \strokec11 )) \cf6 \strokec6 total\cf11 \strokec11  += \cf8 \strokec8 parseFloat\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 beanLeveeAcres\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \});\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 total\cf11 \strokec11 .\cf8 \strokec8 toFixed\cf11 \strokec11 (\cf13 \strokec13 2\cf11 \strokec11 )\cf10 \strokec10 \}\cf7 \strokec7  acres (Levee)`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11             \cf5 \strokec5 if\cf11 \strokec11  (\cf12 \strokec12 Array\cf11 \strokec11 .\cf8 \strokec8 isArray\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 )) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 total\cf11 \strokec11  = \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 .\cf8 \strokec8 reduce\cf11 \strokec11 ((\cf6 \strokec6 sum\cf11 \strokec11 , \cf6 \strokec6 f\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 sum\cf11 \strokec11  + (\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 acres\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 ), \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf9 \strokec9 total\cf11 \strokec11 .\cf8 \strokec8 toFixed\cf11 \strokec11 (\cf13 \strokec13 2\cf11 \strokec11 )\cf10 \strokec10 \}\cf7 \strokec7  acres`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 '\'97 acres'\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11             \})()\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11           \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 parentName\cf11 \strokec11  === \cf7 \strokec7 'Tillage'\cf11 \strokec11  && \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 passes\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf11 \strokec11 Passes: \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 passes\cf10 \strokec10 \}\cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf16 \strokec16 </\cf12 \strokec12 Card\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3 );\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf8 \strokec8 renderListItem\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf6 \strokec6 job\cf4 \strokec4 , \cf6 \strokec6 isFieldJob\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf5 \strokec5 return\cf4 \strokec4  (\cb1 \
+\cb3  \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \cb1 \strokec4 \
+\cb3   \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center justify-between ..."\cf4 \cb1 \strokec4 \
+\cb3   \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 tag\cf11 \strokec11  = \cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf6 \strokec6 tagName\cf11 \strokec11 ?.\cf8 \strokec8 toLowerCase\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 isInsideMenu\cf11 \strokec11  = \cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf8 \strokec8 closest\cf11 \strokec11 (\cf7 \strokec7 '.job-menu'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 tag\cf11 \strokec11  === \cf7 \strokec7 'input'\cf11 \strokec11  || \cf9 \strokec9 isInsideMenu\cf11 \strokec11 ) \cf5 \strokec5 return\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf8 \strokec8 setSelectedJob\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3       \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56523  List View Left Section */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3       \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center gap-3 overflow-x-auto whitespace-nowrap text-sm"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3         \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u11036  Checkbox */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3        \cf10 \strokec10 \{\cf9 \strokec9 role\cf11 \strokec11  !== \cf7 \strokec7 'viewer'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf10 \strokec10 input\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 type\cf11 \strokec11 =\cf7 \strokec7 "checkbox"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 checked\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 onChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf6 \strokec6 checked\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf8 \strokec8 setSelectedJobs\cf11 \strokec11 ((\cf6 \strokec6 prev\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  [...\cf6 \strokec6 prev\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ]);\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf8 \strokec8 setSelectedJobs\cf11 \strokec11 ((\cf6 \strokec6 prev\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 filter\cf11 \strokec11 ((\cf6 \strokec6 id\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 id\cf11 \strokec11  !== \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ));\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3         \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56517  Job Date */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobDate\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3         \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55356 \u57137  Job Type */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-gray-700 flex items-center gap-1"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3           \cf16 \strokec16 <\cf10 \strokec10 img\cf4 \cb1 \strokec4 \
+\cb3             \cf6 \strokec6 src\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 getJobTypeIcon\cf11 \strokec11 (\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 ))\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3             \cf6 \strokec6 alt\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3             \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "w-5 h-5 inline-block"\cf4 \cb1 \strokec4 \
+\cb3           \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cb3           \cf10 \strokec10 \{\cf8 \strokec8 getJobTypeName\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3         \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55356 \u57150  Field Name */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3           \cf10 \strokec10 \{\cf6 \strokec6 isFieldJob\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11             ? \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fieldName\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 : [...\cf10 \strokec10 new\cf11 \strokec11  \cf12 \strokec12 Set\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 ?.\cf8 \strokec8 filter\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  !\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 isDetachedFromGroup\cf11 \strokec11 ).\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 fieldName\cf11 \strokec11 ))].\cf8 \strokec8 join\cf11 \strokec11 (\cf7 \strokec7 ', '\cf11 \strokec11 )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3         \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55358 \u56810  Product Name */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 products\cf11 \strokec11 ?.[\cf13 \strokec13 0\cf11 \strokec11 ]?.\cf6 \strokec6 productName\cf11 \strokec11  || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3         \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56528  Acres + Passes */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3         \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex flex-col"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3           \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3             \cf10 \strokec10 \{\cf11 \strokec11 (() \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11               \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 isLeveeJob\cf11 \strokec11  = (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ).\cf8 \strokec8 toLowerCase\cf11 \strokec11 ().\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'levee'\cf11 \strokec11 ) ||\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                                  (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ).\cf8 \strokec8 toLowerCase\cf11 \strokec11 ().\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'pack'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 isLeveeJob\cf11 \strokec11  && \cf12 \strokec12 Array\cf11 \strokec11 .\cf8 \strokec8 isArray\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 )) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf10 \strokec10 let\cf11 \strokec11  \cf6 \strokec6 total\cf11 \strokec11  = \cf13 \strokec13 0\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11 .\cf8 \strokec8 forEach\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 crop\cf11 \strokec11  = \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 crop\cf11 \strokec11  || \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 crops\cf11 \strokec11 ?.[\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 cropYear\cf11 \strokec11 ]?.\cf6 \strokec6 crop\cf11 \strokec11  || \cf7 \strokec7 ''\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 crop\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'Rice'\cf11 \strokec11 )) \cf6 \strokec6 total\cf11 \strokec11  += \cf8 \strokec8 parseFloat\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 riceLeveeAcres\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf5 \strokec5 else\cf11 \strokec11  \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 crop\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf7 \strokec7 'Soybean'\cf11 \strokec11 )) \cf6 \strokec6 total\cf11 \strokec11  += \cf8 \strokec8 parseFloat\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 beanLeveeAcres\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \});\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 total\cf11 \strokec11 .\cf8 \strokec8 toFixed\cf11 \strokec11 (\cf13 \strokec13 1\cf11 \strokec11 )\cf10 \strokec10 \}\cf7 \strokec7  ac (Levee)`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 isFieldJob\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 acres\cf11 \strokec11 ?.\cf8 \strokec8 toFixed\cf11 \strokec11 ?.(\cf13 \strokec13 1\cf11 \strokec11 ) || \cf7 \strokec7 '\'97'\cf10 \strokec10 \}\cf7 \strokec7  ac`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 total\cf11 \strokec11  = \cf12 \strokec12 Object\cf11 \strokec11 .\cf8 \strokec8 values\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 acres\cf11 \strokec11  || \{\}).\cf8 \strokec8 reduce\cf11 \strokec11 ((\cf6 \strokec6 sum\cf11 \strokec11 , \cf6 \strokec6 val\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 sum\cf11 \strokec11  + (\cf6 \strokec6 val\cf11 \strokec11  || \cf13 \strokec13 0\cf11 \strokec11 ), \cf13 \strokec13 0\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf5 \strokec5 return\cf11 \strokec11  \cf7 \strokec7 `\cf10 \strokec10 $\{\cf9 \strokec9 total\cf11 \strokec11 .\cf8 \strokec8 toFixed\cf11 \strokec11 (\cf13 \strokec13 1\cf11 \strokec11 )\cf10 \strokec10 \}\cf7 \strokec7  ac`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \})()\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3           \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3           \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 parentName\cf11 \strokec11  === \cf7 \strokec7 'Tillage'\cf11 \strokec11  && \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 passes\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11             \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf11 \strokec11 Passes: \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 passes\cf10 \strokec10 \}\cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3        \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56524  Status + Link badge */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center gap-2"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf16 \strokec16 <\cf12 \strokec12 Badge\cf4 \strokec4  \cf6 \strokec6 variant\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11 ?.\cf8 \strokec8 toLowerCase\cf11 \strokec11 ()\cf10 \strokec10 \}\cf16 \strokec16 >\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf10 \strokec10 \}\cf16 \strokec16 </\cf12 \strokec12 Badge\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3   \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Badge\cf11 \strokec11  \cf6 \strokec6 variant\cf11 \strokec11 =\cf7 \strokec7 "outline"\cf16 \strokec16 >\cf11 \strokec11 \uc0\u55357 \u56599  Grouped\cf16 \strokec16 </\cf12 \strokec12 Badge\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3       \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3      \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55358 \u56816  3-dot menu */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 \{\cf9 \strokec9 role\cf11 \strokec11  !== \cf7 \strokec7 'viewer'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "job-menu relative"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 <\cf12 \strokec12 Menu\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf16 \strokec16 <\cf12 \strokec12 Menu.Button\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-gray-500 hover:text-gray-700"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 <\cf12 \strokec12 MoreVertical\cf11 \strokec11  \cf6 \strokec6 size\cf11 \strokec11 =\cf10 \strokec10 \{\cf13 \strokec13 18\cf10 \strokec10 \}\cf11 \strokec11  \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf16 \strokec16 </\cf12 \strokec12 Menu.Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf16 \strokec16 <\cf12 \strokec12 Menu.Items\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow-md z-50"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u9999 \u65039  Edit */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `block w-full px-4 py-2 text-sm text-left \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 isFieldJob\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                         \cf8 \strokec8 navigate\cf11 \strokec11 (\cf7 \strokec7 `/jobs/field/\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf10 \strokec10 \}\cf7 \strokec7 `\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                         \cf8 \strokec8 navigate\cf11 \strokec11 (\cf7 \strokec7 '/jobs/summary'\cf11 \strokec11 , \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                           \cf6 \strokec6 state:\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 isEditing:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 jobId:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 jobType:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 jobDate:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobDate\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 vendor:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 vendor\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 applicator:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 applicator\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 products:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 products\cf11 \strokec11 ,\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 selectedFields:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11  || [],\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                             \cf6 \strokec6 cropYear:\cf11 \strokec11  \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 cropYear\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                           \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                         \});\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \uc0\u9999 \u65039  Edit\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56785 \u65039  Delete */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `block w-full px-4 py-2 text-sm text-left \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 handleDelete\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 , \cf6 \strokec6 isFieldJob\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \uc0\u55357 \u56785 \u65039  Delete\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56516  PDF */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `block w-full px-4 py-2 text-sm text-left \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{async\cf11 \strokec11  () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf10 \strokec10 const\cf11 \strokec11  \{ \cf8 \strokec8 generatePDFBlob\cf11 \strokec11  \} = \cf5 \strokec5 await\cf11 \strokec11  \cf10 \strokec10 import\cf11 \strokec11 (\cf7 \strokec7 '../utils/generatePDF'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 blob\cf11 \strokec11  = \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 generatePDFBlob\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 url\cf11 \strokec11  = \cf12 \strokec12 URL\cf11 \strokec11 .\cf8 \strokec8 createObjectURL\cf11 \strokec11 (\cf9 \strokec9 blob\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 link\cf11 \strokec11  = \cf6 \strokec6 document\cf11 \strokec11 .\cf8 \strokec8 createElement\cf11 \strokec11 (\cf7 \strokec7 'a'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf9 \strokec9 link\cf11 \strokec11 .\cf6 \strokec6 href\cf11 \strokec11  = \cf9 \strokec9 url\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf9 \strokec9 link\cf11 \strokec11 .\cf6 \strokec6 download\cf11 \strokec11  = \cf7 \strokec7 `JobOrder_\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 jobType\cf10 \strokec10 \}\cf7 \strokec7 _\cf10 \strokec10 $\{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 cropYear\cf10 \strokec10 \}\cf7 \strokec7 .pdf`\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf6 \strokec6 document\cf11 \strokec11 .\cf6 \strokec6 body\cf11 \strokec11 .\cf8 \strokec8 appendChild\cf11 \strokec11 (\cf9 \strokec9 link\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf9 \strokec9 link\cf11 \strokec11 .\cf8 \strokec8 click\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                       \cf6 \strokec6 document\cf11 \strokec11 .\cf6 \strokec6 body\cf11 \strokec11 .\cf8 \strokec8 removeChild\cf11 \strokec11 (\cf9 \strokec9 link\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \uc0\u55357 \u56516  PDF\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11               \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56580  Toggle Status */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `block w-full px-4 py-2 text-sm text-left \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{async\cf11 \strokec11  () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  = \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11  === \cf7 \strokec7 'Planned'\cf11 \strokec11  ? \cf7 \strokec7 'Completed'\cf11 \strokec11  : \cf7 \strokec7 'Planned'\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11   \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 isFieldJob\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 ref\cf11 \strokec11  = \cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf9 \strokec9 ref\cf11 \strokec11 , \{ ...\cf6 \strokec6 job\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \});\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf8 \strokec8 setFieldJobs\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  ? \{ ...\cf6 \strokec6 j\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 j\cf11 \strokec11 ))\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf2 \strokec2 // \uc0\u55357 \u56577  Also update linked grouped job field if exists\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 groupRef\cf11 \strokec11  = \cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobs'\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 groupSnap\cf11 \strokec11  = \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 getDoc\cf11 \strokec11 (\cf9 \strokec9 groupRef\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 groupSnap\cf11 \strokec11 .\cf8 \strokec8 exists\cf11 \strokec11 ()) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 groupData\cf11 \strokec11  = \cf9 \strokec9 groupSnap\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 ();\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 updatedFields\cf11 \strokec11  = (\cf9 \strokec9 groupData\cf11 \strokec11 .\cf6 \strokec6 fields\cf11 \strokec11  || []).\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 f\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 f\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 fieldId\cf11 \strokec11  ? \{ ...\cf6 \strokec6 f\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 f\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11         \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf9 \strokec9 groupRef\cf11 \strokec11 , \{ ...\cf9 \strokec9 groupData\cf11 \strokec11 , \cf6 \strokec6 fields:\cf11 \strokec11  \cf9 \strokec9 updatedFields\cf11 \strokec11  \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \});\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11   \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf2 \strokec2 // It's a master job \'97 update it\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 ref\cf11 \strokec11  = \cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobs'\cf11 \strokec11 , \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf9 \strokec9 ref\cf11 \strokec11 , \{ ...\cf6 \strokec6 job\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \});\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf8 \strokec8 setJobs\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  ? \{ ...\cf6 \strokec6 j\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 j\cf11 \strokec11 ))\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf2 \strokec2 // \uc0\u55357 \u56577  Also update all related jobsByField\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 fieldSnap\cf11 \strokec11  = \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 getDocs\cf11 \strokec11 (\cf8 \strokec8 collection\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 ));\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 linked\cf11 \strokec11  = \cf9 \strokec9 fieldSnap\cf11 \strokec11 .\cf6 \strokec6 docs\cf11 \strokec11 .\cf8 \strokec8 filter\cf11 \strokec11 (\cf6 \strokec6 doc\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 doc\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 ().\cf6 \strokec6 linkedToJobId\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf5 \strokec5 await\cf11 \strokec11  \cf12 \strokec12 Promise\cf11 \strokec11 .\cf8 \strokec8 all\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf9 \strokec9 linked\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 docSnap\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf8 \strokec8 setDoc\cf11 \strokec11 (\cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 , \cf6 \strokec6 docSnap\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ), \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           ...\cf6 \strokec6 docSnap\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 (),\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \}, \{ \cf6 \strokec6 merge:\cf11 \strokec11  \cf10 \strokec10 true\cf11 \strokec11  \})\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf8 \strokec8 setFieldJobs\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11  === \cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11  ? \{ ...\cf6 \strokec6 j\cf11 \strokec11 , \cf6 \strokec6 status:\cf11 \strokec11  \cf9 \strokec9 newStatus\cf11 \strokec11  \} : \cf6 \strokec6 j\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                     \cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 status\cf11 \strokec11  === \cf7 \strokec7 'Planned'\cf11 \strokec11  ? \cf7 \strokec7 '\uc0\u10004 \u65039  Mark as Completed'\cf11 \strokec11  : \cf7 \strokec7 '\uc0\u8617 \u65039  Mark as Planned'\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11                 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf16 \strokec16 </\cf12 \strokec12 Menu.Items\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 </\cf12 \strokec12 Menu\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3   );\cb1 \
+\cb3 \};\cb1 \
+\
+\
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 filteredJobs\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 jobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 job\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 cropYear\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf9 \strokec9 cropYear\cf4 \strokec4 );\cb1 \
+\cb3   \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 filteredFieldJobs\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 fieldJobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 job\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 cropYear\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf9 \strokec9 cropYear\cf4 \strokec4 );\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 jobsToShow\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf9 \strokec9 view\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'By Field'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf9 \strokec9 filteredFieldJobs\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf9 \strokec9 filteredJobs\cf4 \strokec4 )\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   .\cf8 \strokec8 map\cf4 \strokec4 (\cf6 \strokec6 job\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 view\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'Grouped'\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 attachedFields\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 fieldJobs\cf4 \strokec4 .\cf8 \strokec8 filter\cf4 \strokec4 (\cb1 \
+\cb3         \cf6 \strokec6 f\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 fieldIds\cf4 \strokec4 ?.\cf8 \strokec8 includes\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 fieldId\cf4 \strokec4 ) \cf11 \strokec11 &&\cf4 \strokec4  \cf11 \strokec11 !\cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 isDetachedFromGroup\cf4 \cb1 \strokec4 \
+\cb3       );\cb1 \
+\cb3       \cf5 \strokec5 return\cf4 \strokec4  \{\cb1 \
+\cb3         \cf11 \strokec11 ...\cf6 \strokec6 job\cf4 \strokec4 ,\cb1 \
+\cb3         \cf6 \strokec6 fields:\cf4 \strokec4  \cf9 \strokec9 attachedFields\cf4 \cb1 \strokec4 \
+\cb3       \};\cb1 \
+\cb3     \}\cb1 \
+\cb3     \cf5 \strokec5 return\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 ;\cb1 \
+\cb3   \})\cb1 \
+\cb3   .\cf8 \strokec8 filter\cf4 \strokec4 ((\cf6 \strokec6 job\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 matchesStatus\cf4 \strokec4  \cf11 \strokec11 =\cf4 \cb1 \strokec4 \
+\cb3       \cf9 \strokec9 filterStatus\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'All'\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 status\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf9 \strokec9 filterStatus\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 jobTypeName\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 typeof\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'string'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4 ;\cb1 \
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 matchesType\cf4 \strokec4  \cf11 \strokec11 =\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf9 \strokec9 filterType\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'All'\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf8 \strokec8 getJobTypeName\cf4 \strokec4 (\cf6 \strokec6 job\cf4 \strokec4 ) \cf11 \strokec11 ===\cf4 \strokec4  \cf9 \strokec9 filterType\cf4 \strokec4 ;\cb1 \
+\
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 matchesSearch\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (() \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 fieldMatch\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 view\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'By Field'\cf4 \cb1 \strokec4 \
+\cb3         \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 fieldName\cf4 \strokec4 ?.\cf8 \strokec8 toLowerCase\cf4 \strokec4 ().\cf8 \strokec8 includes\cf4 \strokec4 (\cf9 \strokec9 searchText\cf4 \strokec4 .\cf8 \strokec8 toLowerCase\cf4 \strokec4 ())\cb1 \
+\cb3         \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 fields\cf4 \strokec4 ?.\cf8 \strokec8 some\cf4 \strokec4 (\cf6 \strokec6 f\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \strokec4  \cf6 \strokec6 f\cf4 \strokec4 .\cf6 \strokec6 fieldName\cf4 \strokec4 ?.\cf8 \strokec8 toLowerCase\cf4 \strokec4 ().\cf8 \strokec8 includes\cf4 \strokec4 (\cf9 \strokec9 searchText\cf4 \strokec4 .\cf8 \strokec8 toLowerCase\cf4 \strokec4 ()));\cb1 \
+\
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 productMatch\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 products\cf4 \strokec4 ?.\cf8 \strokec8 some\cf4 \strokec4 (\cf6 \strokec6 p\cf4 \strokec4  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 p\cf4 \strokec4 .\cf6 \strokec6 productName\cf4 \strokec4 ?.\cf8 \strokec8 toLowerCase\cf4 \strokec4 ().\cf8 \strokec8 includes\cf4 \strokec4 (\cf9 \strokec9 searchText\cf4 \strokec4 .\cf8 \strokec8 toLowerCase\cf4 \strokec4 ())\cb1 \
+\cb3       );\cb1 \
+\
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 typeMatch\cf4 \strokec4  \cf11 \strokec11 =\cf4 \cb1 \strokec4 \
+\cb3   (\cf10 \strokec10 typeof\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'string'\cf4 \cb1 \strokec4 \
+\cb3     \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \cb1 \strokec4 \
+\cb3     \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 job\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \cb1 \strokec4 \
+\cb3   ).\cf8 \strokec8 toLowerCase\cf4 \strokec4 ().\cf8 \strokec8 includes\cf4 \strokec4 (\cf9 \strokec9 searchText\cf4 \strokec4 .\cf8 \strokec8 toLowerCase\cf4 \strokec4 ());\cb1 \
+\
+\
+\cb3       \cf5 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 fieldMatch\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf9 \strokec9 productMatch\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf9 \strokec9 typeMatch\cf4 \strokec4 ;\cb1 \
+\cb3     \})();\cb1 \
+\
+\cb3     \cf5 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 matchesStatus\cf4 \strokec4  \cf11 \strokec11 &&\cf4 \strokec4  \cf9 \strokec9 matchesType\cf4 \strokec4  \cf11 \strokec11 &&\cf4 \strokec4  \cf9 \strokec9 matchesSearch\cf4 \strokec4 ;\cb1 \
+\cb3   \})\cb1 \
+\cb3   .\cf8 \strokec8 sort\cf4 \strokec4 ((\cf6 \strokec6 a\cf4 \strokec4 , \cf6 \strokec6 b\cf4 \strokec4 ) \cf10 \strokec10 =>\cf4 \strokec4  \{\cb1 \
+\cb3   \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 sortKey\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'date'\cf4 \strokec4 ) \{\cb1 \
+\cb3     \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 compare\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  (\cf6 \strokec6 a\cf4 \strokec4 .\cf6 \strokec6 jobDate\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ).\cf8 \strokec8 localeCompare\cf4 \strokec4 (\cf6 \strokec6 b\cf4 \strokec4 .\cf6 \strokec6 jobDate\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 sortDirection\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'asc'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf9 \strokec9 compare\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf11 \strokec11 -\cf9 \strokec9 compare\cf4 \strokec4 ;\cb1 \
+\cb3   \}\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 sortKey\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'type'\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 typeA\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 typeof\cf4 \strokec4  \cf6 \strokec6 a\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'string'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 a\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 a\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 typeB\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf10 \strokec10 typeof\cf4 \strokec4  \cf6 \strokec6 b\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'string'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 b\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 b\cf4 \strokec4 .\cf6 \strokec6 jobType\cf4 \strokec4 ?.\cf6 \strokec6 name\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 typeA\cf4 \strokec4 .\cf8 \strokec8 localeCompare\cf4 \strokec4 (\cf9 \strokec9 typeB\cf4 \strokec4 );\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \}\cb1 \
+\cb3     \cf5 \strokec5 if\cf4 \strokec4  (\cf9 \strokec9 sortKey\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'field'\cf4 \strokec4 ) \{\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 nameA\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 view\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'By Field'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 a\cf4 \strokec4 .\cf6 \strokec6 fieldName\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 a\cf4 \strokec4 .\cf6 \strokec6 fields\cf4 \strokec4 ?.[\cf13 \strokec13 0\cf4 \strokec4 ]?.\cf6 \strokec6 fieldName\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\cb3       \cf10 \strokec10 const\cf4 \strokec4  \cf9 \strokec9 nameB\cf4 \strokec4  \cf11 \strokec11 =\cf4 \strokec4  \cf9 \strokec9 view\cf4 \strokec4  \cf11 \strokec11 ===\cf4 \strokec4  \cf7 \strokec7 'By Field'\cf4 \strokec4  \cf11 \strokec11 ?\cf4 \strokec4  \cf6 \strokec6 b\cf4 \strokec4 .\cf6 \strokec6 fieldName\cf4 \strokec4  \cf11 \strokec11 :\cf4 \strokec4  \cf6 \strokec6 b\cf4 \strokec4 .\cf6 \strokec6 fields\cf4 \strokec4 ?.[\cf13 \strokec13 0\cf4 \strokec4 ]?.\cf6 \strokec6 fieldName\cf4 \strokec4  \cf11 \strokec11 ||\cf4 \strokec4  \cf7 \strokec7 ''\cf4 \strokec4 ;\cb1 \
+\cb3       \cf5 \strokec5 return\cf4 \strokec4  \cf9 \strokec9 nameA\cf4 \strokec4 .\cf8 \strokec8 localeCompare\cf4 \strokec4 (\cf9 \strokec9 nameB\cf4 \strokec4 );\cb1 \
+\cb3     \}\cb1 \
+\cb3     \cf5 \strokec5 return\cf4 \strokec4  \cf13 \strokec13 0\cf4 \strokec4 ;\cb1 \
+\cb3   \});\cb1 \
+\
+\
+\cb3   \cf5 \strokec5 return\cf4 \strokec4  (\cb1 \
+\cb3     \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "p-4 md:p-6"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3       \cf16 \strokec16 <\cf12 \strokec12 PageHeader\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 title\cf11 \strokec11 =\cf7 \strokec7 "Jobs"\cf4 \cb1 \strokec4 \
+\cb3         \cf6 \strokec6 actions\cf11 \strokec11 =\cf10 \strokec10 \{\cf16 \strokec16 <\cf12 \strokec12 Button\cf11 \strokec11  \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 navigate\cf11 \strokec11 (\cf7 \strokec7 '/jobs/create'\cf11 \strokec11 )\cf10 \strokec10 \}\cf16 \strokec16 ><\cf12 \strokec12 Plus\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "mr-2"\cf11 \strokec11  \cf6 \strokec6 size\cf11 \strokec11 =\cf10 \strokec10 \{\cf13 \strokec13 16\cf10 \strokec10 \}\cf11 \strokec11  \cf16 \strokec16 />\cf11 \strokec11  Create Job\cf16 \strokec16 </\cf12 \strokec12 Button\cf16 \strokec16 >\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3       \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 \{\cf9 \strokec9 role\cf11 \strokec11  === \cf7 \strokec7 'viewer'\cf11 \strokec11  ? (\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 Tabs\cf11 \strokec11  \cf6 \strokec6 defaultValue\cf11 \strokec11 =\cf7 \strokec7 "By Field"\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 view\cf10 \strokec10 \}\cf11 \strokec11  \cf6 \strokec6 onValueChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 setView\cf10 \strokec10 \}\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "mb-4"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Tab\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "By Field"\cf16 \strokec16 >\cf11 \strokec11 By Field\cf16 \strokec16 </\cf12 \strokec12 Tab\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf12 \strokec12 Tabs\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 ) : (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 Tabs\cf11 \strokec11  \cf6 \strokec6 defaultValue\cf11 \strokec11 =\cf7 \strokec7 "By Field"\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 view\cf10 \strokec10 \}\cf11 \strokec11  \cf6 \strokec6 onValueChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 setView\cf10 \strokec10 \}\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "mb-4"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Tab\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "By Field"\cf16 \strokec16 >\cf11 \strokec11 By Field\cf16 \strokec16 </\cf12 \strokec12 Tab\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Tab\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "Grouped"\cf16 \strokec16 >\cf11 \strokec11 Grouped (Bulk Edit Only)\cf16 \strokec16 </\cf12 \strokec12 Tab\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf12 \strokec12 Tabs\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex gap-2 items-center mb-4"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setViewMode\cf11 \strokec11 (\cf7 \strokec7 'cards'\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cb1 \
+\cb3     \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `p-1 rounded \cf10 \strokec10 $\{\cf9 \strokec9 viewMode\cf11 \strokec11  === \cf7 \strokec7 'cards'\cf11 \strokec11  ? \cf7 \strokec7 'bg-blue-100 text-blue-700'\cf11 \strokec11  : \cf7 \strokec7 'text-gray-500 hover:text-gray-700'\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3     \uc0\u55357 \u57318  Card View\cb1 \
+\cb3   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setViewMode\cf11 \strokec11 (\cf7 \strokec7 'list'\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `p-1 rounded \cf10 \strokec10 $\{\cf9 \strokec9 viewMode\cf11 \strokec11  === \cf7 \strokec7 'list'\cf11 \strokec11  ? \cf7 \strokec7 'bg-blue-100 text-blue-700'\cf11 \strokec11  : \cf7 \strokec7 'text-gray-500 hover:text-gray-700'\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3     \uc0\u55357 \u56523  List View\cb1 \
+\cb3   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf16 \cb3 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex flex-wrap items-center justify-between gap-3 mb-4"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56589  Search */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 <\cf10 \strokec10 input\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 type\cf11 \strokec11 =\cf7 \strokec7 "text"\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 placeholder\cf11 \strokec11 =\cf7 \strokec7 "Search jobs..."\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 value\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 searchText\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 onChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 e\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setSearchText\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf6 \strokec6 value\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "border border-gray-300 px-3 py-1 rounded w-full md:w-64"\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 \{\cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf6 \strokec6 length\cf11 \strokec11  > \cf13 \strokec13 0\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 Menu\cf11 \strokec11  \cf6 \strokec6 as\cf11 \strokec11 =\cf7 \strokec7 "div"\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "relative"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Menu.Button\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \uc0\u9881 \u65039  Bulk Actions\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Menu.Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Menu.Items\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "absolute z-50 mt-2 bg-white border border-gray-300 rounded shadow-md w-48"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `w-full text-left px-4 py-2 text-sm \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{async\cf11 \strokec11  () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 confirm\cf11 \strokec11  = \cf6 \strokec6 window\cf11 \strokec11 .\cf8 \strokec8 confirm\cf11 \strokec11 (\cf7 \strokec7 `Delete \cf10 \strokec10 $\{\cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf6 \strokec6 length\cf10 \strokec10 \}\cf7 \strokec7  selected jobs?`\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11               \cf5 \strokec5 if\cf11 \strokec11  (!\cf9 \strokec9 confirm\cf11 \strokec11 ) \cf5 \strokec5 return\cf11 \strokec11 ;\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11   \cf5 \strokec5 await\cf11 \strokec11  \cf12 \strokec12 Promise\cf11 \strokec11 .\cf8 \strokec8 all\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf10 \strokec10 async\cf11 \strokec11  (\cf6 \strokec6 id\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 view\cf11 \strokec11  === \cf7 \strokec7 'By Field'\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 handleDelete\cf11 \strokec11 (\cf6 \strokec6 id\cf11 \strokec11 , \cf10 \strokec10 true\cf11 \strokec11 ); \cf2 \strokec2 // isFieldJob = true\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf2 \strokec2 // Also delete linked field jobs\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 fieldJobSnap\cf11 \strokec11  = \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 getDocs\cf11 \strokec11 (\cf8 \strokec8 collection\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 ));\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf10 \strokec10 const\cf11 \strokec11  \cf9 \strokec9 linkedFieldJobs\cf11 \strokec11  = \cf9 \strokec9 fieldJobSnap\cf11 \strokec11 .\cf6 \strokec6 docs\cf11 \strokec11 .\cf8 \strokec8 filter\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         (\cf6 \strokec6 doc\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 doc\cf11 \strokec11 .\cf8 \strokec8 data\cf11 \strokec11 ().\cf6 \strokec6 linkedToJobId\cf11 \strokec11  === \cf6 \strokec6 id\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf5 \strokec5 await\cf11 \strokec11  \cf12 \strokec12 Promise\cf11 \strokec11 .\cf8 \strokec8 all\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf9 \strokec9 linkedFieldJobs\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 ((\cf6 \strokec6 docSnap\cf11 \strokec11 ) \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf8 \strokec8 deleteDoc\cf11 \strokec11 (\cf8 \strokec8 doc\cf11 \strokec11 (\cf9 \strokec9 db\cf11 \strokec11 , \cf7 \strokec7 'jobsByField'\cf11 \strokec11 , \cf6 \strokec6 docSnap\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ))\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       );\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf5 \strokec5 await\cf11 \strokec11  \cf8 \strokec8 handleDelete\cf11 \strokec11 (\cf6 \strokec6 id\cf11 \strokec11 , \cf10 \strokec10 false\cf11 \strokec11 ); \cf2 \strokec2 // isFieldJob = false\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \})\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 );\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf8 \cb3 \strokec8 setJobs\cf11 \strokec11 ((\cf6 \strokec6 prev\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 filter\cf11 \strokec11 ((\cf6 \strokec6 j\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  !\cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 )));\cf4 \cb1 \strokec4 \
+\cf8 \cb3 \strokec8 setFieldJobs\cf11 \strokec11 ((\cf6 \strokec6 prev\cf11 \strokec11 ) \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf6 \strokec6 prev\cf11 \strokec11 .\cf8 \strokec8 filter\cf11 \strokec11 ((\cf6 \strokec6 j\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  !\cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ) && !\cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf8 \strokec8 includes\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 linkedToJobId\cf11 \strokec11 ))\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 );\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf8 \cb3 \strokec8 setSelectedJobs\cf11 \strokec11 ([]);\cf4 \cb1 \strokec4 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11             \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \uc0\u55357 \u56785 \u65039  Delete Selected\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Menu.Items\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf12 \strokec12 Menu\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55357 \u56526  Sort buttons */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center gap-2"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3     \cf10 \strokec10 \{\cf11 \strokec11 [\cf7 \strokec7 'date'\cf11 \strokec11 , \cf7 \strokec7 'type'\cf11 \strokec11 , \cf7 \strokec7 'field'\cf11 \strokec11 ].\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 key\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf6 \strokec6 key\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 key\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf5 \strokec5 if\cf11 \strokec11  (\cf9 \strokec9 sortKey\cf11 \strokec11  === \cf6 \strokec6 key\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf8 \strokec8 setSortDirection\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  (\cf6 \strokec6 prev\cf11 \strokec11  === \cf7 \strokec7 'asc'\cf11 \strokec11  ? \cf7 \strokec7 'desc'\cf11 \strokec11  : \cf7 \strokec7 'asc'\cf11 \strokec11 ));\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf8 \strokec8 setSortKey\cf11 \strokec11 (\cf6 \strokec6 key\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf8 \strokec8 setSortDirection\cf11 \strokec11 (\cf7 \strokec7 'desc'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `px-3 py-1 rounded text-sm border \cf10 \strokec10 $\{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf9 \strokec9 sortKey\cf11 \strokec11  === \cf6 \strokec6 key\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       ? \cf7 \strokec7 'bg-blue-600 text-white'\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       : \cf7 \strokec7 'text-gray-600 hover:bg-gray-100'\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   Sort by \cf10 \strokec10 \{\cf6 \strokec6 key\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11     ))\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3   \cf10 \strokec10 \{\cf2 \strokec2 /* \uc0\u55356 \u57243 \u65039  Filters Button (stub for now) */\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "relative"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setShowFilterPanel\cf11 \strokec11 (\cf6 \strokec6 prev\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  !\cf6 \strokec6 prev\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cb3     \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-sm border rounded px-3 py-1 text-gray-700 hover:bg-gray-100"\cf4 \cb1 \strokec4 \
+\cb3   \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3     Filters\cb1 \
+\cb3   \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 \{\cf9 \strokec9 view\cf11 \strokec11  === \cf7 \strokec7 'By Field'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 Menu\cf11 \strokec11  \cf6 \strokec6 as\cf11 \strokec11 =\cf7 \strokec7 "div"\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "relative"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Menu.Button\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "bg-green-600 text-white text-sm px-3 py-1 rounded hover:bg-green-700 transition"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \uc0\u55357 \u56548  Export\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Menu.Button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf12 \strokec12 Menu.Items\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow z-50"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `block w-full px-4 py-2 text-sm text-left \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 handleExportCSV\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \uc0\u55357 \u56522  Export as CSV\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11      \cf10 \strokec10 \{\cf9 \strokec9 role\cf11 \strokec11  !== \cf7 \strokec7 'viewer'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 \{\cf11 \strokec11 (\{ \cf6 \strokec6 active\cf11 \strokec11  \}) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf7 \strokec7 `block w-full px-4 py-2 text-sm text-left \cf10 \strokec10 $\{\cf6 \strokec6 active\cf11 \strokec11  ? \cf7 \strokec7 'bg-gray-100'\cf11 \strokec11  : \cf7 \strokec7 ''\cf10 \strokec10 \}\cf7 \strokec7 `\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf8 \strokec8 handleExportPDF\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \uc0\u55357 \u56516  Export as PDF\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf12 \strokec12 Menu.Item\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf12 \strokec12 Menu.Items\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf12 \strokec12 Menu\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf10 \strokec10 \{\cf9 \strokec9 showFilterPanel\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow p-3 z-50"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "mb-2 text-xs font-semibold text-gray-500"\cf16 \strokec16 >\cf11 \strokec11 Status\cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 select\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 value\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 filterStatus\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 onChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setFilterStatus\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf6 \strokec6 value\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "mb-3 w-full border rounded px-2 py-1 text-sm"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 option\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "All"\cf16 \strokec16 >\cf11 \strokec11 All\cf16 \strokec16 </\cf10 \strokec10 option\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 option\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "Planned"\cf16 \strokec16 >\cf11 \strokec11 Planned\cf16 \strokec16 </\cf10 \strokec10 option\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 option\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "Completed"\cf16 \strokec16 >\cf11 \strokec11 Completed\cf16 \strokec16 </\cf10 \strokec10 option\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf10 \strokec10 select\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "mb-2 text-xs font-semibold text-gray-500"\cf16 \strokec16 >\cf11 \strokec11 Job Type\cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 select\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 value\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 filterType\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 onChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setFilterType\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf6 \strokec6 value\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "w-full border rounded px-2 py-1 text-sm"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 option\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf7 \strokec7 "All"\cf16 \strokec16 >\cf11 \strokec11 All\cf16 \strokec16 </\cf10 \strokec10 option\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11      \cf10 \strokec10 \{\cf11 \strokec11 [...\cf10 \strokec10 new\cf11 \strokec11  \cf12 \strokec12 Set\cf11 \strokec11 (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   [...\cf9 \strokec9 jobs\cf11 \strokec11 , ...\cf9 \strokec9 fieldJobs\cf11 \strokec11 ]\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 j\cf11 \strokec11  \cf10 \strokec10 =>\cf11 \strokec11  \cf10 \strokec10 typeof\cf11 \strokec11  \cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11  === \cf7 \strokec7 'string'\cf11 \strokec11  ? \cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11  : \cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 jobType\cf11 \strokec11 ?.\cf6 \strokec6 name\cf11 \strokec11 )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     .\cf8 \strokec8 filter\cf11 \strokec11 (\cf12 \strokec12 Boolean\cf11 \strokec11 )\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )].\cf8 \strokec8 map\cf11 \strokec11 ((\cf6 \strokec6 type\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf10 \strokec10 option\cf11 \strokec11  \cf6 \strokec6 key\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 type\cf10 \strokec10 \}\cf11 \strokec11  \cf6 \strokec6 value\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 type\cf10 \strokec10 \}\cf16 \strokec16 >\cf10 \strokec10 \{\cf6 \strokec6 type\cf10 \strokec10 \}\cf16 \strokec16 </\cf10 \strokec10 option\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 ))\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf10 \strokec10 select\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3   \cf16 \strokec16 <\cf10 \strokec10 div\cf4 \strokec4  \cf6 \strokec6 className\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 viewMode\cf11 \strokec11  === \cf7 \strokec7 'cards'\cf11 \strokec11  ? \cf7 \strokec7 '...'\cf11 \strokec11  : \cf7 \strokec7 'flex flex-col divide-y border rounded'\cf10 \strokec10 \}\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\cb3   \cf10 \strokec10 \{\cf9 \strokec9 viewMode\cf11 \strokec11  === \cf7 \strokec7 'list'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex items-center justify-between border-b py-2 px-2 text-sm font-semibold text-gray-700 bg-gray-50"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11      \cf10 \strokec10 \{\cf9 \strokec9 role\cf11 \strokec11  !== \cf7 \strokec7 'viewer'\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf10 \strokec10 input\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 type\cf11 \strokec11 =\cf7 \strokec7 "checkbox"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 checked\cf11 \strokec11 =\cf10 \strokec10 \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf6 \strokec6 length\cf11 \strokec11  > \cf13 \strokec13 0\cf11 \strokec11  &&\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf9 \strokec9 selectedJobs\cf11 \strokec11 .\cf6 \strokec6 length\cf11 \strokec11  === \cf9 \strokec9 jobsToShow\cf11 \strokec11 .\cf6 \strokec6 length\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 onChange\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 (\cf6 \strokec6 e\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf5 \strokec5 if\cf11 \strokec11  (\cf6 \strokec6 e\cf11 \strokec11 .\cf6 \strokec6 target\cf11 \strokec11 .\cf6 \strokec6 checked\cf11 \strokec11 ) \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf8 \strokec8 setSelectedJobs\cf11 \strokec11 (\cf9 \strokec9 jobsToShow\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 ((\cf6 \strokec6 j\cf11 \strokec11 ) \cf10 \strokec10 =>\cf11 \strokec11  \cf6 \strokec6 j\cf11 \strokec11 .\cf6 \strokec6 id\cf11 \strokec11 ));\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \} \cf5 \strokec5 else\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf8 \strokec8 setSelectedJobs\cf11 \strokec11 ([]);\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11    \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex-1"\cf11 \strokec11  \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 span\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "opacity-0"\cf16 \strokec16 >\cf11 \strokec11 \uc0\u8943 \cf16 \strokec16 </\cf10 \strokec10 span\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3  \cf10 \strokec10 \{\cf9 \strokec9 jobsToShow\cf11 \strokec11 .\cf8 \strokec8 map\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11  \cf10 \strokec10 =>\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf9 \strokec9 viewMode\cf11 \strokec11  === \cf7 \strokec7 'cards'\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     ? \cf16 \strokec16 <\cf12 \strokec12 React.Fragment\cf11 \strokec11  \cf6 \strokec6 key\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf10 \strokec10 \}\cf16 \strokec16 >\cf10 \strokec10 \{\cf8 \strokec8 renderJobCard\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 , \cf9 \strokec9 view\cf11 \strokec11  === \cf7 \strokec7 'By Field'\cf11 \strokec11 )\cf10 \strokec10 \}\cf16 \strokec16 </\cf12 \strokec12 React.Fragment\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     : \cf16 \strokec16 <\cf12 \strokec12 React.Fragment\cf11 \strokec11  \cf6 \strokec6 key\cf11 \strokec11 =\cf10 \strokec10 \{\cf6 \strokec6 job\cf11 \strokec11 .\cf6 \strokec6 id\cf10 \strokec10 \}\cf16 \strokec16 >\cf10 \strokec10 \{\cf8 \strokec8 renderListItem\cf11 \strokec11 (\cf6 \strokec6 job\cf11 \strokec11 , \cf9 \strokec9 view\cf11 \strokec11  === \cf7 \strokec7 'By Field'\cf11 \strokec11 )\cf10 \strokec10 \}\cf16 \strokec16 </\cf12 \strokec12 React.Fragment\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf16 \cb3 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 \cb3 \strokec10 \{\cf9 \strokec9 selectedJob\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf12 \strokec12 JobDetailsModal\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 job\cf11 \strokec11 =\cf10 \strokec10 \{\cf9 \strokec9 selectedJob\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf6 \strokec6 onClose\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setSelectedJob\cf11 \strokec11 (\cf10 \strokec10 null\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 />\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3       \cf10 \strokec10 \{\cf9 \strokec9 confirmDeleteId\cf11 \strokec11  && (\cf4 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf11 \cb3 \strokec11   \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "bg-white p-6 rounded shadow-lg max-w-sm w-full"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 p\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "text-sm text-gray-800 mb-4"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         Are you sure you want to delete this job? This can\'92t be undone.\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf10 \strokec10 p\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 <\cf10 \strokec10 div\cf11 \strokec11  \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "flex justify-end gap-3"\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \cf8 \strokec8 setConfirmDeleteId\cf11 \strokec11 (\cf10 \strokec10 null\cf11 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "px-3 py-1 rounded text-sm bg-gray-200 hover:bg-gray-300"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           Cancel\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 <\cf10 \strokec10 button\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 onClick\cf11 \strokec11 =\cf10 \strokec10 \{\cf11 \strokec11 () \cf10 \strokec10 =>\cf11 \strokec11  \{\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf8 \strokec8 handleDelete\cf11 \strokec11 (\cf9 \strokec9 confirmDeleteId\cf11 \strokec11 , \cf9 \strokec9 view\cf11 \strokec11  === \cf7 \strokec7 'By Field'\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11             \cf8 \strokec8 setConfirmDeleteId\cf11 \strokec11 (\cf10 \strokec10 null\cf11 \strokec11 );\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \}\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           \cf6 \strokec6 className\cf11 \strokec11 =\cf7 \strokec7 "px-3 py-1 rounded text-sm bg-red-600 text-white hover:bg-red-700"\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11           Yes, Delete\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11         \cf16 \strokec16 </\cf10 \strokec10 button\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11       \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11     \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11   \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cf11 \cb3 \strokec11 )\cf10 \strokec10 \}\cf4 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf4 \cb3     \cf16 \strokec16 </\cf10 \strokec10 div\cf16 \strokec16 >\cf4 \cb1 \strokec4 \
+\cb3   );\cb1 \
+\cb3 \}  \cf2 \strokec2 // closing Jobs component\cf4 \cb1 \strokec4 \
+\
+\
+\
+\
+}
