@@ -17,13 +17,8 @@ export default function Products() {
     fetchProducts();
   }, []);
 
-  const handleSaveProduct = async () => {
-  const unit = autoPopulateUnit(currentProduct.crop, currentProduct.rateType);
-
-  const productToSave = {
-    ...currentProduct,
-    unit
-  };
+const handleSaveProduct = async () => {
+  const productToSave = { ...currentProduct }; // 🚫 Don't overwrite unit anymore
 
   if (currentProduct.id) {
     await updateDoc(doc(db, 'products', currentProduct.id), productToSave);
@@ -37,19 +32,13 @@ export default function Products() {
 };
 
 
+
   const handleDeleteProduct = async (id) => {
     await deleteDoc(doc(db, 'products', id));
     fetchProducts();
   };
 
-  const autoPopulateUnit = (crop, rateType) => {
-    if (crop === 'Rice') {
-      return rateType === 'Population' ? 'units (900,000 seeds/unit)' : 'bushels (45 lbs/bu)';
-    } else if (crop === 'Soybeans') {
-      return rateType === 'Population' ? 'units (140,000 seeds/unit)' : 'bushels (60 lbs/bu)';
-    }
-    return '';
-  };
+
 
   const filteredProducts = products.filter(p => p.type === activeTab);
 
@@ -163,18 +152,25 @@ export default function Products() {
                   <option value="Weight">Weight (lbs/acre)</option>
                   <option value="Population">Population (seeds/acre)</option>
                 </select>
-<input
-  className="border px-2 py-1 mb-4 w-full bg-gray-100 text-gray-700"
-  placeholder="Unit"
-  value={
-    currentProduct.rateType === 'Population'
-      ? 'seeds/acre'
-      : currentProduct.rateType === 'Weight'
-      ? 'lbs/acre'
-      : ''
-  }
-  disabled
-/>
+<select
+  className="border px-2 py-1 mb-4 w-full"
+  value={currentProduct.unit || ''}
+  onChange={(e) => setCurrentProduct({ ...currentProduct, unit: e.target.value })}
+>
+  <option value="">Select Unit</option>
+  <option value="fl oz/acre">fl oz/acre</option>
+  <option value="pt/acre">pt/acre</option>
+  <option value="qt/acre">qt/acre</option>
+  <option value="gal/acre">gal/acre</option>
+  <option value="lbs/acre">lbs/acre</option>
+  <option value="oz dry/acre">oz dry/acre</option>
+  <option value="tons/acre">tons/acre</option>
+  <option value="seeds/acre">seeds/acre</option>
+  <option value="units/acre">units/acre</option>
+  <option value="%v/v">%v/v</option>
+</select>
+
+
 
                 <input
                   className="border px-2 py-1 mb-4 w-full"
@@ -206,12 +202,24 @@ export default function Products() {
                   value={currentProduct.form || ''}
                   onChange={(e) => setCurrentProduct({ ...currentProduct, form: e.target.value })}
                 />
-                <input
-                  className="border px-2 py-1 mb-4 w-full"
-                  placeholder="Unit (e.g. lbs, gal)"
-                  value={currentProduct.unit || ''}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, unit: e.target.value })}
-                />
+               <select
+  className="border px-2 py-1 mb-4 w-full"
+  value={currentProduct.unit || ''}
+  onChange={(e) => setCurrentProduct({ ...currentProduct, unit: e.target.value })}
+>
+  <option value="">Select Unit</option>
+  <option value="fl oz/acre">fl oz/acre</option>
+  <option value="pt/acre">pt/acre</option>
+  <option value="qt/acre">qt/acre</option>
+  <option value="gal/acre">gal/acre</option>
+  <option value="lbs/acre">lbs/acre</option>
+  <option value="oz dry/acre">oz dry/acre</option>
+  <option value="tons/acre">tons/acre</option>
+  <option value="seeds/acre">seeds/acre</option>
+  <option value="units/acre">units/acre</option>
+  <option value="%v/v">%v/v</option>
+</select>
+
                 <input
                   className="border px-2 py-1 mb-4 w-full"
                   placeholder="Manufacturer"
@@ -253,12 +261,24 @@ export default function Products() {
                   value={currentProduct.manufacturer || ''}
                   onChange={(e) => setCurrentProduct({ ...currentProduct, manufacturer: e.target.value })}
                 />
-                <input
-                  className="border px-2 py-1 mb-4 w-full"
-                  placeholder="Unit (e.g. qt, gal)"
-                  value={currentProduct.unit || ''}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, unit: e.target.value })}
-                />
+               <select
+  className="border px-2 py-1 mb-4 w-full"
+  value={currentProduct.unit || ''}
+  onChange={(e) => setCurrentProduct({ ...currentProduct, unit: e.target.value })}
+>
+  <option value="">Select Unit</option>
+  <option value="fl oz/acre">fl oz/acre</option>
+  <option value="pt/acre">pt/acre</option>
+  <option value="qt/acre">qt/acre</option>
+  <option value="gal/acre">gal/acre</option>
+  <option value="lbs/acre">lbs/acre</option>
+  <option value="oz dry/acre">oz dry/acre</option>
+  <option value="tons/acre">tons/acre</option>
+  <option value="seeds/acre">seeds/acre</option>
+  <option value="units/acre">units/acre</option>
+  <option value="%v/v">%v/v</option>
+</select>
+
               </>
             )}
 

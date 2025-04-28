@@ -32,29 +32,56 @@ const totalProduct = (product, acres, water) => {
   if (!rate || !acres) return '';
   const unit = (product.unit || '').toLowerCase();
   const crop = (product.crop || '').toLowerCase();
-  const total = rate * acres;
+  const totalAmount = rate * acres;
+  const type = product.type || product.productType || ''; // 🛠 catch fertilizer vs seed properly
 
-  if (unit === '%v/v') {
+  if (['seeds/acre', 'population'].includes(unit)) {
+    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+    const totalSeeds = rate * acres;
+    const units = totalSeeds / seedsPerUnit;
+    return `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+
+  } else if (unit === 'lbs/acre') {
+    if (type === 'Seed') {
+      const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+      const bushels = totalAmount / lbsPerBushel;
+      return `${bushels.toFixed(1)} bushels`;
+    } else {
+      const tons = totalAmount / 2000;
+      return `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
+    }
+
+  } else if (unit === 'fl oz/acre') {
+    const gal = totalAmount / 128;
+    return `${gal.toFixed(2)} gallons`;
+
+  } else if (unit === 'pt/acre') {
+    const gal = totalAmount / 8;
+    return `${gal.toFixed(2)} gallons`;
+
+  } else if (unit === 'qt/acre') {
+    const gal = totalAmount / 4;
+    return `${gal.toFixed(2)} gallons`;
+
+  } else if (unit === 'oz dry/acre') {
+    const lbs = totalAmount / 16;
+    return `${lbs.toFixed(2)} lbs`;
+
+  } else if (unit === '%v/v') {
+    if (!water || isNaN(water)) {
+      return 'Missing water volume';
+    }
     const gal = (rate / 100) * water * acres;
     return `${gal.toFixed(2)} gallons`;
-  }
-  if (['fl oz/acre', 'fluid oz/acre'].includes(unit)) return `${(total / 128).toFixed(2)} gallons`;
-  if (unit === 'pt/acre') return `${(total / 8).toFixed(2)} gallons`;
-  if (unit === 'qt/acre') return `${(total / 4).toFixed(2)} gallons`;
-  if (unit === 'oz dry/acre') return `${(total / 16).toFixed(2)} lbs`;
-  if (unit === 'tons/acre') return `${total.toFixed(2)} tons`;
 
-  if (unit === 'lbs/acre') {
-    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-    return `${(total / lbsPerBushel).toFixed(1)} bushels`;
+  } else if (unit === 'tons/acre') {
+    return `${totalAmount.toFixed(2)} tons`;
+
+  } else {
+    return `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
   }
-  if (unit === 'seeds/acre') {
-    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-    const units = total / seedsPerUnit;
-    return `${units.toFixed(1)} units`;
-  }
-  return `${total.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
 };
+
 
 export const generatePDFBlob = async (job) => {
   const totalAcres = job.fields?.reduce((sum, f) => sum + (f.acres ?? f.gpsAcres ?? 0), 0);
@@ -96,7 +123,20 @@ export const generatePDFBlob = async (job) => {
               style={[styles.tableRow, i % 2 === 1 ? styles.shadedRow : null]}
             >
               <Text style={styles.cellWide}>{p.name || p.productName || 'Unnamed'}</Text>
-              <Text style={styles.cell}>{p.rate} {p.unit}</Text>
+<Text style={styles.cell}>
+  {(() => {
+    const unit = (p.unit || '').toLowerCase();
+    const rate = parseFloat(p.rate) || 0;
+    if (unit === '%v/v') {
+      return `${rate}% v/v`;
+    }
+    if (['seeds/acre', 'population'].includes(unit)) {
+      const prettyRate = rate >= 1000 ? `${(rate/1000).toFixed(1)}k` : rate;
+      return `${prettyRate} seeds/acre`;
+    }
+    return `${rate} ${unit}`;
+  })()}
+</Text>
               <Text style={styles.cell}>{totalProduct(p, totalAcres, waterVolume)}</Text>
             </View>
           ))}

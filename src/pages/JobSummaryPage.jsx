@@ -7,14 +7,22 @@ import {
   getDocs,
   doc,
   getDoc,
+  updateDoc,
   query,
   where,
 } from 'firebase/firestore';
+
 import { saveJob } from '../utils/saveJob'; // NEW!
 import Select from 'react-select';
 import ProductComboBox from '../components/ProductComboBox';
 import EditAreaModal from "../components/EditAreaModal";
 import EditJobPolygonForCreate from "../pages/EditJobPolygonForCreate";
+
+async function updateProductUnit(productId, newUnit) {
+  if (!productId) return;
+  const ref = doc(db, 'products', productId);
+  await updateDoc(ref, { unit: newUnit });
+}
 
 // 🔹 Component Setup
 export default function JobSummaryPage() {
@@ -48,6 +56,7 @@ export default function JobSummaryPage() {
   const [passes, setPasses] = useState(location.state?.passes || 1);
   const [showEditAreaModal, setShowEditAreaModal] = useState(false);
   const [fieldToEdit, setFieldToEdit] = useState(null);
+const [usedProductIds, setUsedProductIds] = useState([]);
 
 
 
@@ -65,6 +74,12 @@ export default function JobSummaryPage() {
       if (crop === 'Rice') return sum + (parseFloat(f.riceLeveeAcres) || 0);
       if (crop === 'Soybeans') return sum + (parseFloat(f.beanLeveeAcres) || 0);
     }
+
+async function updateProductUnit(productId, newUnit) {
+  if (!productId) return;
+  const ref = doc(db, 'products', productId);
+  await updateDoc(ref, { unit: newUnit });
+}
 
     return sum + (
       !isNaN(parseFloat(f.acres)) ? parseFloat(f.acres)
@@ -126,6 +141,25 @@ const handleSavePolygon = (updatedField) => {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+  const fetchUsedProductIds = async () => {
+    const q = query(collection(db, 'jobsByField')); // ✅ Or 'jobs' depending on your app
+    const snap = await getDocs(q);
+    const ids = new Set();
+
+    snap.forEach(doc => {
+      const jobData = doc.data();
+      jobData.products?.forEach(p => {
+        if (p.productId) ids.add(p.productId);
+      });
+    });
+
+    setUsedProductIds(Array.from(ids));
+  };
+
+  fetchUsedProductIds();
+}, []);
 
     useEffect(() => {
   const loadJob = async () => {
@@ -313,32 +347,37 @@ return (
     {/* 🔹 Products Section */}
     {requiresProducts && editableProducts.map((p, i) => (
       <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3 items-center">
-        <ProductComboBox
-          productType={selectedProductType}
-          allProducts={productsList.filter(p => {
-            const parent = jobType?.parentName;
-            if (parent === 'Seeding') return p.type === 'Seed';
-            if (parent === 'Spraying') return p.type === 'Chemical';
-            if (parent === 'Fertilizer') return p.type === 'Fertilizer';
-            return true;
-          })}
-          usedProductIds={[]}
-          value={{ id: p.productId, name: p.productName }}
-          onChange={(selected) => {
-            handleProductChange(i, 'productId', selected.id);
-            handleProductChange(i, 'productName', selected.name);
-            handleProductChange(i, 'crop', selected.crop || '');
-            const rateType = selected?.rateType?.toLowerCase();
-            const cleanUnit =
-              rateType === 'weight'
-                ? 'lbs/acre'
-                : rateType === 'population'
-                ? 'seeds/acre'
-                : selected.unit || '';
-            handleProductChange(i, 'unit', cleanUnit);
-            handleProductChange(i, 'rateType', selected.rateType || '');
-          }}
-        />
+      <ProductComboBox
+  productType={selectedProductType}
+allProducts={productsList
+  .filter(p => {
+    const parent = jobType?.parentName;
+    if (parent === 'Seeding') return p.type === 'Seed';
+    if (parent === 'Spraying') return p.type === 'Chemical';
+    if (parent === 'Fertilizing') return p.type === 'Fertilizer';
+    return true;
+  })
+  .sort((a, b) => {
+    const aUsed = usedProductIds.includes(a.id);
+    const bUsed = usedProductIds.includes(b.id);
+    if (aUsed && !bUsed) return -1;
+    if (!aUsed && bUsed) return 1;
+    return (a.name || '').localeCompare(b.name || '');
+  })
+}
+
+
+  usedProductIds={[]}
+  value={{ id: p.productId, name: p.productName }}
+  onChange={(selected) => {
+    handleProductChange(i, 'productId', selected.id);
+    handleProductChange(i, 'productName', selected.name);
+    handleProductChange(i, 'crop', selected.crop || '');
+    handleProductChange(i, 'unit', selected.unit || '');
+    handleProductChange(i, 'rateType', selected.rateType || '');
+  }}
+/>
+
         <input
           type="number"
           placeholder="Rate"
@@ -346,20 +385,41 @@ return (
           value={p.rate}
           onChange={e => handleProductChange(i, 'rate', e.target.value)}
         />
-        <select
-          className="border p-2 rounded w-full"
-          value={p.unit}
-          onChange={e => handleProductChange(i, 'unit', e.target.value)}
-        >
-          <option value="">Select Unit</option>
-          {[
-            'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
-            'lbs/acre', 'oz dry/acre', 'tons/acre',
-            'seeds/acre', 'units/acre', '%v/v'
-          ].map(unit => (
-            <option key={unit} value={unit}>{unit}</option>
-          ))}
-        </select>
+    <select
+  className="border p-2 rounded w-full"
+  value={p.unit}
+  onChange={async (e) => {
+    const newUnit = e.target.value;
+    const oldUnit = p.unit;
+
+    handleProductChange(i, 'unit', newUnit);
+
+    if (newUnit !== oldUnit) {
+      const confirmUpdate = window.confirm("Update Product's Unit in Database?");
+   if (confirmUpdate) {
+  console.log('Updating productId:', p.productId, 'New Unit:', newUnit); // 👈 ADD THIS
+  try {
+    await updateProductUnit(p.productId, newUnit);
+    alert("Product unit updated successfully.");
+  } catch (error) {
+    console.error("Failed to update unit:", error);
+    alert("Failed to update product unit.");
+  }
+}
+
+    }
+  }}
+>
+  <option value="">Select Unit</option>
+  {[
+    'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
+    'lbs/acre', 'oz dry/acre', 'tons/acre',
+    'seeds/acre', 'units/acre', '%v/v'
+  ].map(unit => (
+    <option key={unit} value={unit}>{unit}</option>
+  ))}
+</select>
+
         <button
           className={redLinkBtn}
           onClick={() => setEditableProducts(prev => prev.filter((_, idx) => idx !== i))}
@@ -543,60 +603,77 @@ if (typeof parsedGeo === 'string') {
     {requiresProducts && (
       <div className="mt-6 border-t pt-4">
         <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
-        {editableProducts.map((p, i) => {
-          const rate = parseFloat(p.rate);
-          const unit = p.unit?.toLowerCase() || '';
-          const crop = p.crop?.toLowerCase?.() || '';
-         const acres = fields.reduce((sum, f) => {
-  if (isLeveeJob) {
-    const crop = f.crop || f.crops?.[cropYear]?.crop || '';
-    if (crop.includes('Rice') && f.riceLeveeAcres) return sum + parseFloat(f.riceLeveeAcres);
-    if (crop.includes('Soybean') && f.beanLeveeAcres) return sum + parseFloat(f.beanLeveeAcres);
+      {editableProducts.map((p, i) => {
+  const rate = parseFloat(p.rate);
+  const unit = p.unit?.toLowerCase() || '';
+  const crop = p.crop?.toLowerCase?.() || '';
+  const acres = fields.reduce((sum, f) => {
+    if (isLeveeJob) {
+      const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+      if (crop.includes('Rice') && f.riceLeveeAcres) return sum + parseFloat(f.riceLeveeAcres);
+      if (crop.includes('Soybean') && f.beanLeveeAcres) return sum + parseFloat(f.beanLeveeAcres);
+    }
+    return sum + (f.acres ?? f.drawnAcres ?? f.gpsAcres ?? 0);
+  }, 0);
+
+  const totalAmount = rate * acres;
+  let display = '';
+
+  if (['seeds/acre', 'population'].includes(unit)) {
+    const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+    const totalSeeds = rate * acres;
+    const units = totalSeeds / seedsPerUnit;
+    display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
+
+  } else if (unit === 'lbs/acre') {
+    if (selectedProductType === 'Seed') {
+      const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+      const bushels = totalAmount / lbsPerBushel;
+      display = `${bushels.toFixed(1)} bushels`;
+    } else {
+      const tons = totalAmount / 2000;
+      display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
+    }
+
+  } else if (unit === 'fl oz/acre') {
+    const gal = totalAmount / 128;
+    display = `${gal.toFixed(2)} gallons`;
+
+  } else if (unit === 'pt/acre') {
+    const gal = totalAmount / 8;
+    display = `${gal.toFixed(2)} gallons`;
+
+  } else if (unit === 'qt/acre') {
+    const gal = totalAmount / 4;
+    display = `${gal.toFixed(2)} gallons`;
+
+  } else if (unit === 'oz dry/acre') {
+    const lbs = totalAmount / 16;
+    display = `${lbs.toFixed(2)} lbs`;
+
+  } else if (unit === '%v/v') {
+    const water = parseFloat(waterVolume);
+    if (isNaN(water) || water === 0) {
+      display = 'Missing water volume';
+    } else {
+      const gal = (rate / 100) * water * acres;
+      display = `${gal.toFixed(2)} gallons`;
+    }
+
+  } else if (unit === 'tons/acre') {
+    display = `${totalAmount.toFixed(2)} tons`;
+
+  } else {
+    display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
   }
-  return sum + (f.acres ?? f.drawnAcres ?? f.gpsAcres ?? 0);
-}, 0);
 
+  return (
+    <div key={i} className="text-sm text-gray-700">
+      {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
+    </div>
+  );
+})}
 
-          const totalAmount = rate * acres;
-          let display = '';
-
-          if (['seeds/acre', 'population'].includes(unit)) {
-            const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-            const totalSeeds = rate * acres;
-            const units = totalSeeds / seedsPerUnit;
-            display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
-          } else if (['lbs/acre'].includes(unit)) {
-            const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-            const bushels = totalAmount / lbsPerBushel;
-            display = `${bushels.toFixed(1)} bushels`;
-          } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
-            const gal = totalAmount / 128;
-            display = `${gal.toFixed(2)} gallons`;
-          } else if (unit === 'pt/acre') {
-            const gal = totalAmount / 8;
-            display = `${gal.toFixed(2)} gallons`;
-          } else if (unit === 'qt/acre') {
-            const gal = totalAmount / 4;
-            display = `${gal.toFixed(2)} gallons`;
-          } else if (unit === 'oz dry/acre') {
-            const lbs = totalAmount / 16;
-            display = `${lbs.toFixed(2)} lbs`;
-          } else if (unit === '%v/v') {
-            const water = parseFloat(waterVolume || 0);
-            const gal = (rate / 100) * water * acres;
-            display = `${gal.toFixed(2)} gallons`;
-          } else if (unit === 'tons/acre') {
-            display = `${totalAmount.toFixed(2)} tons`;
-          } else {
-            display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
-          }
-
-          return (
-            <div key={i} className="text-sm text-gray-700">
-              {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
-            </div>
-          );
-        })}
       </div>
     )}
 
