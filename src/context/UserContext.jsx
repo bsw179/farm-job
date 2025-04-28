@@ -11,37 +11,41 @@ export function UserProvider({ children }) {
   const [loading, setLoading] = useState(true);   // Still loading user/role
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-      if (authUser) {
-        setUser(authUser);
-        const userRef = doc(db, 'users', authUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setRole(data.role || null);
-        } else {
-          setRole(null);
-        }
+  const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+    if (authUser) {
+      const userRef = doc(db, 'users', authUser.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setUser({ ...authUser, ...data }); // 🛠 merge Firestore profile into user
+        setRole(data.role || null);
       } else {
-        setUser(null);
+        setUser(authUser);
         setRole(null);
       }
-      setLoading(false);
-    });
+    } else {
+      setUser(null);
+      setRole(null);
+    }
+    setLoading(false);
+  });
 
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
+
 const refreshUserData = async () => {
   if (auth.currentUser) {
     const userRef = doc(db, 'users', auth.currentUser.uid);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
       const data = userSnap.data();
-      setUser({ uid: auth.currentUser.uid, ...data });
+      setUser({ ...auth.currentUser, ...data });
       setRole(data.role || null);
     }
   }
 };
+
 
   return (
 <UserContext.Provider value={{ user, role, loading, refreshUserData }}>
