@@ -10,7 +10,9 @@ import {
   updateDoc,
   query,
   where,
+  setDoc,
 } from 'firebase/firestore';
+import { Trash2 } from 'lucide-react';
 
 import { saveJob } from '../utils/saveJob'; // NEW!
 import Select from 'react-select';
@@ -22,6 +24,23 @@ async function updateProductUnit(productId, newUnit) {
   if (!productId) return;
   const ref = doc(db, 'products', productId);
   await updateDoc(ref, { unit: newUnit });
+}
+
+async function markProductAsUsed(productId, productName, type) {
+  if (!productId) return;
+  console.log(`🛠️ Marking product as used:`, { productId, productName, type }); // 👈 ADD THIS LINE
+
+  const ref = doc(db, 'usedProducts', productId);
+  const existing = await getDoc(ref);
+
+  if (!existing.exists()) {
+    await setDoc(ref, {
+      productId,
+      productName,
+      type,
+      timestamp: new Date()
+    });
+  }
 }
 
 // 🔹 Component Setup
@@ -57,6 +76,8 @@ export default function JobSummaryPage() {
   const [showEditAreaModal, setShowEditAreaModal] = useState(false);
   const [fieldToEdit, setFieldToEdit] = useState(null);
 const [usedProductIds, setUsedProductIds] = useState([]);
+const [showFieldSelectModal, setShowFieldSelectModal] = useState(false);
+const [allFields, setAllFields] = useState([]); // all available fields from DB
 
 
 
@@ -143,23 +164,30 @@ const handleSavePolygon = (updatedField) => {
   }, []);
 
   useEffect(() => {
-  const fetchUsedProductIds = async () => {
-    const q = query(collection(db, 'jobsByField')); // ✅ Or 'jobs' depending on your app
-    const snap = await getDocs(q);
-    const ids = new Set();
-
-    snap.forEach(doc => {
-      const jobData = doc.data();
-      jobData.products?.forEach(p => {
-        if (p.productId) ids.add(p.productId);
-      });
-    });
-
-    setUsedProductIds(Array.from(ids));
+  const fetchFields = async () => {
+    const snap = await getDocs(collection(db, 'fields'));
+    const fieldList = snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setAllFields(fieldList);
   };
 
-  fetchUsedProductIds();
+  fetchFields();
 }, []);
+
+ useEffect(() => {
+  const fetchUsedProducts = async () => {
+    const snap = await getDocs(collection(db, 'usedProducts'));
+    const ids = snap.docs.map(doc => doc.data().productId); // ✅ pulls correct productId field
+        console.log('🛠️ Used Product IDs loaded:', ids); // 👈 ADD THIS
+
+setUsedProductIds(ids.filter(Boolean));
+  };
+
+  fetchUsedProducts();
+}, []);
+
 
     useEffect(() => {
   const loadJob = async () => {
@@ -203,26 +231,36 @@ const handleSavePolygon = (updatedField) => {
       const enriched = await Promise.all(
         selected.map(async (f) => {
           const ref = doc(db, 'fields', f.fieldId || f.id);
-          const snap = await getDoc(ref);
-          if (!snap.exists()) return f;
+         const snap = await getDoc(ref);
+if (!snap.exists()) return f;
 
-          let geo = snap.data()?.boundary?.geojson;
-          if (typeof geo === 'string') {
-            try {
-              geo = JSON.parse(geo);
-            } catch {
-              geo = null;
-            }
-          }
+const fieldData = snap.data();
+let geo = fieldData?.boundary?.geojson;
 
-          return {
-            ...f,
-            boundary: { geojson: geo }
-          };
+if (typeof geo === 'string') {
+  try {
+    geo = JSON.parse(geo);
+  } catch {
+    geo = null;
+  }
+}
+
+return {
+  ...f,
+  boundary: { geojson: geo },
+  operator: fieldData.operator || '',
+  landowner: fieldData.landowner || '',
+  operatorExpenseShare: typeof fieldData.operatorExpenseShare === 'number' ? fieldData.operatorExpenseShare : undefined,
+  landownerExpenseShare: typeof fieldData.landownerExpenseShare === 'number' ? fieldData.landownerExpenseShare : undefined,
+};
+
+
         })
       );
 
       setFields(enriched);
+setSelectedFields(enriched); // ✅ sync them
+
     };
 
     loadBoundaries();
@@ -233,10 +271,55 @@ const handleSavePolygon = (updatedField) => {
     updated[index][field] = value;
     setEditableProducts(updated);
   };
+const enrichFieldData = async (fieldArray) => {
+  const enriched = await Promise.all(
+    fieldArray.map(async (f) => {
+      const ref = doc(db, 'fields', f.fieldId || f.id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return f;
+
+      const fieldData = snap.data();
+      let geo = fieldData?.boundary?.geojson;
+
+      if (typeof geo === 'string') {
+        try {
+          geo = JSON.parse(geo);
+        } catch {
+          geo = null;
+        }
+      }
+
+      return {
+        ...f,
+        boundary: { geojson: geo },
+        operator: fieldData.operator || '',
+        landowner: fieldData.landowner || '',
+        operatorExpenseShare: typeof fieldData.operatorExpenseShare === 'number' ? fieldData.operatorExpenseShare : undefined,
+        landownerExpenseShare: typeof fieldData.landownerExpenseShare === 'number' ? fieldData.landownerExpenseShare : undefined,
+        riceLeveeAcres: fieldData.riceLeveeAcres ?? null,
+        beanLeveeAcres: fieldData.beanLeveeAcres ?? null,
+        crops: fieldData.crops ?? {},
+      };
+    })
+  );
+
+  return enriched;
+};
 
   const handleAddProduct = () => {
     setEditableProducts(prev => [...prev, { productId: '', productName: '', rate: '', unit: '' }]);
   };
+
+  useEffect(() => {
+  const fetchUsedProducts = async () => {
+    const snap = await getDocs(collection(db, 'usedProducts'));
+    const ids = snap.docs.map(doc => doc.id);
+    setUsedProductIds(ids);
+  };
+
+  fetchUsedProducts();
+}, []);
+
 // 🔹 Patch polygon updates from Edit Area
 useEffect(() => {
   const updated = location.state?.updatedField;
@@ -262,12 +345,71 @@ setFields(prev =>
 }, [location.state]);
 
 
+ 
+
+
+
+async function handleSaveJob() {
+const fieldsWithCrop = selectedFields.map(f => ({
+  
+  ...f,
+  crop: f.crop || f.crops?.[cropYear]?.crop || '',
+  operator: f.operator || '',
+  landowner: f.landowner || '',
+  operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : undefined,
+  landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : undefined,
+}));
+
+
+  // 🔵 Mark all products used
+  for (const product of editableProducts) {
+    console.log('🔎 Marking product:', {
+      id: product.productId,
+      name: product.productName,
+      type: product.type,
+    }); // 👈 ADD THIS
+
+    if (product.productId) {
+      await markProductAsUsed(product.productId, product.productName, product.type || '');
+    }
+  }
+console.log('🧠 Saving jobId:', jobId);
+
+  console.log('🛑 FIELDS PASSED TO SAVEJOB:', fieldsWithCrop);
+
+  // 🔵 Save the job
+  saveJob({
+    jobType,
+    fields: fieldsWithCrop,
+    editableProducts,
+    vendor,
+    applicator,
+    cropYear,
+    jobDate,
+    jobStatus,
+    jobId,
+    notes,
+    shouldGeneratePDF,
+    waterVolume,
+    isEditing,
+    navigate,
+    setSaving,
+    passes
+  });
+}
   // 🔹 Early Exit if No Job Types
 if (!jobTypesList.length) return null;
+
 
 // 🔹 Begin Page Layout
 return (
   <div className="p-6">
+<button
+  onClick={() => setShowFieldSelectModal(true)}
+  className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition mb-4"
+>
+  ➕ Add Fields
+</button>
 
     {/* 🔹 Job Type Selector */}
     <div className="mb-4">
@@ -345,89 +487,99 @@ return (
     </div>
 
     {/* 🔹 Products Section */}
-    {requiresProducts && editableProducts.map((p, i) => (
-      <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3 items-center">
+   {requiresProducts && editableProducts.map((p, i) => {
+  console.log("🧪 Product row", {
+    product: p.productName,
+    productId: p.productId,
+    usedIds: usedProductIds,
+    matching: usedProductIds.includes(p.productId)
+  });
+
+  return (
+    <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3 items-center">
+
       <ProductComboBox
-  productType={selectedProductType}
-allProducts={productsList
-  .filter(p => {
-    const parent = jobType?.parentName;
-    if (parent === 'Seeding') return p.type === 'Seed';
-    if (parent === 'Spraying') return p.type === 'Chemical';
-    if (parent === 'Fertilizing') return p.type === 'Fertilizer';
-    return true;
-  })
-  .sort((a, b) => {
-    const aUsed = usedProductIds.includes(a.id);
-    const bUsed = usedProductIds.includes(b.id);
-    if (aUsed && !bUsed) return -1;
-    if (!aUsed && bUsed) return 1;
-    return (a.name || '').localeCompare(b.name || '');
-  })
-}
+        productType={selectedProductType}
+        allProducts={productsList
+          .filter(prod => {
+            const parent = jobType?.parentName;
+            if (parent === 'Seeding') return prod.type === 'Seed';
+            if (parent === 'Spraying') return prod.type === 'Chemical';
+            if (parent === 'Fertilizing') return prod.type === 'Fertilizer';
+            return true;
+          })
+          .sort((a, b) => {
+            const aUsed = usedProductIds.includes(a.id);
+            const bUsed = usedProductIds.includes(b.id);
+            if (aUsed && !bUsed) return -1;
+            if (!aUsed && bUsed) return 1;
+            return (a.name || '').localeCompare(b.name || '');
+          })
+        }
+        usedProductIds={usedProductIds}
+        value={{ id: p.productId, name: p.productName }}
+        onChange={(selected) => {
+          handleProductChange(i, 'productId', selected.id);
+          handleProductChange(i, 'productName', selected.name);
+          handleProductChange(i, 'crop', selected.crop || '');
+          handleProductChange(i, 'unit', selected.unit || '');
+          handleProductChange(i, 'rateType', selected.rateType || '');
+          handleProductChange(i, 'type', selected.type || '');
+        }}
+      />
 
+      <input
+        type="number"
+        placeholder="Rate"
+        className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        value={p.rate}
+        onChange={e => handleProductChange(i, 'rate', e.target.value)}
+      />
 
-  usedProductIds={[]}
-  value={{ id: p.productId, name: p.productName }}
-  onChange={(selected) => {
-    handleProductChange(i, 'productId', selected.id);
-    handleProductChange(i, 'productName', selected.name);
-    handleProductChange(i, 'crop', selected.crop || '');
-    handleProductChange(i, 'unit', selected.unit || '');
-    handleProductChange(i, 'rateType', selected.rateType || '');
-  }}
-/>
+      <select
+        className="border p-2 rounded w-full"
+        value={p.unit}
+        onChange={async (e) => {
+          const newUnit = e.target.value;
+          const oldUnit = p.unit;
 
-        <input
-          type="number"
-          placeholder="Rate"
-          className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={p.rate}
-          onChange={e => handleProductChange(i, 'rate', e.target.value)}
-        />
-    <select
-  className="border p-2 rounded w-full"
-  value={p.unit}
-  onChange={async (e) => {
-    const newUnit = e.target.value;
-    const oldUnit = p.unit;
+          handleProductChange(i, 'unit', newUnit);
 
-    handleProductChange(i, 'unit', newUnit);
+          if (newUnit !== oldUnit) {
+            const confirmUpdate = window.confirm("Update Product's Unit in Database?");
+            if (confirmUpdate) {
+              console.log('Updating productId:', p.productId, 'New Unit:', newUnit);
+              try {
+                await updateProductUnit(p.productId, newUnit);
+                alert("Product unit updated successfully.");
+              } catch (error) {
+                console.error("Failed to update unit:", error);
+                alert("Failed to update product unit.");
+              }
+            }
+          }
+        }}
+      >
+        <option value="">Select Unit</option>
+        {[
+          'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
+          'lbs/acre', 'oz dry/acre', 'tons/acre',
+          'seeds/acre', 'units/acre', '%v/v'
+        ].map(unit => (
+          <option key={unit} value={unit}>{unit}</option>
+        ))}
+      </select>
 
-    if (newUnit !== oldUnit) {
-      const confirmUpdate = window.confirm("Update Product's Unit in Database?");
-   if (confirmUpdate) {
-  console.log('Updating productId:', p.productId, 'New Unit:', newUnit); // 👈 ADD THIS
-  try {
-    await updateProductUnit(p.productId, newUnit);
-    alert("Product unit updated successfully.");
-  } catch (error) {
-    console.error("Failed to update unit:", error);
-    alert("Failed to update product unit.");
-  }
-}
+      <button
+        className={redLinkBtn}
+        onClick={() => setEditableProducts(prev => prev.filter((_, idx) => idx !== i))}
+      >
+        🗑️ Remove
+      </button>
+    </div>
+  );
+})}
 
-    }
-  }}
->
-  <option value="">Select Unit</option>
-  {[
-    'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
-    'lbs/acre', 'oz dry/acre', 'tons/acre',
-    'seeds/acre', 'units/acre', '%v/v'
-  ].map(unit => (
-    <option key={unit} value={unit}>{unit}</option>
-  ))}
-</select>
-
-        <button
-          className={redLinkBtn}
-          onClick={() => setEditableProducts(prev => prev.filter((_, idx) => idx !== i))}
-        >
-          🗑️ Remove
-        </button>
-      </div>
-    ))}
 
     {requiresProducts && (
       <button
@@ -467,11 +619,15 @@ allProducts={productsList
 
     {/* 🔹 Fields List Section */}
     <div className="mb-6">
-      <h3 className="text-lg font-semibold mb-2">
-        {totalJobAcres.toFixed(2)} acres total
-      </h3>
+    <h3 className="text-sm font-semibold mb-2">
+  Total Job Acres – {totalJobAcres.toFixed(2)} –{' '}
+  {selectedFields.some(f => f.drawnPolygon && f.drawnAcres) ? 'partial' : 'full'} 
+  {' '}({selectedFields.length} fields selected)
+</h3>
+
 
 {selectedFields.map((field) => {
+        const boxSize = 100;
         const isPartial = field.drawnPolygon && field.drawnAcres;
         const displayAcres = field.acres ?? (isPartial ? field.drawnAcres : field.gpsAcres) ?? 0;
         const crop = field.crop || field.crops?.[cropYear]?.crop || '—';
@@ -487,101 +643,125 @@ if (typeof parsedGeo === 'string') {
 
 
         return (
-          <div key={field.id} className="border border-gray-300 rounded-xl bg-white p-4 shadow-sm mb-6">
-            <p>
-              <strong>{field.fieldName}</strong> –{' '}
-              {isLeveeJob
-                ? `${((field.crop || field.crops?.[cropYear]?.crop || '').includes('Rice')
-                    ? field.riceLeveeAcres
-                    : field.beanLeveeAcres) || 0} acres (Levee – ${field.crop || field.crops?.[cropYear]?.crop || '—'})`
-                : `${Number(displayAcres).toFixed(2)} acres – ${isPartial ? 'partial' : 'full'}`}
-            </p>
-            <p>Crop: {crop}</p>
-
-            <div
-              id={`field-canvas-${field.id}`}
-              className="bg-white p-2 rounded border shadow-sm mt-4"
-              style={{ width: 'fit-content', margin: '0 auto' }}
-            >
-              {(() => {
-                let overlay = field.drawnPolygon;
-                if (typeof overlay === 'string') {
-                  try {
-                    overlay = JSON.parse(overlay);
-                  } catch {
-                    overlay = null;
-                  }
-                }
-
-                if (!parsedGeo) return null;
-
-                const coords = parsedGeo.coordinates?.[0] || [];
-                const bounds = coords.reduce((acc, [lng, lat]) => ({
-                  minX: Math.min(acc.minX, lng),
-                  maxX: Math.max(acc.maxX, lng),
-                  minY: Math.min(acc.minY, lat),
-                  maxY: Math.max(acc.maxY, lat),
-                }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
-
-                const width = bounds.maxX - bounds.minX || 1;
-                const height = bounds.maxY - bounds.minY || 1;
-                const boxSize = 300;
-                const margin = 10;
-                const scale = (boxSize - margin * 2) / Math.max(width, height);
-                const xOffset = (boxSize - width * scale) / 2;
-                const yOffset = (boxSize - height * scale) / 2;
-                const project = ([lng, lat]) => ({
-                  x: (lng - bounds.minX) * scale + xOffset,
-                  y: boxSize - ((lat - bounds.minY) * scale + yOffset),
-                });
-
-                const basePath = coords.map((pt, i) => {
-                  const { x, y } = project(pt);
-                  return `${i === 0 ? 'M' : 'L'}${x},${y}`;
-                }).join(' ') + ' Z';
-
-                let overlayPath = null;
-                if (overlay?.geometry?.coordinates?.[0]) {
-                  overlayPath = overlay.geometry.coordinates[0].map((pt, i) => {
-                    const { x, y } = project(pt);
-                    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
-                  }).join(' ') + ' Z';
-                }
-
-                return (
-                  <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-64 h-64 bg-white border rounded shadow mx-auto">
-                    <path d={basePath} fill={overlayPath ? '#F87171' : '#34D399'} fillOpacity={0.4} stroke="#4B5563" strokeWidth="1.5" />
-                    {overlayPath && (
-                      <path d={overlayPath} fill="#34D399" fillOpacity={0.6} stroke="#047857" strokeWidth="2" />
-                    )}
-                  </svg>
-                );
-              })()}
-            </div>
-
-            <div className="flex justify-between items-center mt-2 no-print">
-            {!isEditing && (
-<button
-  className={blueLinkBtn}
-  onClick={() => {
-    setFieldToEdit(field);
-    setShowEditAreaModal(true);
-  }}
+<div key={field.id} className="relative border border-gray-300 rounded-xl bg-white px-4 py-2
+shadow-sm mb-6">
+    <button
+  title="Remove Field"
+  onClick={() => setFields(prev => prev.filter(f => f.id !== field.id))}
+className="absolute -top-0 left-1 text-red-400 hover:text-red-600"
 >
-  ✏️ Edit Area
+  <Trash2 size={16} strokeWidth={2} />
 </button>
 
 
-)}
+<div className="flex items-start gap-4 mb-0">
+  
+  {/* 🔹 Left: Text */}
+<div className="flex-1 space-y-1 text-xs text-gray-700 pt-3">
+    <p className="font-semibold">
+      {field.fieldName} –{' '}
+      {isLeveeJob
+        ? `${((field.crop || field.crops?.[cropYear]?.crop || '').includes('Rice')
+            ? field.riceLeveeAcres
+            : field.beanLeveeAcres) || 0} acres (Levee – ${field.crop || field.crops?.[cropYear]?.crop || '—'})`
+        : `${Number(displayAcres).toFixed(2)} acres – ${isPartial ? 'partial' : 'full'}`}
+    </p>
+    <p>Crop: {crop}</p>
+    <p className="text-gray-500">
+      {(() => {
+        const op = field.operator;
+        const lo = field.landowner;
+        const opShare = typeof field.operatorExpenseShare === 'number' ? field.operatorExpenseShare : null;
+        const loShare = typeof field.landownerExpenseShare === 'number' ? field.landownerExpenseShare : null;
+
+        let split = '';
+        if (op && opShare !== null && opShare > 0) split += `${op}: ${opShare}%`;
+        if (lo && loShare !== null && loShare > 0) split += `${split ? ' / ' : ''}${lo}: ${loShare}%`;
+        return split;
+      })()}
+    </p>
+  </div>
+
+  {/* 🔹 Right: Map Preview */}
+  <div
+    id={`field-canvas-${field.id}`}
+    className="p-1 border border-gray-300 rounded"
+    style={{ width: 'fit-content' }}
+  >
+    {(() => {
+  let overlay = field.drawnPolygon;
+  if (typeof overlay === 'string') {
+    try {
+      overlay = JSON.parse(overlay);
+    } catch {
+      overlay = null;
+    }
+  }
+
+  if (!parsedGeo) return null;
+
+  const coords = parsedGeo.coordinates?.[0] || [];
+  const bounds = coords.reduce((acc, [lng, lat]) => ({
+    minX: Math.min(acc.minX, lng),
+    maxX: Math.max(acc.maxX, lng),
+    minY: Math.min(acc.minY, lat),
+    maxY: Math.max(acc.maxY, lat),
+  }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+
+  const width = bounds.maxX - bounds.minX || 1;
+  const height = bounds.maxY - bounds.minY || 1;
+  const margin = 10;
+  const scale = (boxSize - margin * 2) / Math.max(width, height);
+  const xOffset = (boxSize - width * scale) / 2;
+  const yOffset = (boxSize - height * scale) / 2;
+  const project = ([lng, lat]) => ({
+    x: (lng - bounds.minX) * scale + xOffset,
+    y: boxSize - ((lat - bounds.minY) * scale + yOffset),
+  });
+
+  const basePath = coords.map((pt, i) => {
+    const { x, y } = project(pt);
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+  }).join(' ') + ' Z';
+
+  let overlayPath = null;
+  if (overlay?.geometry?.coordinates?.[0]) {
+    overlayPath = overlay.geometry.coordinates[0].map((pt, i) => {
+      const { x, y } = project(pt);
+      return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+    }).join(' ') + ' Z';
+  }
+
+  return (
+    <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-24 h-24 border rounded">
+      <path d={basePath} fill={overlayPath ? '#F87171' : '#34D399'} fillOpacity={0.4} stroke="#4B5563" strokeWidth="1.5" />
+      {overlayPath && (
+        <path d={overlayPath} fill="#34D399" fillOpacity={0.6} stroke="#047857" strokeWidth="2" />
+      )}
+    </svg>
+  );
+})()}
+
+  </div>
+</div>
+
+{/* 🔹 Bottom: Edit / Remove */}
+<div className="mt-0 pt-0 text-sm">
+  {!isEditing && (
+    <button
+      onClick={() => {
+        setFieldToEdit(field);
+        setShowEditAreaModal(true);
+      }}
+      className="text-blue-600 hover:text-blue-800 underline"
+    >
+      ✏️ Edit Area
+    </button>
+  )}
 
 
-              <button
-                className={blueLinkBtn}
-                onClick={() => setFields(prev => prev.filter(f => f.id !== field.id))}
-              >
-                ❌ Remove Field
-              </button>
-            </div>
+</div>
+
           </div>
         );
       })}
@@ -625,15 +805,19 @@ if (typeof parsedGeo === 'string') {
     const units = totalSeeds / seedsPerUnit;
     display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
 
-  } else if (unit === 'lbs/acre') {
-    if (selectedProductType === 'Seed') {
-      const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-      const bushels = totalAmount / lbsPerBushel;
-      display = `${bushels.toFixed(1)} bushels`;
-    } else {
-      const tons = totalAmount / 2000;
-      display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
-    }
+} else if (unit === 'lbs/acre') {
+  if (jobType?.parentName === 'Seeding') {
+    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+    const bushels = totalAmount / lbsPerBushel;
+    display = `${bushels.toFixed(1)} bushels`;
+  } else if (jobType?.parentName === 'Fertilizing') {
+    const tons = totalAmount / 2000;
+    display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
+  } else {
+    display = `${totalAmount.toFixed(1)} lbs`;
+  }
+
+
 
   } else if (unit === 'fl oz/acre') {
     const gal = totalAmount / 128;
@@ -690,33 +874,8 @@ if (typeof parsedGeo === 'string') {
 
       <button
         className={primaryBtn}
-  onClick={() => {
-const fieldsWithCrop = selectedFields.map(f => ({
-    ...f,
-    crop: f.crop || f.crops?.[cropYear]?.crop || ''
-  }));
+onClick={handleSaveJob}
 
-  console.log('🛑 FIELDS PASSED TO SAVEJOB:', fieldsWithCrop);
-
-  saveJob({
-    jobType,
-    fields: fieldsWithCrop,
-    editableProducts,
-    vendor,
-    applicator,
-    cropYear,
-    jobDate,
-    jobStatus,
-    jobId,
-    notes,
-    shouldGeneratePDF,
-    waterVolume,
-    isEditing,
-    navigate,
-    setSaving,
-    passes
-  });
-}}
 
         disabled={saving}
       >
@@ -740,6 +899,99 @@ const fieldsWithCrop = selectedFields.map(f => ({
 
   )}
 </EditAreaModal>
+<EditAreaModal
+  isOpen={showEditAreaModal}
+  onClose={() => setShowEditAreaModal(false)}
+>
+  {fieldToEdit && (
+    <EditJobPolygonForCreate
+      field={fieldToEdit}
+      onCloseModal={() => setShowEditAreaModal(false)}
+      onSavePolygon={handleSavePolygon}
+    />
+  )}
+</EditAreaModal>
+
+{/* 🔹 New Field Select Modal */}
+{showFieldSelectModal && (
+  <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center p-4">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
+{/* 🔹 Sticky top bar */}
+<div className="sticky top-0 bg-white z-20 border-b pb-2 mb-4">
+  <div className="flex justify-between items-center mb-2">
+    <p className="text-sm font-semibold">Fields Selected – {selectedFields.length}</p>
+    <button
+      onClick={async () => {
+        const enriched = await enrichFieldData(selectedFields);
+        setFields(enriched);
+        setShowFieldSelectModal(false);
+      }}
+      className="text-sm bg-green-600 text-white px-3 py-1 rounded shadow hover:bg-green-700 transition"
+    >
+      ✅ Go Back to Job
+    </button>
+  </div>
+
+  {/* 🔹 Selected Field Chips */}
+  <div className="flex flex-wrap gap-2">
+    {selectedFields.map(f => (
+      <span
+        key={f.id}
+        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2 hover:bg-blue-200 transition"
+      >
+        {f.fieldName}
+        <button
+          onClick={() => setSelectedFields(prev => prev.filter(p => p.id !== f.id))}
+          className="text-red-500 hover:text-red-700 font-bold"
+        >
+          ×
+        </button>
+      </span>
+    ))}
+  </div>
+</div>
+
+{/* 🔹 Field Groups by Farm (Accordion-style) */}
+<div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+  {Object.entries(
+    allFields
+      .sort((a, b) => a.fieldName.localeCompare(b.fieldName))
+      .reduce((acc, field) => {
+        const farm = field.farmName || 'Other';
+        if (!acc[farm]) acc[farm] = [];
+        acc[farm].push(field);
+        return acc;
+      }, {})
+  )
+    .sort((a, b) => a[0].localeCompare(b[0])) // Sort farms alphabetically
+    .map(([farmName, fields]) => (
+      <details key={farmName} className="bg-gray-50 border rounded-md">
+        <summary className="cursor-pointer px-3 py-1.5 font-medium text-xs bg-gray-100 border-b sticky top-0 z-10">
+
+          {farmName} ({fields.length})
+        </summary>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3">
+          {fields
+            .filter(f => !selectedFields.some(sel => sel.id === f.id))
+            .sort((a, b) => a.fieldName.localeCompare(b.fieldName))
+            .map(field => (
+            <div
+              key={field.id}
+               onClick={() => setSelectedFields(prev => [...prev, field])}
+                className="border rounded px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-xs"
+                >
+              <p className="font-medium">{field.fieldName}</p>
+            </div>
+
+
+            ))}
+        </div>
+      </details>
+    ))}
+</div>
+    </div>
+  </div>
+)}
 
    </div> 
   ); // ✅ This closes the return

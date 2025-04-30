@@ -28,7 +28,6 @@ import FieldMetrics from "@/pages/FieldMetrics";
 import BoundaryUploadMapbox from "@/pages/BoundaryUploadMapbox";
 import ManageJobTypes from "@/pages/Setup/ManageJobTypes";
 import JobSummaryPage from "@/pages/JobSummaryPage";
-import CreateJobPage from "@/pages/CreateJobPage";
 import EditJobPolygonForCreate from "../pages/EditJobPolygonForCreate";
 import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
 import FieldJobSummaryPage from "../pages/FieldJobSummaryPage";
@@ -266,16 +265,6 @@ import LogProductPurchase from './pages/LogProductPurchase';
               </ProtectedRoute>
             }
           />
-
-          <Route
-            path="/jobs/create"
-            element={
-              <ProtectedRoute path="/jobs/create">
-                <CreateJobPage />
-              </ProtectedRoute>
-            }
-          />
-
           <Route
             path="/jobs/summary"
             element={

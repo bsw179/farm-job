@@ -16,6 +16,8 @@ import {
 } from 'firebase/firestore';
 import EditAreaModal from "../components/EditAreaModal";
 import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
+import html2canvas from 'html2canvas';
+import ProductComboBox from '../components/ProductComboBox';
 
 function FieldJobSummaryPage() {
   const { jobId } = useParams();
@@ -134,31 +136,14 @@ useEffect(() => {
   loadVendorsAndApplicators();
 }, []);
 useEffect(() => {
-  const loadUsedProducts = async () => {
-    if (!job?.jobType || !job?.cropYear) return;
-console.log('🔗 linkedToJobId:', job.linkedToJobId);
-
-    const q = query(
-      collection(db, 'jobs'),
-      where('jobType', '==', job.jobType),
-      where('cropYear', '==', job.cropYear)
-    );
-
-    const snap = await getDocs(q);
-    const ids = new Set();
-
-    snap.forEach(doc => {
-      const jobData = doc.data();
-      jobData.products?.forEach(p => {
-        if (p.productId) ids.add(p.productId);
-      });
-    });
-
-    setUsedProductIds(Array.from(ids));
+  const fetchUsedProducts = async () => {
+    const snap = await getDocs(collection(db, 'usedProducts'));
+    const ids = snap.docs.map(doc => doc.data().productId);
+    setUsedProductIds(ids.filter(Boolean));
   };
 
-  loadUsedProducts();
-}, [job?.jobType, job?.cropYear]);
+  fetchUsedProducts();
+}, []);
 
 
  useEffect(() => {
@@ -330,6 +315,20 @@ useEffect(() => {
 
     if (generatePdf) {
       try {
+        // Capture map image
+const canvasElement = document.getElementById(`field-canvas-${job.fieldId}`);
+let imageBase64 = null;
+
+if (canvasElement) {
+  const buttons = canvasElement.querySelectorAll('.no-print');
+  buttons.forEach(btn => btn.style.display = 'none');
+
+  const canvas = await html2canvas(canvasElement);
+  imageBase64 = canvas.toDataURL('image/png');
+
+  buttons.forEach(btn => btn.style.display = '');
+}
+
         const { generatePDFBlob } = await import('../utils/generatePDF');
         const fieldSnap = await getDoc(doc(db, 'fields', job.fieldId));
         const fieldData = fieldSnap.exists() ? fieldSnap.data() : {};
@@ -337,16 +336,23 @@ useEffect(() => {
         const fullJob = {
           ...job,
           notes,
-          fields: [
-            {
-              id: job.fieldId,
-              fieldName: job.fieldName,
-              acres: job.acres,
-              drawnAcres: job.drawnAcres,
-              drawnPolygon: job.drawnPolygon,
-              ...fieldData,
-            }
-          ],
+    fields: [
+  {
+    id: job.fieldId,
+    fieldName: job.fieldName,
+    acres: job.acres,
+    drawnAcres: job.drawnAcres,
+    drawnPolygon: job.drawnPolygon,
+    imageBase64,
+    operator: job.operator || '',
+    landowner: job.landowner || '',
+    operatorExpenseShare: typeof job.operatorExpenseShare === 'number' ? job.operatorExpenseShare : undefined,
+    landownerExpenseShare: typeof job.landownerExpenseShare === 'number' ? job.landownerExpenseShare : undefined,
+    ...fieldData,
+  }
+],
+
+
           acres: { [job.fieldId]: job.acres },
           fieldIds: [job.fieldId],
         };
@@ -555,75 +561,36 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
   key={i}
   className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2"
 >
-         <select
-  className="border p-2 rounded"
-  value={p.productName || ''}
-  onChange={(e) => {
-    const productName = e.target.value;
-    const matched = productsList.find(prod => prod.name === productName);
-
-    handleProductChange(i, 'productName', productName);
-
-    if (matched) {
-      const rateType = matched?.rateType?.toLowerCase();
-      const cleanUnit =
-        rateType === 'weight'
-          ? 'lbs/acre'
-          : rateType === 'population'
-          ? 'seeds/acre'
-          : matched.unit || '';
-
-      handleProductChange(i, 'unit', cleanUnit);
-      handleProductChange(i, 'rateType', matched.rateType || '');
-      handleProductChange(i, 'productId', matched.id);
-      handleProductChange(i, 'crop', matched.crop || '');
-    }
+       <ProductComboBox
+  productType={job?.jobType?.productType}
+  allProducts={productsList
+    .filter(prod => {
+      const parent = job?.jobType?.parentName;
+      if (parent === 'Seeding') return prod.type === 'Seed';
+      if (parent === 'Spraying') return prod.type === 'Chemical';
+      if (parent === 'Fertilizing') return prod.type === 'Fertilizer';
+      return true;
+    })
+    .sort((a, b) => {
+      const aUsed = usedProductIds.includes(a.id);
+      const bUsed = usedProductIds.includes(b.id);
+      if (aUsed && !bUsed) return -1;
+      if (!aUsed && bUsed) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    })
+  }
+  usedProductIds={usedProductIds}
+  value={{ id: p.productId, name: p.productName }}
+  onChange={(selected) => {
+    handleProductChange(i, 'productId', selected.id);
+    handleProductChange(i, 'productName', selected.name);
+    handleProductChange(i, 'crop', selected.crop || '');
+    handleProductChange(i, 'unit', selected.unit || '');
+    handleProductChange(i, 'rateType', selected.rateType || '');
+    handleProductChange(i, 'type', selected.type || '');
   }}
->
-<option value="">Select Product</option>
+/>
 
-{/* 🔵 Label for used products */}
-{job.products.length > 0 && (
-  <option disabled>Products Used By You</option>
-)}
-
-{/* 🔵 List used products */}
-{productsList
-  .filter(prod => {
-    const parent = job.jobType?.parentName;
-    if (parent === 'Seeding') return prod.type === 'Seed';
-    if (parent === 'Spraying') return prod.type === 'Chemical';
-    if (parent === 'Fertilizer') return prod.type === 'Fertilizer';
-    return true;
-  })
-  .filter(prod => job.products.some(p => p.productId === prod.id))
-  .map(prod => (
-    <option key={prod.id} value={prod.name}>
-      {prod.name}
-    </option>
-  ))}
-
-{/* 🔵 Label for all other products */}
-<option disabled>All Other Products</option>
-
-{/* 🔵 List available products not yet picked */}
-{productsList
-  .filter(prod => {
-    const parent = job.jobType?.parentName;
-    if (parent === 'Seeding') return prod.type === 'Seed';
-    if (parent === 'Spraying') return prod.type === 'Chemical';
-    if (parent === 'Fertilizer') return prod.type === 'Fertilizer';
-    return true;
-  })
-  .filter(prod => !job.products.some(p => p.productId === prod.id))
-  .map(prod => (
-    <option key={prod.id} value={prod.name}>
-      {prod.name}
-    </option>
-  ))}
-
-
-</select>
 
 
 <input
@@ -655,18 +622,40 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
   }
 
   return (
-    <select
-      className="border p-2 rounded"
-      value={p.unit}
-      onChange={(e) => handleProductChange(i, 'unit', e.target.value)}
-    >
-      <option value="">Select Unit</option>
-      {unitOptions.map(unit => (
-        <option key={unit} value={unit}>
-          {unit}
-        </option>
-      ))}
-    </select>
+   <select
+  className="border p-2 rounded"
+  value={p.unit}
+  onChange={async (e) => {
+    const newUnit = e.target.value;
+    const oldUnit = p.unit;
+
+    handleProductChange(i, 'unit', newUnit);
+
+    if (newUnit !== oldUnit) {
+      const confirmUpdate = window.confirm("Update Product's Unit in Database?");
+      if (confirmUpdate) {
+        console.log('Updating productId:', p.productId, 'New Unit:', newUnit);
+        try {
+          await updateProductUnit(p.productId, newUnit);
+          alert("Product unit updated successfully.");
+        } catch (error) {
+          console.error("Failed to update unit:", error);
+          alert("Failed to update product unit.");
+        }
+      }
+    }
+  }}
+>
+  <option value="">Select Unit</option>
+  {[
+    'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
+    'lbs/acre', 'oz dry/acre', 'tons/acre',
+    'seeds/acre', 'units/acre', '%v/v'
+  ].map(unit => (
+    <option key={unit} value={unit}>{unit}</option>
+  ))}
+</select>
+
   );
 })()}
 
@@ -729,6 +718,26 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 <p className="text-sm text-gray-600 mb-2">
   Crop: {job.crop || '—'}
 </p>
+{(() => {
+  const op = job.operator;
+  const lo = job.landowner;
+  const opShare = typeof job.operatorExpenseShare === 'number' ? job.operatorExpenseShare : null;
+  const loShare = typeof job.landownerExpenseShare === 'number' ? job.landownerExpenseShare : null;
+
+  let split = '';
+
+  if (op && opShare !== null && opShare > 0) {
+    split += `${op}: ${opShare}%`;
+  }
+  if (lo && loShare !== null && loShare > 0) {
+    split += `${split ? ' / ' : ''}${lo}: ${loShare}%`;
+  }
+
+return (
+  <p className="text-sm text-gray-700">
+    {split || '⚠️ No split info available'}
+  </p>
+);})()}
 
 
       <div
@@ -736,11 +745,7 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
         className="bg-white p-2 rounded border shadow-sm"
         style={{ width: 'fit-content', margin: '0 auto' }}
       >
-        <div className="border rounded-lg shadow p-4 mt-6">
-  <h3 className="text-lg font-semibold">{job.fieldName}</h3>
-  <p className="text-sm text-gray-600">
-    {job.crop || 'No crop'} • {job.acres?.toFixed(2) || '—'} acres
-  </p>
+      
 
 <div className="mt-4">
   {fieldBoundary ? (
@@ -753,7 +758,7 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 
 
   </div>
-</div>
+
 
       
       <div className="mt-6">

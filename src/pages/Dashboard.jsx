@@ -23,11 +23,18 @@ export default function Dashboard() {
       icon: <ClipboardList className="w-6 h-6 text-green-600" />,
       onClick: () => navigate('/jobs'),
     },
-    {
-      title: 'Create Job',
-      icon: <PlusSquare className="w-6 h-6 text-indigo-600" />,
-      onClick: () => navigate('/jobs/create'),
-    },
+  {
+  title: 'Create Job',
+  icon: <PlusSquare className="w-6 h-6 text-indigo-600" />,
+  onClick: () => navigate('/jobs/summary', {
+    state: {
+      cropYear: new Date().getFullYear(),
+      selectedFields: [],
+      isEditing: false,
+    }
+  }),
+},
+
     {
       title: 'Reports',
       icon: <BarChart2 className="w-6 h-6 text-purple-600" />,

@@ -326,14 +326,27 @@ const jobsToShow = (view === 'By Field' ? filteredFieldJobs : filteredJobs)
 
 return (
   <div className="p-4 md:p-6">
-    <PageHeader
-      title="Jobs"
-      actions={
-        <Button onClick={() => navigate('/jobs/create')}>
-          <Plus className="mr-2" size={16} /> Create Job
-        </Button>
+<PageHeader
+  title="Jobs"
+  actions={
+ <Button
+  onClick={() => {
+    console.log('🧭 Navigating to Job Summary');
+    navigate('/jobs/summary', {
+      state: {
+       cropYear: new Date().getFullYear(),
+        selectedFields: [],
+        isEditing: false,
       }
-    />
+    });
+  }}
+>
+  <Plus className="mr-2" size={16} /> Create Job
+</Button>
+
+  }
+/>
+
 
     {/* 🔹 Tabs for By Field vs Grouped */}
     {role === 'viewer' ? (

@@ -26,9 +26,10 @@ export async function saveJob({
   setSaving(true);
 console.log('🧹 FIELDS ENTERING saveJob:', fields);
 
-  const jobDocRef = isEditing
-    ? doc(db, 'jobs', jobId)
-    : doc(collection(db, 'jobs')); // if creating new
+  const jobDocRef = jobId
+  ? doc(db, 'jobs', jobId)
+  : doc(collection(db, 'jobs'));
+
 
   const finalJobId = jobDocRef.id;
 
@@ -90,29 +91,35 @@ console.log('🧹 FIELDS ENTERING saveJob:', fields);
       rateType: p.rateType || ''
     }));
 
-    const updatedFieldsWithAcres = updatedFields.map(f => {
-      let polygon = f.drawnPolygon;
-      if (polygon && typeof polygon === 'object' && polygon.type === 'Feature') {
-        polygon = JSON.stringify(polygon);
-      }
-      return {
-        ...f,
-        boundary: f.boundary
-  ? (typeof f.boundary === 'string'
-    ? f.boundary
-    : f.boundary.geojson
-      ? (typeof f.boundary.geojson === 'string' ? f.boundary.geojson : JSON.stringify(f.boundary.geojson))
-      : JSON.stringify(f.boundary))
-  : null,
+   const updatedFieldsWithAcres = updatedFields.map(f => {
+  let polygon = f.drawnPolygon;
+  if (polygon && typeof polygon === 'object' && polygon.type === 'Feature') {
+    polygon = JSON.stringify(polygon);
+  }
 
-        drawnPolygon: polygon ?? null,
-        acres: f.drawnAcres ?? f.gpsAcres ?? f.acres ?? 0,
-        riceLeveeAcres: f?.riceLeveeAcres ?? null,
-        beanLeveeAcres: f?.beanLeveeAcres ?? null,
-        crop: f?.crop || '',
-      };
-    });
+  return {
+    ...f,
+    boundary: f.boundary
+      ? (typeof f.boundary === 'string'
+        ? f.boundary
+        : f.boundary.geojson
+          ? (typeof f.boundary.geojson === 'string' ? f.boundary.geojson : JSON.stringify(f.boundary.geojson))
+          : JSON.stringify(f.boundary))
+      : null,
+    drawnPolygon: polygon ?? null,
+    acres: f.drawnAcres ?? f.gpsAcres ?? f.acres ?? 0,
+    riceLeveeAcres: f?.riceLeveeAcres ?? null,
+    beanLeveeAcres: f?.beanLeveeAcres ?? null,
+    crop: f?.crop || '',
+    operator: f.operator || '',
+    landowner: f.landowner || '',
+    operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : undefined,
+    landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : undefined,
+  };
+});
+
 console.log('🛑 FIELDS AFTER UPDATEDFIELDSWITHACRES BUILD:', updatedFieldsWithAcres);
+console.log('🔍 Sample field before updatedFieldsWithAcres:', updatedFields[0]);
 
        // 🛠️ Save or update master grouped job
     const masterJob = {
@@ -192,6 +199,11 @@ boundary: field.boundary ? (typeof field.boundary === 'string' ? field.boundary 
         notes: notes || '',
         waterVolume: jobType?.parentName === 'Spraying' ? waterVolume : '',
         ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+        operator: field.operator || '',
+landowner: field.landowner || '',
+operatorExpenseShare: typeof field.operatorExpenseShare === 'number' ? field.operatorExpenseShare : undefined,
+landownerExpenseShare: typeof field.landownerExpenseShare === 'number' ? field.landownerExpenseShare : undefined,
+
         timestamp: serverTimestamp()
       };
 

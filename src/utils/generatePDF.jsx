@@ -167,11 +167,18 @@ export const generatePDFBlob = async (job) => {
           {job.fields?.map((f, i) => {
             if (!f.imageBase64) return null;
 
-            const op = f.operator || '—';
-            const lo = f.landowner || '';
-            const opExp = f.operatorExpenseShare ?? 100;
-            const loExp = f.landownerExpenseShare ?? 0;
-            const split = loExp > 0 ? `${op}: ${opExp}% / ${lo}: ${loExp}%` : `${op}: ${opExp}%`;
+const op = f.operator || '—';
+const lo = f.landowner || '—';
+const opShare = typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : 100;
+const loShare = typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : 0;
+
+let split = '';
+
+if (opShare > 0) split += `${op}: ${opShare}%`;
+if (loShare > 0) split += `${split ? '\n' : ''}${lo}: ${loShare}%`;
+
+if (!split) split = `${op}:`; // Fallback if nothing valid
+
 
             return (
               <View key={i} style={styles.mapWrap}>
