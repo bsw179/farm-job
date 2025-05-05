@@ -1,20 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ReportControls from '../../components/reports/ReportControls';
+import { useContext } from 'react';
+import { CropYearContext } from '../../context/CropYearContext';
+import { saveAs } from 'file-saver';
+import { generatePDFfromElement } from '../../utils/exportPDF';
 
 export default function VendorSummary() {
   const [purchases, setPurchases] = useState([]);
-  const [groupedByVendor, setGroupedByVendor] = useState({});
+  const [filterState, setFilterState] = useState({});
+  const [sort, setSort] = useState('az');
+  const [filters, setFilters] = useState({});
 
-  useEffect(() => {
-    const fetchPurchases = async () => {
-      const snap = await getDocs(collection(db, 'inputPurchases'));
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setPurchases(data);
-    };
+  const { cropYear } = useContext(CropYearContext);
 
-    fetchPurchases();
-  }, []);
+
+
+useEffect(() => {
+  const fetchPurchases = async () => {
+    const snap = await getDocs(collection(db, 'inputPurchases'));
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const filteredByYear = data.filter(p => String(p.cropYear) === String(cropYear));
+    setPurchases(filteredByYear);
+  };
+
+  fetchPurchases();
+}, [cropYear]); // 👈 make sure this runs every time cropYear changes
+  
 
   useEffect(() => {
     const grouped = {};
@@ -25,12 +38,103 @@ export default function VendorSummary() {
       grouped[vendor].push(p);
     });
 
-    setGroupedByVendor(grouped);
+   
   }, [purchases]);
 
+const filteredPurchases = purchases.filter(p => {
+  const matchesOperator = !filterState.operator || (p.operator || '').toLowerCase() === filterState.operator.toLowerCase();
+  const matchesVendor = !filterState.vendor || (p.vendorName || '').toLowerCase() === filterState.vendor.toLowerCase();
+  const matchesProduct = !filterState.product || (p.productName || '').toLowerCase().includes(filterState.product.toLowerCase());
+
+  let matchesDate = true;
+  if (filterState.dateStart || filterState.dateEnd) {
+    const jobDate = new Date(p.date);
+    if (filterState.dateStart) matchesDate &= jobDate >= new Date(filterState.dateStart);
+    if (filterState.dateEnd) matchesDate &= jobDate <= new Date(filterState.dateEnd);
+  }
+
+  return matchesOperator && matchesVendor && matchesProduct && matchesDate;
+});
+
+const sortedPurchases = [...filteredPurchases].sort((a, b) => {
+  if (sort === 'az') return (a.vendorName || '').localeCompare(b.vendorName || '');
+  if (sort === 'za') return (b.vendorName || '').localeCompare(a.vendorName || '');
+  if (sort === 'newest') return new Date(b.date) - new Date(a.date);
+  if (sort === 'oldest') return new Date(a.date) - new Date(b.date);
+  return 0;
+});
+
+const groupedByVendor = {};
+sortedPurchases.forEach(p => {
+  const vendor = p.vendorName || 'Unknown Vendor';
+  if (!groupedByVendor[vendor]) groupedByVendor[vendor] = [];
+  groupedByVendor[vendor].push(p);
+});
+
+const handleExport = (format) => {
+  if (format === 'csv') {
+    let csv = 'Vendor,Product,Amount,Unit,Cost,Date,Invoice\n';
+
+    Object.entries(groupedByVendor).forEach(([vendor, entries]) => {
+      entries.forEach(p => {
+        csv += [
+          `"${vendor}"`,
+          `"${p.productName || ''}"`,
+          p.amount,
+          p.unit,
+          parseFloat(p.cost || 0).toFixed(2),
+          p.date || '',
+          p.invoice || ''
+        ].join(',') + '\n';
+      });
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `VendorSummary_${cropYear}.csv`);
+  }
+
+  if (format === 'pdf') {
+    const el = document.getElementById('report-container');
+    generatePDFfromElement(el, `VendorSummary_${cropYear}.pdf`);
+  }
+};
+
+
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Vendor Summary</h2>
+   <div id="report-container" className="p-6 max-w-5xl mx-auto">
+
+   <div className="no-print">
+  <ReportControls
+    title="Vendor Summary"
+    sortOptions={[
+      { label: 'Vendor A–Z', value: 'az' },
+      { label: 'Vendor Z–A', value: 'za' },
+      { label: 'Date Added (Newest)', value: 'newest' },
+      { label: 'Date Added (Oldest)', value: 'oldest' }
+    ]}
+    filters={[
+      { label: 'Operator', type: 'select', key: 'operator', options: ['PCF', 'TCF'] },
+      { label: 'Vendor', type: 'select', key: 'vendor', options: Object.keys(groupedByVendor) },
+      { label: 'Product', type: 'text', key: 'product' },
+      { label: 'Date Range', type: 'date-range', key: 'date' }
+    ]}
+    onFilterChange={setFilterState}
+    selectedSort={sort}
+    onSortChange={setSort}
+    onExport={handleExport}
+  />
+  {!filterState.operator && (
+  <div className="text-sm text-gray-500 mb-2 ml-1">PCF <span className="mx-1">•</span> TCF</div>
+)}
+
+{filterState.operator && (
+  <div className="text-sm text-gray-500 mb-2 ml-1">{filterState.operator}</div>
+)}
+
+</div>
+
+
+
       {/* 🔹 Vendor Totals Summary Card */}
 <div className="bg-gray-100 border rounded p-4 mb-6 shadow-sm">
   <h4 className="text-lg font-semibold mb-2">2025 Vendor Totals</h4>
@@ -46,12 +150,13 @@ export default function VendorSummary() {
     })}
   </ul>
   <hr className="my-2" />
-  <p className="text-sm font-medium flex justify-between">
-    <span>Total Purchases</span>
-    <span className="font-mono text-right">
-      ${purchases.reduce((sum, p) => sum + (parseFloat(p.cost) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-    </span>
-  </p>
+<p className="text-sm font-medium flex justify-between">
+  <span>Total Purchases</span>
+  <span className="font-mono text-right">
+    ${filteredPurchases.reduce((sum, p) => sum + (parseFloat(p.cost) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+  </span>
+</p>
+
 </div>
  
      {Object.entries(groupedByVendor).map(([vendor, entries]) => {
