@@ -22,6 +22,9 @@ export async function saveJob({
   navigate,
   setSaving,
   passes,
+  seedTreatments,
+  seedTreatmentStatus,
+
 }) {
   setSaving(true);
 console.log('🧹 FIELDS ENTERING saveJob:', fields);
@@ -53,12 +56,17 @@ console.log('🧹 FIELDS ENTERING saveJob:', fields);
       return;
     }
 
-    const incompleteProduct = editableProducts.find(p => !p.productId || !p.rate || !p.unit);
+const incompleteProduct = editableProducts.find(p =>
+  ['seed', 'fertilizer', 'chemical'].includes((p.type || '').toLowerCase()) &&
+  (!p.productId || !p.rate || !p.unit)
+);
+
     if (incompleteProduct) {
       alert('Please fill out all product fields (product, rate, and unit).');
       setSaving(false);
       return;
     }
+
 
     await new Promise(res => setTimeout(res, 100)); // slight delay for UI
 
@@ -82,14 +90,29 @@ console.log('🧹 FIELDS ENTERING saveJob:', fields);
 };
     }));
 
-    const cleanedProducts = editableProducts.map(p => ({
-      productId: p.productId || '',
-      productName: p.productName || '',
-      rate: p.rate || '',
-      unit: p.unit || '',
-      crop: p.crop || '',
-      rateType: p.rateType || ''
-    }));
+ const cleanedProducts = editableProducts.map(p => ({
+  productId: p.productId || '',
+  productName: p.productName || '',
+  type: p.type || '',
+  rate: p.rate || '',
+  unit: p.unit || '',
+  rateType: p.rateType || '',
+  crop: p.crop || '',
+
+  // Optional but useful for seed/chemical reports
+  vendorId: p.vendorId || '',
+  vendorName: p.vendorName || '',
+  unitSize: p.unitSize || '',
+  seedsPerUnit: p.seedsPerUnit || '',
+  form: p.form || '',
+  npk: p.npk || '',
+  ai: p.ai || ''
+}));
+
+
+const isLeveeJob =
+  jobType?.name?.toLowerCase().includes('levee') ||
+  jobType?.name?.toLowerCase().includes('pack');
 
    const updatedFieldsWithAcres = updatedFields.map(f => {
   let polygon = f.drawnPolygon;
@@ -107,14 +130,28 @@ console.log('🧹 FIELDS ENTERING saveJob:', fields);
           : JSON.stringify(f.boundary))
       : null,
     drawnPolygon: polygon ?? null,
-    acres: f.drawnAcres ?? f.gpsAcres ?? f.acres ?? 0,
+  acres: isLeveeJob
+  ? (
+      f.crop?.toLowerCase().includes('rice') && f.riceLeveeAcres != null
+        ? Number(f.riceLeveeAcres)
+        : f.crop?.toLowerCase().includes('soybean') && f.beanLeveeAcres != null
+        ? Number(f.beanLeveeAcres)
+        : 0
+    )
+  : f.drawnAcres ?? f.gpsAcres ?? f.acres ?? 0,
+
+
     riceLeveeAcres: f?.riceLeveeAcres ?? null,
     beanLeveeAcres: f?.beanLeveeAcres ?? null,
     crop: f?.crop || '',
     operator: f.operator || '',
     landowner: f.landowner || '',
-    operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : undefined,
-    landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : undefined,
+operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : null,
+landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : null,
+operatorRentShare: typeof f.operatorRentShare === 'number' ? f.operatorRentShare : null,
+landownerRentShare: typeof f.landownerRentShare === 'number' ? f.landownerRentShare : null,
+county: f.county || '',
+
   };
 });
 
@@ -122,36 +159,69 @@ console.log('🛑 FIELDS AFTER UPDATEDFIELDSWITHACRES BUILD:', updatedFieldsWith
 console.log('🔍 Sample field before updatedFieldsWithAcres:', updatedFields[0]);
 
        // 🛠️ Save or update master grouped job
-    const masterJob = {
-      jobId: finalJobId,
-      jobType: {
-        name: jobType.name,
-        icon: jobType.icon || '',
-        cost: jobType.cost || 0,
-        parentName: jobType.parentName || ''
-      },
-      ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
-      vendor: vendor || '',
-      applicator: applicator || '',
-      products: cleanedProducts,
-      cropYear,
-      jobDate,
-      status: jobStatus,
-    fields: updatedFieldsWithAcres
-  .filter(f => !f.isDetachedFromGroup)
-  .map(f => ({
-    id: f.id,
-    fieldId: f.fieldId || f.id,
-    fieldName: f.fieldName || '',
-    acres: f.acres ?? 0,
-    drawnAcres: f.drawnAcres ?? null,
-    crop: f.crop || '',
-    riceLeveeAcres: f.riceLeveeAcres ?? null,
-    beanLeveeAcres: f.beanLeveeAcres ?? null,
-boundary: f.boundary ? (typeof f.boundary === 'string' ? f.boundary : JSON.stringify(f.boundary)) : null,
-    drawnPolygon: f.drawnPolygon ? (typeof f.drawnPolygon === 'string' ? f.drawnPolygon : JSON.stringify(f.drawnPolygon)) : null,
+ const masterJob = {
+  jobId: finalJobId,
+  jobType: {
+  name: jobType.name,
+  parentName: jobType.parentName || '',
+  icon: jobType.icon || '',
+  cost: jobType.cost || 0,
+  productType: jobType.productType || '',
+  defaultUnit: jobType.defaultUnit || '',
+  requiresWater: jobType.requiresWater ?? false
+  },
+  ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
+  vendor: vendor || '',
+  applicator: applicator || '',
+  seedTreatmentStatus: seedTreatmentStatus || '', // ✅ <-- INSERT THIS LINE
+  products: cleanedProducts,
 
-  })),
+
+  cropYear,
+  jobDate,
+  status: jobStatus,
+  fields: updatedFieldsWithAcres
+    .filter(f => !f.isDetachedFromGroup)
+  .map(f => ({
+  id: f.id,
+  fieldId: f.fieldId || f.id,
+  fieldName: f.fieldName || '',
+  farmName: f.farmName || '',
+  farmNumber: f.farmNumber || '',
+  tractNumber: f.tractNumber || '',
+  fsaFieldNumber: f.fsaFieldNumber || '',
+  gpsAcres: f.gpsAcres ?? null,
+  fsaAcres: f.fsaAcres ?? null,
+  county: f.county || '',
+  acres: f.acres ?? 0,
+  drawnAcres: f.drawnAcres ?? null,
+  crop: f.crop || '',
+  riceLeveeAcres: f.riceLeveeAcres ?? null,
+  beanLeveeAcres: f.beanLeveeAcres ?? null,
+  boundary: f.boundary
+    ? (typeof f.boundary === 'string' ? f.boundary : JSON.stringify(f.boundary))
+    : null,
+  drawnPolygon: f.drawnPolygon
+    ? (typeof f.drawnPolygon === 'string' ? f.drawnPolygon : JSON.stringify(f.drawnPolygon))
+    : null,
+  operator: f.operator || '',
+  landowner: f.landowner || '',
+  operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : null,
+  landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : null,
+  expenseSplit: {
+    operator: f.operator || '',
+    operatorShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : 100,
+    landowner: f.landowner || '',
+    landownerShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : 0,
+operatorRentShare: typeof f.operatorRentShare === 'number' ? f.operatorRentShare : null,
+landownerRentShare: typeof f.landownerRentShare === 'number' ? f.landownerRentShare : null,
+county: f.county || '',
+
+  }
+}))
+
+,
+
 fieldIds: updatedFieldsWithAcres
   .filter(f => !f.isDetachedFromGroup)
   .map(f => f.id),
@@ -163,6 +233,7 @@ fieldIds: updatedFieldsWithAcres
 console.log('🧹 Final fields going into saveJob:', updatedFieldsWithAcres);
 console.log('🧹 Field[0] crop:', updatedFieldsWithAcres[0]?.crop);
 console.log('🛑 MASTERJOB FINAL STRUCTURE BEFORE SAVE:', masterJob);
+console.log("🧪 masterJob before save:", JSON.stringify(masterJob, null, 2));
 
     await setDoc(jobDocRef, masterJob, { merge: true });
 
@@ -179,30 +250,51 @@ console.log('🛑 MASTERJOB FINAL STRUCTURE BEFORE SAVE:', masterJob);
         linkedToJobId: finalJobId,
         fieldId: field.fieldId || field.id,
         fieldName: field.fieldName || '',
+        farmName: field.farmName || '',
+        farmNumber: field.farmNumber || '',
+        tractNumber: field.tractNumber || '',
+        fsaFieldNumber: field.fsaFieldNumber || '',
+        gpsAcres: field.gpsAcres ?? null,
+        fsaAcres: field.fsaAcres ?? null,
+        county: field.county || '',
+
         cropYear,
         crop: field.crop || '',
         acres: field.acres ?? 0,
         drawnAcres: field.drawnAcres ?? null,
-drawnPolygon: field.drawnPolygon ? (typeof field.drawnPolygon === 'string' ? field.drawnPolygon : JSON.stringify(field.drawnPolygon)) : null,
-boundary: field.boundary ? (typeof field.boundary === 'string' ? field.boundary : JSON.stringify(field.boundary)) : null,
+        drawnPolygon: field.drawnPolygon ? (typeof field.drawnPolygon === 'string' ? field.drawnPolygon : JSON.stringify(field.drawnPolygon)) : null,
+        boundary: field.boundary ? (typeof field.boundary === 'string' ? field.boundary : JSON.stringify(field.boundary)) : null,
         status: jobStatus,
         vendor: vendor || '',
         applicator: applicator || '',
         products: cleanedProducts,
-        jobType: {
-          name: jobType.name,
-          parentName: jobType.parentName || '',
-          icon: jobType.icon || '',
-          cost: jobType.cost || 0
+
+
+      jobType: {
+        name: jobType.name,
+        parentName: jobType.parentName || '',
+        icon: jobType.icon || '',
+        cost: jobType.cost || 0,
+        productType: jobType.productType || '',
+        defaultUnit: jobType.defaultUnit || '',
+        requiresWater: jobType.requiresWater ?? false
         },
         jobDate: jobDate || '',
         notes: notes || '',
         waterVolume: jobType?.parentName === 'Spraying' ? waterVolume : '',
         ...(jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
         operator: field.operator || '',
-landowner: field.landowner || '',
-operatorExpenseShare: typeof field.operatorExpenseShare === 'number' ? field.operatorExpenseShare : undefined,
-landownerExpenseShare: typeof field.landownerExpenseShare === 'number' ? field.landownerExpenseShare : undefined,
+        expenseSplit: {
+        operator: field.operator || '',
+        operatorShare: typeof field.operatorExpenseShare === 'number' ? field.operatorExpenseShare : 100,
+        landowner: field.landowner || '',
+        landownerShare: typeof field.landownerExpenseShare === 'number' ? field.landownerExpenseShare : 0
+        },
+
+        seedTreatmentStatus: seedTreatmentStatus || '',
+        landowner: field.landowner || '',
+        operatorExpenseShare: typeof field.operatorExpenseShare === 'number' ? field.operatorExpenseShare : undefined,
+        landownerExpenseShare: typeof field.landownerExpenseShare === 'number' ? field.landownerExpenseShare : undefined,
 
         timestamp: serverTimestamp()
       };

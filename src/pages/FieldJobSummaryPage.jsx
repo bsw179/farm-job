@@ -20,6 +20,8 @@ import html2canvas from 'html2canvas';
 import ProductComboBox from '../components/ProductComboBox';
 
 function FieldJobSummaryPage() {
+  const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";
+
   const { jobId } = useParams();
   const navigate = useNavigate();
 const [field, setField] = useState(null);
@@ -45,6 +47,8 @@ const [vendor, setVendor] = useState('');
 const [applicator, setApplicator] = useState('');
 const [showEditAreaModal, setShowEditAreaModal] = useState(false);
 const [fieldToEdit, setFieldToEdit] = useState(null);
+const [seedTreatmentStatus, setSeedTreatmentStatus] = useState('');
+const [seedTreatments, setSeedTreatments] = useState([]);
 
 const isLeveeJob = job?.jobType?.name?.toLowerCase().includes('levee') || job?.jobType?.name?.toLowerCase().includes('pack');
 const handleProductChange = (index, field, value) => {
@@ -74,11 +78,15 @@ const fetchUpdatedFieldJob = async () => {
       ? { name: jobData.jobType }
       : jobData.jobType;
 
-    setJob({
-      ...jobData,
-      jobType: normalizedJobType,
-      drawnPolygon: parsedPolygon,
-    });
+
+setJob({
+  ...jobData,
+  jobType: normalizedJobType,
+  drawnPolygon: parsedPolygon,
+});
+
+
+
   }
 };
 
@@ -168,6 +176,8 @@ useEffect(() => {
         jobType: normalizedJobType,
         drawnPolygon: parsedPolygon,
       });
+setSeedTreatmentStatus(jobData.seedTreatmentStatus || '');
+setSeedTreatments((jobData.products || []).filter(p => (p.type || '').toLowerCase() === 'seed treatment'));
 
       setNotes(jobData.notes || '');
       setWaterVolume(jobData.waterVolume || 0);
@@ -258,31 +268,119 @@ useEffect(() => {
  const handleSave = async () => {
   setSaving(true);
 
+  if (seedTreatmentStatus === 'separate') {
+    const missing = seedTreatments.find(t => !t.productId || !t.rate || !t.unit);
+    if (missing) {
+      alert('Please fill out all seed treatment fields (product, rate, and unit).');
+      setSaving(false);
+      return;
+    }
+  }
+
   const cleanedDrawnPolygon = typeof job.drawnPolygon === 'object'
     ? JSON.stringify(job.drawnPolygon)
     : job.drawnPolygon;
 
+  // ✅ Override GPS/drawn acres with levee acres if applicable
+ const isLeveeJob =
+  job?.jobType?.name?.toLowerCase().includes('levee') ||
+  job?.jobType?.name?.toLowerCase().includes('pack');
+
+const leveeAcres =
+  isLeveeJob && (job.crop || '').toLowerCase().includes('rice') && field?.riceLeveeAcres != null
+    ? Number(field.riceLeveeAcres)
+    : isLeveeJob && (job.crop || '').toLowerCase().includes('soybean') && field?.beanLeveeAcres != null
+    ? Number(field.beanLeveeAcres)
+    : null;
+
+const finalAcres = leveeAcres ?? job.drawnAcres ?? job.acres ?? 0;
+
+
   try {
     const newFieldJobRef = doc(collection(db, 'jobsByField'));
 
+    const expenseSplit = job.expenseSplit || {
+      operator: job.operator || field?.operator || '',
+      operatorShare: typeof job.operatorExpenseShare === 'number' ? job.operatorExpenseShare : 100,
+      landowner: job.landowner || field?.landowner || '',
+      landownerShare: typeof job.landownerExpenseShare === 'number' ? job.landownerExpenseShare : 0
+    };
+
     await setDoc(newFieldJobRef, {
       ...job,
+      farmName: field?.farmName || '',
+      farmNumber: field?.farmNumber || '',
+      tractNumber: field?.tractNumber || '',
+      fsaFieldNumber: field?.fsaFieldNumber || '',
+      gpsAcres: field?.gpsAcres ?? null,
+      fsaAcres: field?.fsaAcres ?? null,
+      county: field?.county || '',
+
       id: newFieldJobRef.id,
       status: job.status || 'Planned',
       jobType,
       vendor: job.vendor || '',
       applicator: job.applicator || '',
-      products: job.products || [],
+    products: [
+  ...(job.products || [])
+    .filter(p => (p.type || '').toLowerCase() !== 'seed treatment')
+    .map(p => ({
+      productId: p.productId || '',
+      productName: p.productName || '',
+      type: p.type || '',
+      rate: p.rate || '',
+      unit: p.unit || '',
+      rateType: p.rateType || '',
+      crop: p.crop || '',
+      vendorId: p.vendorId || '',
+      vendorName: p.vendorName || '',
+      unitSize: p.unitSize || '',
+      seedsPerUnit: p.seedsPerUnit || '',
+      form: p.form || '',
+      npk: p.npk || '',
+      ai: p.ai || ''
+    })),
+  ...(seedTreatmentStatus === 'separate'
+    ? seedTreatments.map(p => ({
+        productId: p.productId || '',
+        productName: p.productName || '',
+        type: 'Seed Treatment',
+        rate: p.rate || '',
+        unit: p.unit || '',
+        rateType: p.rateType || '',
+        vendorId: p.vendorId || '',
+        vendorName: p.vendorName || '',
+        unitSize: p.unitSize || '',
+        seedsPerUnit: p.seedsPerUnit || '',
+        form: p.form || '',
+        npk: p.npk || '',
+        ai: p.ai || ''
+      }))
+    : [])
+],
+
+
+      seedTreatmentStatus: seedTreatmentStatus || '',
+      operator: expenseSplit.operator,
+      landowner: expenseSplit.landowner,
+      operatorExpenseShare: expenseSplit.operatorShare,
+      landownerExpenseShare: expenseSplit.landownerShare,
+      operatorRentShare: job.operatorRentShare ?? field?.operatorRentShare ?? null,
+      landownerRentShare: job.landownerRentShare ?? field?.landownerRentShare ?? null,
+      county: job.county || field?.county || '',
+      expenseSplit,
       notes: notes || '',
       ...(job?.jobType?.parentName === 'Tillage' ? { passes: parseInt(passes) || 1 } : {}),
       waterVolume: job?.jobType?.parentName === 'Spraying' ? waterVolume : '',
       drawnPolygon: cleanedDrawnPolygon,
       drawnAcres: job.drawnAcres ?? null,
-      acres: job.acres ?? null,
+      acres: finalAcres,
       linkedToJobId: null,
       isDetachedFromGroup: true,
       timestamp: serverTimestamp()
     });
+
+
 
     // 🧹 Delete old jobsByField doc
     await deleteDoc(doc(db, 'jobsByField', job.id));
@@ -544,7 +642,11 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 </div>
 
 <p className="mb-2 text-sm text-gray-500">
-  {getJobTypeName(job)} • {job.cropYear} • {(job.drawnAcres ?? job.acres)?.toFixed(2)} acres
+  {job.jobType?.name} • {job.cropYear} •{' '}
+  {isLeveeJob
+    ? `${((job.crop || '').toLowerCase().includes('rice') ? field?.riceLeveeAcres
+      : field?.beanLeveeAcres) ?? 0} levee acres`
+    : `${(job.drawnAcres ?? job.acres)?.toFixed(2)} acres`}
 </p>
 
 
@@ -556,7 +658,10 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
     <span>Units</span>
   </div>
 
-        {job.products.map((p, i) => (
+        {job.products
+  .filter(p => (p.type || '').toLowerCase() !== 'seed treatment')
+  .map((p, i) => (
+
 <div
   key={i}
   className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2"
@@ -662,7 +767,8 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
           </div>
           
         ))}
-{requiresProducts && (
+
+        {requiresProducts && (
   <>
     <button
       onClick={() =>
@@ -677,6 +783,126 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
     </button>
   </>
 )}
+        {/* 🔹 Seed Treatment Section */}
+{job.products?.some(p => (p.type || '').toLowerCase() === 'seed') && (
+
+  <div className="mt-4 border-t pt-4">
+    <h4 className="font-semibold text-sm mb-2">Seed Treatment</h4>
+
+    <div className="space-y-2 text-sm">
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="seedTreatmentStatus"
+          value="none"
+          checked={seedTreatmentStatus === 'none'}
+          onChange={(e) => setSeedTreatmentStatus(e.target.value)}
+        />
+        No seed treatment applied
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="seedTreatmentStatus"
+          value="included"
+          checked={seedTreatmentStatus === 'included'}
+          onChange={(e) => setSeedTreatmentStatus(e.target.value)}
+        />
+        Treatment already included with seed
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="seedTreatmentStatus"
+          value="separate"
+          checked={seedTreatmentStatus === 'separate'}
+          onChange={(e) => setSeedTreatmentStatus(e.target.value)}
+        />
+        Treatment applied and tracked separately
+      </label>
+    </div>
+
+    {seedTreatmentStatus === 'separate' && (
+  <div className="mt-4 space-y-2">
+    {seedTreatments.map((t, i) => (
+      <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+        <ProductComboBox
+          productType="Seed Treatment"
+          allProducts={productsList.filter(p => p.type === 'Seed Treatment')}
+          usedProductIds={usedProductIds}
+          value={{ id: t.productId, name: t.productName }}
+          onChange={(selected) => {
+            const updated = [...seedTreatments];
+            updated[i] = {
+              ...updated[i],
+              productId: selected.id,
+              productName: selected.name,
+            };
+            setSeedTreatments(updated);
+          }}
+        />
+
+       <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
+  <input
+    type="number"
+    placeholder="Rate"
+    className="border border-gray-300 rounded-md px-2 py-1 w-full"
+    value={t.rate || ''}
+    onChange={e => {
+      const updated = [...seedTreatments];
+      updated[i].rate = e.target.value;
+      setSeedTreatments(updated);
+    }}
+  />
+
+  <select
+    className="border border-gray-300 rounded-md px-2 py-1 w-full"
+    value={t.unit || ''}
+    onChange={e => {
+      const updated = [...seedTreatments];
+      updated[i].unit = e.target.value;
+      setSeedTreatments(updated);
+    }}
+  >
+    <option value="">Select Unit</option>
+  <option value="/acre">/acre</option>
+
+  </select>
+</div>
+
+
+        <button
+          className={redLinkBtn}
+          onClick={() => setSeedTreatments(prev => prev.filter((_, idx) => idx !== i))}
+        >
+          🗑️ Remove
+        </button>
+      </div>
+    ))}
+
+    <button
+  onClick={() =>
+    setSeedTreatments(prev => [
+      ...prev,
+      {
+        productId: '',
+        productName: '',
+        type: 'Seed Treatment'  // ✅ include this to avoid re-render bugs
+      }
+    ])
+  }
+  className="text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition"
+>
+  + Add Seed Treatment
+</button>
+
+  </div>
+)}
+
+  </div>
+)}
+
+
 {job?.jobType?.parentName === 'Tillage' && (
   <div className="mb-4">
     <label className="block text-sm font-medium">Number of Passes</label>
@@ -805,7 +1031,10 @@ onClick={() => {
 {requiresProducts && (
   <div className="mt-6 border-t pt-4">
     <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
-    {job.products.map((p, i) => {
+{job.products
+  .filter(p => (p.type || '').toLowerCase() !== 'seed treatment')
+  .map((p, i) => {
+
       const requiresWater = job.jobType?.parentName === 'Spraying';
       const rate = parseFloat(p.rate);
       const unit = p.unit?.toLowerCase() || '';
@@ -818,8 +1047,12 @@ if (isLeveeJob) {
     acres = parseFloat(field.beanLeveeAcres);
   }
 }
+const totalAmount = rate * acres;
 
-      const totalAmount = rate * acres;
+      if (p.type === 'Seed Treatment' && ['units', 'bushels'].includes(unit)) {
+  display = `${rate} ${unit} (matched to seed)`;
+}
+
       let display = '';
 
       if (['seeds/acre', 'population'].includes(unit)) {
@@ -827,11 +1060,12 @@ if (isLeveeJob) {
         const totalSeeds = rate * acres;
         const units = totalSeeds / seedsPerUnit;
         display = `${units.toFixed(1)} units`;
-      } else if (['lbs/acre'].includes(unit)) {
-        const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-        const bushels = totalAmount / lbsPerBushel;
-        display = `${bushels.toFixed(1)} bushels`;
-      } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
+     } else if (['lbs/acre'].includes(unit)) {
+       const totalAmount = rate * acres;
+       const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+       const bushels = totalAmount / lbsPerBushel;
+       display = `${bushels.toFixed(1)} bushels`;
+     } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
         const gal = totalAmount / 128;
         display = `${gal.toFixed(2)} gallons`;
       } else if (unit === 'pt/acre') {

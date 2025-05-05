@@ -65,7 +65,14 @@ export default function JobSummaryPage() {
   const [applicator, setApplicator] = useState(location.state?.applicator || '');
   const [vendors, setVendors] = useState([]);
   const [applicators, setApplicators] = useState([]);
-  const [editableProducts, setEditableProducts] = useState(location.state?.products || []);
+const [editableProducts, setEditableProducts] = useState(
+  (location.state?.products || []).filter(p => (p.type || '').toLowerCase() !== 'seed treatment')
+);
+const [seedTreatments, setSeedTreatments] = useState(
+  (location.state?.products || []).filter(p => (p.type || '').toLowerCase() === 'seed treatment')
+);
+console.log("🧪 Initial editableProducts:", location.state?.products?.map(p => `${p.productName} (${p.type})`));
+
   const [productsList, setProductsList] = useState([]);
   const [jobTypesList, setJobTypesList] = useState([]);
   const [waterVolume, setWaterVolume] = useState('');
@@ -78,7 +85,16 @@ export default function JobSummaryPage() {
 const [usedProductIds, setUsedProductIds] = useState([]);
 const [showFieldSelectModal, setShowFieldSelectModal] = useState(false);
 const [allFields, setAllFields] = useState([]); // all available fields from DB
+const [seedTreatmentStatus, setSeedTreatmentStatus] = useState('');
 
+console.log("🧪 Full initial product objects:", location.state?.products || []);
+(location.state?.products || []).forEach(p =>
+  console.log(`🧪 Product row →`, {
+    name: p.productName,
+    type: p.type,
+    id: p.productId
+  })
+);
 
 
 
@@ -88,13 +104,16 @@ const [allFields, setAllFields] = useState([]); // all available fields from DB
   const redLinkBtn = "text-red-600 hover:text-red-800 underline text-sm";  
   const isLeveeJob = jobType?.name?.toLowerCase().includes('levee') || jobType?.name?.toLowerCase().includes('pack');
 
-    const totalJobAcres = fields.reduce((sum, f) => {
-    const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+const totalJobAcres = fields.reduce((sum, f) => {
+  const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+  const isRice = crop.toLowerCase().includes('rice');
+  const isSoy = crop.toLowerCase().includes('soybean');
 
-    if (isLeveeJob) {
-      if (crop === 'Rice') return sum + (parseFloat(f.riceLeveeAcres) || 0);
-      if (crop === 'Soybeans') return sum + (parseFloat(f.beanLeveeAcres) || 0);
-    }
+  if (isLeveeJob) {
+    if (isRice && f.riceLeveeAcres != null) return sum + Number(f.riceLeveeAcres);
+    if (isSoy && f.beanLeveeAcres != null) return sum + Number(f.beanLeveeAcres);
+    return sum; // fallback for missing levee acres
+  }
 
 async function updateProductUnit(productId, newUnit) {
   if (!productId) return;
@@ -103,12 +122,12 @@ async function updateProductUnit(productId, newUnit) {
 }
 
     return sum + (
-      !isNaN(parseFloat(f.acres)) ? parseFloat(f.acres)
-      : !isNaN(parseFloat(f.drawnAcres)) ? parseFloat(f.drawnAcres)
-      : !isNaN(parseFloat(f.gpsAcres)) ? parseFloat(f.gpsAcres)
-      : 0
-    );
-  }, 0);
+    !isNaN(parseFloat(f.acres)) ? parseFloat(f.acres)
+    : !isNaN(parseFloat(f.drawnAcres)) ? parseFloat(f.drawnAcres)
+    : !isNaN(parseFloat(f.gpsAcres)) ? parseFloat(f.gpsAcres)
+    : 0
+  );
+}, 0);
 
     const requiresProducts = ['Seeding', 'Spraying', 'Fertilizing'].includes(
     jobType?.parentName
@@ -207,15 +226,38 @@ setUsedProductIds(ids.filter(Boolean));
     setVendor(jobData.vendor || '');
     setApplicator(jobData.applicator || '');
     setJobStatus(jobData.status || 'Planned');
-    setEditableProducts(jobData.products || []);
+const safeProducts = (jobData.products || []).map(p => {
+  const type = (p.type || '').toLowerCase();
+  if (!type && p.linkedToProductId) return { ...p, type: 'Seed Treatment' };
+  return p;
+});
+
+const seedTreatmentsFromJob = safeProducts.filter(
+  p => (p.type || '').toLowerCase() === 'seed treatment'
+);
+
+const editableProductsFromJob = safeProducts.filter(
+  p => (p.type || '').toLowerCase() !== 'seed treatment'
+);
+
+setSeedTreatments(seedTreatmentsFromJob);
+setEditableProducts(editableProductsFromJob);
+console.log('🧠 jobData.seedTreatmentStatus →', jobData.seedTreatmentStatus);
+setSeedTreatmentStatus(jobData.seedTreatmentStatus || '');
+
+
+
     setWaterVolume(jobData.waterVolume || '');
     setJobId(jobId);
     setNotes(jobData.notes || '');
 
     // ✅ Patch this in
-    if (!fields.length && location.state?.selectedFields?.length) {
-      setFields(location.state.selectedFields);
-    }
+  if (!fields.length && location.state?.selectedFields?.length) {
+  const enriched = await enrichFieldData(location.state.selectedFields);
+  setFields(enriched);
+  setSelectedFields(enriched);
+}
+
   };
 
   loadJob();
@@ -288,6 +330,12 @@ const enrichFieldData = async (fieldArray) => {
           geo = null;
         }
       }
+      console.log('🧪 ENRICH:', {
+  fieldId: f.id,
+  operator: fieldData.operator,
+  opShare: fieldData.operatorExpenseShare,
+  loShare: fieldData.landownerExpenseShare
+});
 
       return {
         ...f,
@@ -310,15 +358,7 @@ const enrichFieldData = async (fieldArray) => {
     setEditableProducts(prev => [...prev, { productId: '', productName: '', rate: '', unit: '' }]);
   };
 
-  useEffect(() => {
-  const fetchUsedProducts = async () => {
-    const snap = await getDocs(collection(db, 'usedProducts'));
-    const ids = snap.docs.map(doc => doc.id);
-    setUsedProductIds(ids);
-  };
 
-  fetchUsedProducts();
-}, []);
 
 // 🔹 Patch polygon updates from Edit Area
 useEffect(() => {
@@ -356,9 +396,27 @@ const fieldsWithCrop = selectedFields.map(f => ({
   crop: f.crop || f.crops?.[cropYear]?.crop || '',
   operator: f.operator || '',
   landowner: f.landowner || '',
-  operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : undefined,
-  landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : undefined,
+  operatorExpenseShare: typeof f.operatorExpenseShare === 'number' ? f.operatorExpenseShare : null,
+  landownerExpenseShare: typeof f.landownerExpenseShare === 'number' ? f.landownerExpenseShare : null,
 }));
+
+const totalAcres = selectedFields.reduce((sum, f) => {
+  const crop = f.crop || f.crops?.[cropYear]?.crop || '';
+  if (isLeveeJob) {
+    if (crop.includes('Rice') && f.riceLeveeAcres) return sum + parseFloat(f.riceLeveeAcres);
+    if (crop.includes('Soybean') && f.beanLeveeAcres) return sum + parseFloat(f.beanLeveeAcres);
+  }
+  return sum + (f.acres ?? f.drawnAcres ?? f.gpsAcres ?? 0);
+}, 0);
+
+const linkedSeed = editableProducts.find(p => (p.type || '').toLowerCase() === 'seed');
+
+const allProducts = [
+  ...editableProducts,
+  ...(seedTreatmentStatus === 'separate' ? seedTreatments : [])
+];
+
+
 
 
   // 🔵 Mark all products used
@@ -376,26 +434,49 @@ const fieldsWithCrop = selectedFields.map(f => ({
 console.log('🧠 Saving jobId:', jobId);
 
   console.log('🛑 FIELDS PASSED TO SAVEJOB:', fieldsWithCrop);
+console.log('🧠 Final job data going to saveJob:');
+console.log({
+  jobType,
+  fields: fieldsWithCrop,
+  editableProducts: allProducts,
+  vendor,
+  applicator,
+  cropYear,
+  jobDate,
+  jobStatus,
+  jobId,
+  notes,
+  shouldGeneratePDF,
+  waterVolume,
+  isEditing,
+  passes
+});
+
 
   // 🔵 Save the job
+  console.log('🧪 FINAL PRODUCTS SENT TO SAVE:', JSON.stringify(allProducts, null, 2));
+
   saveJob({
-    jobType,
-    fields: fieldsWithCrop,
-    editableProducts,
-    vendor,
-    applicator,
-    cropYear,
-    jobDate,
-    jobStatus,
-    jobId,
-    notes,
-    shouldGeneratePDF,
-    waterVolume,
-    isEditing,
-    navigate,
-    setSaving,
-    passes
-  });
+  jobType,
+  fields: fieldsWithCrop,
+  editableProducts: allProducts,
+  vendor,
+  applicator,
+  cropYear,
+  jobDate,
+  jobStatus,
+  jobId,
+  notes,
+  shouldGeneratePDF,
+  waterVolume,
+  isEditing,
+  navigate,
+  setSaving,
+  passes,
+  seedTreatmentStatus,
+  seedTreatments   // ✅ Add this line
+});
+
 }
   // 🔹 Early Exit if No Job Types
 if (!jobTypesList.length) return null;
@@ -487,7 +568,10 @@ return (
     </div>
 
     {/* 🔹 Products Section */}
-   {requiresProducts && editableProducts.map((p, i) => {
+   {requiresProducts && editableProducts
+  .filter(p => (p.type || '').toLowerCase() !== 'seed treatment')
+  .map((p, i) => {
+
   console.log("🧪 Product row", {
     product: p.productName,
     productId: p.productId,
@@ -589,6 +673,120 @@ return (
         + Add Product
       </button>
     )}
+{editableProducts.some(p => (p.type || '').toLowerCase() === 'seed') && (
+  <div className="mt-6 border-t pt-4">
+    <h4 className="font-semibold text-sm mb-2">Seed Treatment</h4>
+
+    <div className="space-y-2 text-sm">
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="seedTreatmentStatus"
+          value="none"
+          checked={seedTreatmentStatus === 'none'}
+          onChange={(e) => setSeedTreatmentStatus(e.target.value)}
+        />
+        No seed treatment applied
+      </label>
+
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="seedTreatmentStatus"
+          value="included"
+          checked={seedTreatmentStatus === 'included'}
+          onChange={(e) => setSeedTreatmentStatus(e.target.value)}
+        />
+        Treatment already included with seed
+      </label>
+
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          name="seedTreatmentStatus"
+          value="separate"
+          checked={seedTreatmentStatus === 'separate'}
+          onChange={(e) => setSeedTreatmentStatus(e.target.value)}
+        />
+        Treatment applied and tracked separately
+      </label>
+    </div>
+
+    {seedTreatmentStatus === 'separate' && (
+      <div className="mt-4 space-y-2">
+       {seedTreatments.map((t, i) => (
+  <div key={i} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+    <ProductComboBox
+      productType="Seed Treatment"
+      allProducts={productsList.filter(p => p.type === 'Seed Treatment')}
+      usedProductIds={usedProductIds}
+      value={{ id: t.productId, name: t.productName }}
+      onChange={(selected) => {
+        const updated = [...seedTreatments];
+        updated[i] = {
+          ...updated[i],
+          productId: selected.id,
+          productName: selected.name,
+          type: 'Seed Treatment'
+        };
+        setSeedTreatments(updated);
+      }}
+    />
+
+    <input
+      type="number"
+      placeholder="Rate"
+      className="border border-gray-300 rounded-md px-2 py-1 w-full"
+      value={t.rate || ''}
+      onChange={e => {
+        const updated = [...seedTreatments];
+        updated[i].rate = e.target.value;
+        setSeedTreatments(updated);
+      }}
+    />
+
+    <select
+      className="border border-gray-300 rounded-md px-2 py-1 w-full"
+      value={t.unit || ''}
+      onChange={e => {
+        const updated = [...seedTreatments];
+        updated[i].unit = e.target.value;
+        setSeedTreatments(updated);
+      }}
+    >
+      <option value="">Select Unit</option>
+     <option value="/acre">/acre</option>
+
+    </select>
+
+    <div className="text-gray-500 text-xs italic">
+      Tracked during purchase
+    </div>
+
+    <button
+      className={redLinkBtn}
+      onClick={() =>
+        setSeedTreatments(prev => prev.filter((_, idx) => idx !== i))
+      }
+    >
+      🗑️ Remove
+    </button>
+  </div>
+))}
+
+
+        <button
+          onClick={() => setSeedTreatments(prev => [...prev, { productId: '', productName: '', rate: '', unit: '' }])}
+          className="text-sm bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700 transition"
+        >
+          + Add Seed Treatment
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
+
 
     {/* 🔹 Number of Passes (Tillage Only) */}
     {jobType?.parentName === 'Tillage' && (
@@ -619,11 +817,10 @@ return (
 
     {/* 🔹 Fields List Section */}
     <div className="mb-6">
-    <h3 className="text-sm font-semibold mb-2">
-  Total Job Acres – {totalJobAcres.toFixed(2)} –{' '}
-  {selectedFields.some(f => f.drawnPolygon && f.drawnAcres) ? 'partial' : 'full'} 
-  {' '}({selectedFields.length} fields selected)
+  <h3 className="text-sm font-semibold mb-2">
+  Total Job Acres – {totalJobAcres.toFixed(2)}{isLeveeJob ? ' levee acres' : ''} ({selectedFields.length} fields selected)
 </h3>
+
 
 
 {selectedFields.map((field) => {
@@ -647,7 +844,8 @@ if (typeof parsedGeo === 'string') {
 shadow-sm mb-6">
     <button
   title="Remove Field"
-  onClick={() => setFields(prev => prev.filter(f => f.id !== field.id))}
+  onClick={() => setSelectedFields(prev => prev.filter(f => f.id !== field.id))
+}
 className="absolute -top-0 left-1 text-red-400 hover:text-red-600"
 >
   <Trash2 size={16} strokeWidth={2} />
@@ -780,16 +978,20 @@ className="absolute -top-0 left-1 text-red-400 hover:text-red-600"
     </div>
 
     {/* 🔹 Product Totals */}
-    {requiresProducts && (
-      <div className="mt-6 border-t pt-4">
-        <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
-      {editableProducts.map((p, i) => {
+{requiresProducts && (
+  <div className="mt-6 border-t pt-4">
+    <h4 className="font-semibold text-sm mb-2">Seed + Product Summary</h4>
+
+{editableProducts
+  .filter(p => (p.type || '').toLowerCase() !== 'seed treatment')
+  .map((p, i) => {
   const rate = parseFloat(p.rate);
   const unit = p.unit?.toLowerCase() || '';
   const crop = p.crop?.toLowerCase?.() || '';
+
   const acres = fields.reduce((sum, f) => {
+    const crop = f.crop || f.crops?.[cropYear]?.crop || '';
     if (isLeveeJob) {
-      const crop = f.crop || f.crops?.[cropYear]?.crop || '';
       if (crop.includes('Rice') && f.riceLeveeAcres) return sum + parseFloat(f.riceLeveeAcres);
       if (crop.includes('Soybean') && f.beanLeveeAcres) return sum + parseFloat(f.beanLeveeAcres);
     }
@@ -805,19 +1007,15 @@ className="absolute -top-0 left-1 text-red-400 hover:text-red-600"
     const units = totalSeeds / seedsPerUnit;
     display = `${units.toFixed(1)} units (${seedsPerUnit.toLocaleString()} seeds/unit)`;
 
-} else if (unit === 'lbs/acre') {
-  if (jobType?.parentName === 'Seeding') {
-    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-    const bushels = totalAmount / lbsPerBushel;
-    display = `${bushels.toFixed(1)} bushels`;
-  } else if (jobType?.parentName === 'Fertilizing') {
-    const tons = totalAmount / 2000;
-    display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
-  } else {
-    display = `${totalAmount.toFixed(1)} lbs`;
-  }
-
-
+  } else if (unit === 'lbs/acre') {
+    if (p.type === 'Seed') {
+      const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+      const bushels = totalAmount / lbsPerBushel;
+      display = `${bushels.toFixed(1)} bushels`;
+    } else {
+      const tons = totalAmount / 2000;
+      display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
+    }
 
   } else if (unit === 'fl oz/acre') {
     const gal = totalAmount / 128;
@@ -850,6 +1048,17 @@ className="absolute -top-0 left-1 text-red-400 hover:text-red-600"
   } else {
     display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
   }
+{seedTreatmentStatus === 'separate' && seedTreatments.length > 0 && (
+  <div className="mt-4">
+    <h4 className="font-semibold text-sm mb-2">Tracked Seed Treatments</h4>
+    {seedTreatments.map((p, i) => (
+      <div key={i} className="text-sm text-gray-700 italic">
+        {p.productName || p.name || 'Unnamed'} — tracked separately
+      </div>
+    ))}
+  </div>
+)}
+
 
   return (
     <div key={i} className="text-sm text-gray-700">
@@ -858,8 +1067,11 @@ className="absolute -top-0 left-1 text-red-400 hover:text-red-600"
   );
 })}
 
-      </div>
-    )}
+  </div>
+)}
+
+
+
 
     {/* 🔹 Save Button */}
     <div className="flex justify-between items-center mt-6">
@@ -899,18 +1111,7 @@ onClick={handleSaveJob}
 
   )}
 </EditAreaModal>
-<EditAreaModal
-  isOpen={showEditAreaModal}
-  onClose={() => setShowEditAreaModal(false)}
->
-  {fieldToEdit && (
-    <EditJobPolygonForCreate
-      field={fieldToEdit}
-      onCloseModal={() => setShowEditAreaModal(false)}
-      onSavePolygon={handleSavePolygon}
-    />
-  )}
-</EditAreaModal>
+
 
 {/* 🔹 New Field Select Modal */}
 {showFieldSelectModal && (
@@ -996,5 +1197,6 @@ onClick={handleSaveJob}
    </div> 
   ); // ✅ This closes the return
 } // ✅ This closes the function
+
 
 

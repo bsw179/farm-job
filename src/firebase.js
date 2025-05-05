@@ -16,6 +16,10 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// ✅ ADD THIS:
+if (typeof window !== 'undefined') {
+  window.db = db;
+}
 // 🛡️ Set auth persistence to LOCAL storage
 setPersistence(auth, browserLocalPersistence)
   .then(() => {

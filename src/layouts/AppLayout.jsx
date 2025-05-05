@@ -37,12 +37,14 @@ import RequireRole from "@/components/RequireRole"; // add this at the top
 import RequireLogin from "@/components/RequireLogin";
 import LoginPage from '@/pages/LoginPage';
 import InputsPage from '@/pages/InputsPage'; // make sure path matches
-import LogProductPurchase from '@/pages/LogProductPurchase';
 import ProductsTracker from '@/pages/ProductsTracker';
 import ProductLedger from '@/pages/ProductLedger';
 import JobsCalendar from "@/pages/JobsCalendar";
 import CropMaps from '@/pages/CropMaps';
 import RainfallPage from '@/pages/RainfallPage';
+import FieldFinancialSummary from '@/pages/FieldFinancialSummary'; // place this at the top with imports
+import FieldCostSummary from "../pages/Reports/FieldCostSummary";
+import VendorSummary from "../pages/Reports/VendorSummary";
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
@@ -78,7 +80,7 @@ export default function AppLayout() {
         return "/profile-settings";
       case "manage users":
         return "/manage-users";
-      case "products":
+     case "manage products":
         return "/products";
       case "manage partners":
         return "/manage-partners";
@@ -147,6 +149,8 @@ export default function AppLayout() {
           <Route path="/fields/:fieldId" element={<FieldDetail />} />
           <Route path="/crop-maps" element={<CropMaps />} />
           <Route path="/rainfall" element={<RainfallPage />} />
+          <Route path="/reports/field-cost" element={<FieldCostSummary />} />
+          <Route path="/reports/vendor-summary" element={<VendorSummary />} />
 
           {/* Protected Pages */}
       
@@ -192,6 +196,17 @@ export default function AppLayout() {
     </ProtectedRoute>
   }
 />
+<Route
+  path="/financial/summary"
+  element={
+    <ProtectedRoute path="/financial/summary">
+      <FieldFinancialSummary />
+    </ProtectedRoute>
+  }
+/>
+
+
+
 
           <Route
             path="/manage-users"
@@ -203,14 +218,7 @@ export default function AppLayout() {
           />
 import LogProductPurchase from './pages/LogProductPurchase';
 
-<Route
-  path="/financial/log"
-  element={
-    <ProtectedRoute path="/financial/log">
-      <LogProductPurchase />
-    </ProtectedRoute>
-  }
-/>
+
 
           <Route
             path="/products"

@@ -78,6 +78,14 @@ const navigate = useNavigate();
 
 
               <button onClick={() => handlePageChange('Manage Users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Users</button>
+            
+            <button
+  onClick={() => navigate('/admin-tools')}
+  className="w-full text-left px-4 py-2 hover:bg-gray-100"
+>
+  Admin Tools
+</button>
+
               <button
   onClick={() => {
     setShowMenu(false);
@@ -92,7 +100,7 @@ const navigate = useNavigate();
 
 
               <div className="px-4 py-2 border-t font-semibold">Setup</div>
-              <button onClick={() => handlePageChange('Products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Products</button>
+              <button onClick={() => handlePageChange('Manage Products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Products</button>
               <button onClick={() => handlePageChange('Manage Partners')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Partners</button>
               <button onClick={() => handlePageChange('Manage Crop Types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">Manage Crop Types</button>
               <button onClick={() => handlePageChange('Import Boundaries')}className="w-full text-left px-4 py-2 hover:bg-gray-100">Import Boundaries</button>

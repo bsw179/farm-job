@@ -255,6 +255,14 @@ try {
 
               const totalAmount = rate * acres;
               let display = '';
+if (p.type === 'Seed Treatment' && ['units', 'bushels'].includes(unit)) {
+  display = `${rate} ${unit} (matched to seed)`;
+}
+else if (unit === 'lbs/acre') {
+  const total = rate * acres;
+  display = `${total.toFixed(1)} lbs`;
+}
+// ... and the rest follows
 
               if (['seeds/acre', 'population'].includes(unit)) {
                 const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;

@@ -47,7 +47,7 @@ const handleSaveProduct = async () => {
       <h2 className="text-xl font-bold mb-4">Manage Products</h2>
 
       <div className="flex gap-4 mb-4">
-        {['Seed', 'Fertilizer', 'Chemical'].map(tab => (
+{['Seed', 'Fertilizer', 'Chemical', 'Seed Treatment'].map(tab => (
           <button
             key={tab}
             className={`px-4 py-2 rounded ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
@@ -281,7 +281,26 @@ const handleSaveProduct = async () => {
 
               </>
             )}
+{activeTab === 'Seed Treatment' && (
+  <>
+    <input
+      className="border px-2 py-1 mb-4 w-full"
+      placeholder="Manufacturer (optional)"
+      value={currentProduct.manufacturer || ''}
+      onChange={(e) => setCurrentProduct({ ...currentProduct, manufacturer: e.target.value })}
+    />
 
+    <select
+      className="border px-2 py-1 mb-4 w-full"
+      value={currentProduct.unit || ''}
+      onChange={(e) => setCurrentProduct({ ...currentProduct, unit: e.target.value })}
+    >
+      <option value="">Select Unit</option>
+      <option value="units">Units</option>
+      <option value="bushels">Bushels</option>
+    </select>
+  </>
+)}
             <div className="flex justify-end gap-2">
               <button className="bg-blue-600 text-white px-4 py-1 rounded" onClick={handleSaveProduct}>Save</button>
               <button className="bg-gray-300 px-4 py-1 rounded" onClick={() => setModalOpen(false)}>Cancel</button>
@@ -289,6 +308,7 @@ const handleSaveProduct = async () => {
           </div>
         </div>
       )}
+
 
       <table className="min-w-full bg-white rounded shadow overflow-hidden">
         <thead className="bg-gray-100">

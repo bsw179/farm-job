@@ -9,6 +9,51 @@ import area from '@turf/area';
 import { Pencil, Trash2, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
+const updateFieldNameInJobs = async (fieldId, newFieldName) => {
+  const q = query(collection(db, 'jobsByField'), where('fieldId', '==', fieldId));
+  const snap = await getDocs(q);
+
+  const updates = snap.docs.map(docSnap =>
+    updateDoc(doc(db, 'jobsByField', docSnap.id), {
+      fieldName: newFieldName
+    })
+  );
+
+  await Promise.all(updates);
+  console.log(`🛠 Updated fieldName in ${snap.size} jobs`);
+};
+const syncAllFieldNamesToGroupedJobs = async () => {
+  const fieldsSnap = await getDocs(collection(db, 'fields'));
+  const jobsSnap = await getDocs(collection(db, 'jobs'));
+
+  const allFields = fieldsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const allJobs = jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  const updates = [];
+
+  for (const job of allJobs) {
+    if (!Array.isArray(job.fields)) continue;
+
+    let updated = false;
+    const updatedFields = job.fields.map(f => {
+      const match = allFields.find(field => field.id === f.id);
+      if (match && match.fieldName !== f.fieldName) {
+        updated = true;
+        return { ...f, fieldName: match.fieldName };
+      }
+      return f;
+    });
+
+    if (updated) {
+      updates.push(updateDoc(doc(db, 'jobs', job.id), { fields: updatedFields }));
+    }
+  }
+
+  await Promise.all(updates);
+  console.log(`🛠 Fully updated field names in ${updates.length} grouped jobs`);
+};
+
+
 export default function FieldDetail() {
   const { fieldId } = useParams();
   const navigate = useNavigate();
@@ -160,6 +205,8 @@ if (
     updatedData.boundary.geojson = null;
   }
 }
+// 🧠 Update fieldName in all matching jobsByField entries
+await updateFieldNameInJobs(fieldId, clean.fieldName);
 
 setField(updatedData);
 setUpdatedField(updatedData);
@@ -254,16 +301,31 @@ return (
 
       {/* Field Info */}
       <div className="grid grid-cols-2 gap-2 mb-6 text-sm">
-        {fieldOrder && Array.isArray(fieldOrder) && fieldOrder.map(([key, label]) => (
-
+       {fieldOrder && Array.isArray(fieldOrder) && fieldOrder.map(([key, label]) => (
   <div key={key} className="bg-white p-3 rounded shadow">
     <label className="block text-xs text-gray-500 mb-1">{label}</label>
     {editMode ? (
       <>
         <input
           className="border p-2 rounded w-full"
-value={updatedField[key] !== undefined ? updatedField[key] : ''}
-          onChange={(e) => setUpdatedField({ ...updatedField, [key]: e.target.value })}
+          value={updatedField[key] !== undefined ? updatedField[key] : ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            const numericKeys = [
+              'operatorExpenseShare',
+              'operatorRentShare',
+              'landownerExpenseShare',
+              'landownerRentShare',
+              'riceLeveeAcres',
+              'beanLeveeAcres',
+              'gpsAcres',
+              'fsaAcres'
+            ];
+            setUpdatedField({
+              ...updatedField,
+              [key]: numericKeys.includes(key) ? Number(value) : value
+            });
+          }}
         />
         {key === 'riceLeveeAcres' && (
           <p className="text-xs text-gray-500 mt-1 italic">
@@ -283,6 +345,7 @@ value={updatedField[key] !== undefined ? updatedField[key] : ''}
     )}
   </div>
 ))}
+
 
       </div>
 
@@ -386,6 +449,14 @@ value={updatedField[key] !== undefined ? updatedField[key] : ''}
       ← Back to Fields
     </button>
   </>
+)}
+{role === 'admin' && (
+  <button
+    onClick={syncAllFieldNamesToGroupedJobs}
+    className="bg-yellow-500 text-white px-4 py-2 rounded shadow hover:bg-yellow-600 mt-6"
+  >
+    🔁 Sync Field Names to Grouped Jobs
+  </button>
 )}
 
       </div>
