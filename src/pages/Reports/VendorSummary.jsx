@@ -12,7 +12,7 @@ export default function VendorSummary() {
   const [filterState, setFilterState] = useState({});
   const [sort, setSort] = useState('az');
   const [filters, setFilters] = useState({});
-
+  const [jobs, setJobs] = useState([]);
   const { cropYear } = useContext(CropYearContext);
 
 
@@ -28,7 +28,16 @@ useEffect(() => {
   fetchPurchases();
 }, [cropYear]); // 👈 make sure this runs every time cropYear changes
   
+useEffect(() => {
+  const fetchJobs = async () => {
+    const snap = await getDocs(collection(db, 'jobsByField'));
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const filteredByYear = data.filter(j => String(j.cropYear) === String(cropYear));
+    setJobs(filteredByYear);
+  };
 
+  fetchJobs();
+}, [cropYear]);
   useEffect(() => {
     const grouped = {};
 
@@ -64,11 +73,84 @@ const sortedPurchases = [...filteredPurchases].sort((a, b) => {
   return 0;
 });
 
+const unitConversionMap = {
+  'lbs': { to: 'tons', factor: 1 / 2000 },
+  'tons': { to: 'tons', factor: 1 },
+  'fl oz': { to: 'gal', factor: 1 / 128 },
+  'gal': { to: 'gal', factor: 1 },
+  'qt': { to: 'fl oz', factor: 32 },
+  'pt': { to: 'fl oz', factor: 16 },
+  'oz': { to: 'lbs', factor: 1 / 16 },
+  'units': { to: 'units', factor: 1 },
+};
+
 const groupedByVendor = {};
+const avgUnitCostByProductName = {};
+
+purchases.forEach(p => {
+  const key = p.productName;
+  if (!key) return;
+
+  if (!avgUnitCostByProductName[key]) {
+    avgUnitCostByProductName[key] = { totalAmount: 0, totalCost: 0 };
+  }
+
+  avgUnitCostByProductName[key].totalAmount += parseFloat(p.amount) || 0;
+  avgUnitCostByProductName[key].totalCost += parseFloat(p.cost) || 0;
+});
+
+// Calculate average cost per unit
+Object.entries(avgUnitCostByProductName).forEach(([key, val]) => {
+  const avg = val.totalCost / val.totalAmount;
+  avgUnitCostByProductName[key].avgCost = isFinite(avg) ? avg : 0;
+});
+
 sortedPurchases.forEach(p => {
   const vendor = p.vendorName || 'Unknown Vendor';
   if (!groupedByVendor[vendor]) groupedByVendor[vendor] = [];
   groupedByVendor[vendor].push(p);
+});
+
+const appliedByVendorProduct = {};
+
+jobs.forEach(job => {
+  const partner = job.operator || job.landowner;
+  if (filterState.operator && partner?.toLowerCase() !== filterState.operator.toLowerCase()) return;
+
+  (job.products || []).forEach(product => {
+    const vendor = product.vendorName || job.vendorName || 'Unknown Vendor';
+ // fallback to job-level vendor
+
+    const productName = product.productName || 'Unknown Product';
+
+   const rate = parseFloat(product.rate) || 0;
+const acres =
+  job.riceLeveeAcres != null ? Number(job.riceLeveeAcres) :
+  job.beanLeveeAcres != null ? Number(job.beanLeveeAcres) :
+  job.drawnAcres ?? job.acres ?? 0;
+
+const rawAmount = rate * acres;
+
+const productUnit = product.unit?.toLowerCase() || '';
+const conversion = unitConversionMap[productUnit];
+const normalizedAmount = conversion ? rawAmount * conversion.factor : rawAmount;
+
+const avgUnitCost = avgUnitCostByProductName[product.productName]?.avgCost || 0;
+const cost = normalizedAmount * avgUnitCost;
+
+console.log(`[${product.productName}] rate: ${rate}, acres: ${acres}, rawAmount: ${rawAmount}, unit: ${productUnit}, normalizedAmount: ${normalizedAmount}, avgCost: ${avgUnitCost}, cost: ${cost}`);
+
+
+
+if (!appliedByVendorProduct[vendor]) appliedByVendorProduct[vendor] = {};
+if (!appliedByVendorProduct[vendor][productName]) {
+  appliedByVendorProduct[vendor][productName] = { totalAmount: 0, totalCost: 0 };
+}
+
+appliedByVendorProduct[vendor][productName].totalAmount += normalizedAmount;
+appliedByVendorProduct[vendor][productName].totalCost += cost;
+
+  });
 });
 
 const handleExport = (format) => {
@@ -183,6 +265,9 @@ const handleExport = (format) => {
         return (
           <div key={product} className="mb-6">
             <h4 className="font-semibold text-md mb-1">{product}</h4>
+             <div className="text-xs text-gray-500 mb-1">
+               Avg Cost: ${avgUnitCostByProductName[product]?.avgCost?.toFixed(2) || '0.00'} per {unit}
+             </div>
 
             {/* Table view */}
             <div className="hidden sm:block">
@@ -225,7 +310,29 @@ const handleExport = (format) => {
             </div>
 
             <p className="text-sm text-gray-700 mt-1 font-medium">
-              Total: {items.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()} {unit} • ${productTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            {(() => {
+  const applied = appliedByVendorProduct[vendor]?.[product] || { totalAmount: 0, totalCost: 0 };
+  const purchasedAmount = items.reduce((sum, p) => {
+  const unitSize = parseFloat(p.unitSize) || 1;
+  return sum + (parseFloat(p.amount) || 0) * unitSize;
+}, 0);
+
+  const purchasedCost = items.reduce((sum, p) => sum + (parseFloat(p.cost) || 0), 0);
+
+  const diffAmount = purchasedAmount - applied.totalAmount;
+  const diffCost = purchasedCost - applied.totalCost;
+
+  return (
+    <div className="text-sm text-gray-700 mt-2 space-y-1 sm:space-y-0 sm:flex sm:gap-4 sm:flex-wrap">
+      <div>Applied: {applied.totalAmount.toFixed(2)} {unit} • ${applied.totalCost.toFixed(2)}</div>
+      <div>Purchased: {purchasedAmount.toFixed(2)} {unit} • ${purchasedCost.toFixed(2)}</div>
+      <div>
+        Difference: {diffAmount.toFixed(2)} {unit} • ${diffCost.toFixed(2)}
+      </div>
+    </div>
+  );
+})()}
+
             </p>
           </div>
         );

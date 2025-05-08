@@ -79,7 +79,7 @@ export default function Sidebar({ onNavigate }) {
   const activePage = getPathLabel(location.pathname);
 
   return (
-    <aside className="flex flex-col w-64 bg-blue-900 text-blue-100 shadow-xl border-r border-blue-800 overflow-y-auto max-h-screen sticky top-0">
+<aside className="absolute top-0 left-0 w-64 min-h-full bg-blue-900 z-40">
       <div className="p-6">
         <h2 className="text-2xl font-extrabold text-white mb-8 tracking-tight">🌾 Farm Job</h2>
         <nav className="flex flex-col gap-8 text-sm">

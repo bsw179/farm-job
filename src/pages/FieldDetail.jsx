@@ -2,7 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { db } from '../firebase';
 import { useCropYear } from '../context/CropYearContext';
 import area from '@turf/area';
@@ -56,6 +65,8 @@ const syncAllFieldNamesToGroupedJobs = async () => {
 
 export default function FieldDetail() {
   const { fieldId } = useParams();
+  const isNew = fieldId === "new";
+
   const navigate = useNavigate();
   const { cropYear, setCropYear } = useCropYear();
   const { role, loading } = useUser();
@@ -70,6 +81,28 @@ if (loading || !role) return null;
 
 
  useEffect(() => {
+  if (isNew) {
+    const blank = {
+      fieldName: "",
+      farmName: "",
+      gpsAcres: "",
+      fsaAcres: "",
+      county: "",
+      farmNumber: "",
+      tractNumber: "",
+      fsaFieldNumber: "",
+      operator: "",
+      landowner: "",
+      crops: {},
+      riceLeveeAcres: "",
+      beanLeveeAcres: "",
+      boundary: null,
+    };
+    setField(blank);
+    setUpdatedField(blank);
+    return;
+  }
+
   const fetchData = async () => {
     const ref = doc(db, 'fields', fieldId);
     const snap = await getDoc(ref);
@@ -171,48 +204,62 @@ if (loading || !role) return null;
   
 
   const handleUpdate = async () => {
-    const ref = doc(db, 'fields', fieldId);
     const clean = { ...updatedField };
 
-// 🚫 Prevent sending geojson if not editing boundary
-if (clean.boundary?.geojson && typeof clean.boundary.geojson === 'object') {
-  delete clean.boundary;
-}
+    // 🧠 Auto-fill bean levee acres if blank
+    if (
+      (clean.beanLeveeAcres === undefined || clean.beanLeveeAcres === "") &&
+      clean.riceLeveeAcres &&
+      !isNaN(clean.riceLeveeAcres)
+    ) {
+      clean.beanLeveeAcres = +(clean.riceLeveeAcres * 0.5).toFixed(2);
+    }
 
-// 🧠 Auto-fill bean levee acres if blank
-if (
-  (clean.beanLeveeAcres === undefined || clean.beanLeveeAcres === '') &&
-  clean.riceLeveeAcres &&
-  !isNaN(clean.riceLeveeAcres)
-) {
-  clean.beanLeveeAcres = +(clean.riceLeveeAcres * 0.5).toFixed(2);
-}
+    // 🚫 Prevent sending geojson if not editing boundary
+    if (clean.boundary?.geojson && typeof clean.boundary.geojson === "object") {
+      delete clean.boundary;
+    }
 
-await updateDoc(ref, clean);
+    if (isNew) {
+      const newRef = doc(collection(db, "fields"));
+      const finalData = {
+        ...clean,
+        id: newRef.id,
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(newRef, finalData);
+      navigate(`/fields/${newRef.id}`);
+      return;
+    }
 
-const updatedSnap = await getDoc(ref);
-const updatedData = { id: fieldId, ...updatedSnap.data() };
+    // 🔁 Update existing field
+    const ref = doc(db, "fields", fieldId);
+    await updateDoc(ref, clean);
 
-// ✅ Patch crash: safely re-parse boundary.geojson
-if (
-  updatedData.boundary?.geojson &&
-  typeof updatedData.boundary.geojson === 'string'
-) {
-  try {
-    updatedData.boundary.geojson = JSON.parse(updatedData.boundary.geojson);
-  } catch {
-    console.warn('Failed to parse boundary after update');
-    updatedData.boundary.geojson = null;
-  }
-}
-// 🧠 Update fieldName in all matching jobsByField entries
-await updateFieldNameInJobs(fieldId, clean.fieldName);
+    const updatedSnap = await getDoc(ref);
+    const updatedData = { id: fieldId, ...updatedSnap.data() };
 
-setField(updatedData);
-setUpdatedField(updatedData);
-setEditMode(false);
+    // ✅ Re-parse geojson if string
+    if (
+      updatedData.boundary?.geojson &&
+      typeof updatedData.boundary.geojson === "string"
+    ) {
+      try {
+        updatedData.boundary.geojson = JSON.parse(updatedData.boundary.geojson);
+      } catch {
+        console.warn("Failed to parse boundary after update");
+        updatedData.boundary.geojson = null;
+      }
+    }
 
+    // 🧠 Sync fieldName to jobs
+    await updateFieldNameInJobs(fieldId, clean.fieldName);
+
+    setField(updatedData);
+    setUpdatedField(updatedData);
+    setEditMode(false);
   };
+
 
   const handleCancel = () => {
     setUpdatedField(field);
@@ -266,9 +313,11 @@ setEditMode(false);
       return `${i === 0 ? 'M' : 'L'}${x},${y}`;
     }).join(' ') + ' Z';
 
-  if (!field || !updatedField) {
-  return <div className="p-6">Loading field data...</div>;
-}
+ if (!field || !updatedField) {
+   return <div className="p-6">Loading field data...</div>;
+ }
+
+
 
 
 return (
@@ -285,331 +334,383 @@ return (
     );
   };
 
-  if (!field) return <div className="p-6">Loading field...</div>;
+if (!field && !isNew) return <div className="p-6">Loading field...</div>;
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between mb-6">
-        <h2 className="text-xl font-bold">{field.fieldName} – Field Details</h2>
+        <h2 className="text-xl font-bold">
+          {field?.fieldName || "New Field"} – Field Details
+        </h2>
         <div className="flex items-center gap-2 text-sm">
-          <button onClick={() => setCropYear(c => c - 1)} className="text-blue-600 font-bold">⬅</button>
+          <button
+            onClick={() => setCropYear((c) => c - 1)}
+            className="text-blue-600 font-bold"
+          >
+            ⬅
+          </button>
           <span className="font-semibold text-gray-700">{cropYear}</span>
-          <button onClick={() => setCropYear(c => c + 1)} className="text-blue-600 font-bold">➡</button>
+          <button
+            onClick={() => setCropYear((c) => c + 1)}
+            className="text-blue-600 font-bold"
+          >
+            ➡
+          </button>
         </div>
       </div>
-
       {/* Field Info */}
       <div className="grid grid-cols-2 gap-2 mb-6 text-sm">
-       {fieldOrder && Array.isArray(fieldOrder) && fieldOrder.map(([key, label]) => (
-  <div key={key} className="bg-white p-3 rounded shadow">
-    <label className="block text-xs text-gray-500 mb-1">{label}</label>
-    {editMode ? (
-      <>
-        <input
-          className="border p-2 rounded w-full"
-          value={updatedField[key] !== undefined ? updatedField[key] : ''}
-          onChange={(e) => {
-            const value = e.target.value;
-            const numericKeys = [
-              'operatorExpenseShare',
-              'operatorRentShare',
-              'landownerExpenseShare',
-              'landownerRentShare',
-              'riceLeveeAcres',
-              'beanLeveeAcres',
-              'gpsAcres',
-              'fsaAcres'
-            ];
-            setUpdatedField({
-              ...updatedField,
-              [key]: numericKeys.includes(key) ? Number(value) : value
-            });
-          }}
-        />
-        {key === 'riceLeveeAcres' && (
-          <p className="text-xs text-gray-500 mt-1 italic">
-            Used for levee making and levee seeding when crop is rice
-          </p>
-        )}
-        {key === 'beanLeveeAcres' && (
-          <p className="text-xs text-gray-500 mt-1 italic">
-            Used for levee making when crop is soybeans (defaults to 50% of rice levees)
-          </p>
-        )}
-      </>
-    ) : (
-      <div className="font-medium">
-        {key === 'gpsAcres' ? gpsAcresFromBoundary : field[key] || '—'}
+        {fieldOrder &&
+          Array.isArray(fieldOrder) &&
+          fieldOrder.map(([key, label]) => (
+            <div key={key} className="bg-white p-3 rounded shadow">
+              <label className="block text-xs text-gray-500 mb-1">
+                {label}
+              </label>
+              {editMode ? (
+                <>
+                  <input
+                    className="border p-2 rounded w-full"
+                    value={
+                      updatedField[key] !== undefined ? updatedField[key] : ""
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numericKeys = [
+                        "operatorExpenseShare",
+                        "operatorRentShare",
+                        "landownerExpenseShare",
+                        "landownerRentShare",
+                        "riceLeveeAcres",
+                        "beanLeveeAcres",
+                        "gpsAcres",
+                        "fsaAcres",
+                      ];
+                      setUpdatedField({
+                        ...updatedField,
+                        [key]: numericKeys.includes(key)
+                          ? Number(value)
+                          : value,
+                      });
+                    }}
+                  />
+                  {key === "riceLeveeAcres" && (
+                    <p className="text-xs text-gray-500 mt-1 italic">
+                      Used for levee making and levee seeding when crop is rice
+                    </p>
+                  )}
+                  {key === "beanLeveeAcres" && (
+                    <p className="text-xs text-gray-500 mt-1 italic">
+                      Used for levee making when crop is soybeans (defaults to
+                      50% of rice levees)
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="font-medium">
+                  {key === "gpsAcres"
+                    ? gpsAcresFromBoundary
+                    : field?.[key] || "—"}
+                </div>
+              )}
+            </div>
+          ))}
       </div>
-    )}
-  </div>
-))}
-
-
-      </div>
-
       {/* Crop Info */}
       <div className="bg-white p-4 rounded shadow col-span-2 mb-6">
-        <h3 className="text-sm font-semibold mb-2 text-gray-700">🌱 Crop Assignment – {cropYear}</h3>
+        <h3 className="text-sm font-semibold mb-2 text-gray-700">
+          🌱 Crop Assignment – {cropYear}
+        </h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
           {editMode ? (
             <>
-             {/* Crop dropdown */}
-<select
-  value={updatedField.crops?.[cropYear]?.crop || ''}
-  onChange={(e) => {
-    setUpdatedField((prev) => ({
-      ...prev,
-      crops: {
-        ...prev.crops,
-        [cropYear]: {
-          ...prev.crops?.[cropYear],
-          crop: e.target.value,
-          riceType: '', // clear riceType if changing crops
-        },
-      },
-    }));
-  }}
-  className="border p-2 rounded"
->
-  <option value="">Select Crop</option>
-  {cropOptions.map((crop) => (
-    <option key={crop.id} value={crop.name}>
-      {crop.icon} {crop.name}
-    </option>
-  ))}
-</select>
+              {/* Crop dropdown */}
+              <select
+                value={updatedField.crops?.[cropYear]?.crop || ""}
+                onChange={(e) => {
+                  setUpdatedField((prev) => ({
+                    ...prev,
+                    crops: {
+                      ...prev.crops,
+                      [cropYear]: {
+                        ...prev.crops?.[cropYear],
+                        crop: e.target.value,
+                        riceType: "", // clear riceType if changing crops
+                      },
+                    },
+                  }));
+                }}
+                className="border p-2 rounded"
+              >
+                <option value="">Select Crop</option>
+                {cropOptions.map((crop) => (
+                  <option key={crop.id} value={crop.name}>
+                    {crop.icon} {crop.name}
+                  </option>
+                ))}
+              </select>
 
-{/* Subtype dropdown if crop has riceTypes */}
-{updatedField.crops?.[cropYear]?.crop &&
-  cropOptions.find(c => c.name === updatedField.crops?.[cropYear]?.crop)?.riceTypes?.length > 0 && (
-    <select
-      value={updatedField.crops?.[cropYear]?.riceType || ''}
-      onChange={(e) => {
-        setUpdatedField((prev) => ({
-          ...prev,
-          crops: {
-            ...prev.crops,
-            [cropYear]: {
-              ...prev.crops?.[cropYear],
-              riceType: e.target.value,
-            },
-          },
-        }));
-      }}
-      className="border p-2 rounded"
-    >
-      <option value="">Select Rice Type</option>
-      {cropOptions
-        .find(c => c.name === updatedField.crops?.[cropYear]?.crop)
-        ?.riceTypes?.map((type) => (
-          <option key={type} value={type}>
-            {type}
-          </option>
-        ))}
-    </select>
-)}
-
-
+              {/* Subtype dropdown if crop has riceTypes */}
+              {updatedField.crops?.[cropYear]?.crop &&
+                cropOptions.find(
+                  (c) => c.name === updatedField.crops?.[cropYear]?.crop
+                )?.riceTypes?.length > 0 && (
+                  <select
+                    value={updatedField.crops?.[cropYear]?.riceType || ""}
+                    onChange={(e) => {
+                      setUpdatedField((prev) => ({
+                        ...prev,
+                        crops: {
+                          ...prev.crops,
+                          [cropYear]: {
+                            ...prev.crops?.[cropYear],
+                            riceType: e.target.value,
+                          },
+                        },
+                      }));
+                    }}
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select Rice Type</option>
+                    {cropOptions
+                      .find(
+                        (c) => c.name === updatedField.crops?.[cropYear]?.crop
+                      )
+                      ?.riceTypes?.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                  </select>
+                )}
             </>
           ) : (
             <div className="col-span-2 space-y-1">
-              <div className="font-medium">Crop: {crop || '—'}</div>
-              {crop === 'Rice' && (
-                <div className="text-sm text-gray-600">Type: {field.crops?.[cropYear]?.riceType || '—'}</div>
+              <div className="font-medium">Crop: {crop || "—"}</div>
+              {crop === "Rice" && (
+                <div className="text-sm text-gray-600">
+                  Type: {field.crops?.[cropYear]?.riceType || "—"}
+                </div>
               )}
               <div className="text-gray-700">
-                Variety: <span className="text-gray-800 font-semibold">{variety || '— (from job)'}</span>
+                Variety:{" "}
+                <span className="text-gray-800 font-semibold">
+                  {variety || "— (from job)"}
+                </span>
               </div>
             </div>
           )}
         </div>
       </div>
-
       {/* Edit Buttons */}
       <div className="mb-6">
-       {editMode ? (
-  <>
-    <button onClick={handleUpdate} className="bg-green-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
-      Save Changes
-    </button>
-    <button onClick={handleCancel} className="bg-gray-500 text-white text-sm px-4 py-2 rounded shadow">
-      Cancel
-    </button>
-  </>
-) : (
-  <>
-    {role !== 'viewer' && (
-      <button onClick={() => setEditMode(true)} className="bg-blue-600 text-white text-sm px-4 py-2 rounded shadow mr-2">
-        Edit Field Info
-      </button>
-    )}
-    <button onClick={() => navigate('/')} className="bg-gray-400 text-white text-sm px-4 py-2 rounded shadow">
-      ← Back to Fields
-    </button>
-  </>
-)}
-{role === 'admin' && (
-  <button
-    onClick={syncAllFieldNamesToGroupedJobs}
-    className="bg-yellow-500 text-white px-4 py-2 rounded shadow hover:bg-yellow-600 mt-6"
-  >
-    🔁 Sync Field Names to Grouped Jobs
-  </button>
-)}
-
-      </div>
-
-      {/* Boundary Viewer */}
-      <div className="bg-white p-3 rounded shadow col-span-2 mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">🗺️ Field Outline</h3>
-        {field.boundary?.geojson ? (
+        {editMode ? (
           <>
-            <div id="boundary-preview-map" className="h-52 w-full rounded border" />
-
-           {role !== 'viewer' && (
-  <button
-    onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
-    className="text-sm text-blue-600 underline mt-2"
-  >
-    📝 Edit Boundary
-  </button>
-)}
-
+            <button
+              onClick={handleUpdate}
+              className="bg-green-600 text-white text-sm px-4 py-2 rounded shadow mr-2"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={handleCancel}
+              className="bg-gray-500 text-white text-sm px-4 py-2 rounded shadow"
+            >
+              Cancel
+            </button>
           </>
         ) : (
           <>
-            <p className="text-sm italic text-gray-500">No boundary assigned to this field yet.</p>
-          {role !== 'viewer' && (
-  <button
-    onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
-    className="text-sm text-blue-600 underline mt-2"
-  >
-    ➕ Add Boundary
-  </button>
-)}
+            {role !== "viewer" && (
+              <button
+                onClick={() => setEditMode(true)}
+                className="bg-blue-600 text-white text-sm px-4 py-2 rounded shadow mr-2"
+              >
+                Edit Field Info
+              </button>
+            )}
+            <button
+              onClick={() => navigate("/")}
+              className="bg-gray-400 text-white text-sm px-4 py-2 rounded shadow"
+            >
+              ← Back to Fields
+            </button>
+          </>
+        )}
+        {role === "admin" && (
+          <button
+            onClick={syncAllFieldNamesToGroupedJobs}
+            className="bg-yellow-500 text-white px-4 py-2 rounded shadow hover:bg-yellow-600 mt-6"
+          >
+            🔁 Sync Field Names to Grouped Jobs
+          </button>
+        )}
+      </div>
+      {/* Boundary Viewer */}
+      <div className="bg-white p-3 rounded shadow col-span-2 mb-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          🗺️ Field Outline
+        </h3>
+        {field?.boundary?.geojson ? (
+          <>
+            <div
+              id="boundary-preview-map"
+              className="h-52 w-full rounded border"
+            />
 
+            {role !== "viewer" && (
+              <button
+                onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
+                className="text-sm text-blue-600 underline mt-2"
+              >
+                📝 Edit Boundary
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-sm italic text-gray-500">
+              No boundary assigned to this field yet.
+            </p>
+            {role !== "viewer" && (
+              <button
+                onClick={() => navigate(`/fields/${field.id}/boundary-editor`)}
+                className="text-sm text-blue-600 underline mt-2"
+              >
+                ➕ Add Boundary
+              </button>
+            )}
           </>
         )}
       </div>
-
       {/* Job History */}
       <div className="bg-white p-3 rounded shadow col-span-2 mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">🧾 Job History</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          🧾 Job History
+        </h3>
         {fieldJobs.length === 0 ? (
-          <p className="text-sm italic text-gray-500">No jobs recorded for this field yet.</p>
+          <p className="text-sm italic text-gray-500">
+            No jobs recorded for this field yet.
+          </p>
         ) : (
           <ul className="space-y-2">
-           {fieldJobs
-  .filter(job => job.cropYear === cropYear)
-  .map(job => (
- <li key={job.id} className="text-sm border rounded p-3 bg-white shadow">
-  <div className="flex justify-between items-start">
-    <div>
-      <div className="text-sm font-semibold text-blue-700 flex items-center gap-1">
-{typeof job.jobType === 'string' ? job.jobType : job.jobType?.name}      </div>
-      <div className="text-xs text-gray-500">
-        {job.cropYear} • {job.fieldName}
-      </div>
+            {fieldJobs
+              .filter((job) => job.cropYear === cropYear)
+              .map((job) => (
+                <li
+                  key={job.id}
+                  className="text-sm border rounded p-3 bg-white shadow"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-sm font-semibold text-blue-700 flex items-center gap-1">
+                        {typeof job.jobType === "string"
+                          ? job.jobType
+                          : job.jobType?.name}{" "}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {job.cropYear} • {job.fieldName}
+                      </div>
 
-      {(() => {
-        const p = job.products?.[0];
-        return p ? (
-          <div className="text-sm text-gray-600 mt-1">
-            {p.productName || p.name} • {p.rate} {p.unit}
-          </div>
-        ) : null;
-      })()}
+                      {(() => {
+                        const p = job.products?.[0];
+                        return p ? (
+                          <div className="text-sm text-gray-600 mt-1">
+                            {p.productName || p.name} • {p.rate} {p.unit}
+                          </div>
+                        ) : null;
+                      })()}
 
-      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-        <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
-        <span>{(job.acres || job.drawnAcres || 0).toFixed(2)} acres</span>
-      </div>
-    </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                        <Badge variant={job.status?.toLowerCase()}>
+                          {job.status}
+                        </Badge>
+                        <span>
+                          {(job.acres || job.drawnAcres || 0).toFixed(2)} acres
+                        </span>
+                      </div>
+                    </div>
 
-
-    {role !== 'viewer' && (
-  <div className="flex gap-2">
-    <button
-      onClick={() => navigate(`/jobs/field/${job.id}`)}
-      className="text-gray-500 hover:text-gray-700"
-      title="View/Edit Job"
-    >
-      <Pencil size={16} />
-    </button>
-    <button
-      onClick={() => setConfirmDeleteId(job.id)}
-      className="text-gray-500 hover:text-gray-700"
-      title="Delete Job"
-    >
-      <Trash2 size={16} />
-    </button>
-    <button
-      onClick={async () => {
-        const { generatePDFBlob } = await import('../utils/generatePDF');
-        const blob = await generatePDFBlob(job);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `JobOrder_${job.jobType}_${job.cropYear}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }}
-      className="text-gray-500 hover:text-gray-700"
-      title="Download PDF"
-    >
-      <FileText size={16} />
-    </button>
-  </div>
-)}
-
-  </div>
-</li>
-
-
-  ))}
-
+                    {role !== "viewer" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/jobs/field/${job.id}`)}
+                          className="text-gray-500 hover:text-gray-700"
+                          title="View/Edit Job"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(job.id)}
+                          className="text-gray-500 hover:text-gray-700"
+                          title="Delete Job"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const { generatePDFBlob } = await import(
+                              "../utils/generatePDF"
+                            );
+                            const blob = await generatePDFBlob(job);
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = `JobOrder_${job.jobType}_${job.cropYear}.pdf`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="text-gray-500 hover:text-gray-700"
+                          title="Download PDF"
+                        >
+                          <FileText size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
           </ul>
         )}
       </div>
-
       {/* Notes Placeholder */}
       <div className="bg-white p-3 rounded shadow col-span-2">
-        <h3 className="text-sm font-semibold text-gray-700">📝 Notes + Observations</h3>
+        <h3 className="text-sm font-semibold text-gray-700">
+          📝 Notes + Observations
+        </h3>
       </div>
-     
-
-{confirmDeleteId && (
-  <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
-      <p className="text-sm text-gray-800 mb-4">
-        Are you sure you want to delete this job? This can’t be undone.
-      </p>
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => setConfirmDeleteId(null)}
-          className="px-3 py-1 rounded text-sm bg-gray-200 hover:bg-gray-300"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={async () => {
-            await deleteDoc(doc(db, 'jobsByField', confirmDeleteId));
-            setFieldJobs(prev => prev.filter(j => j.id !== confirmDeleteId));
-            setConfirmDeleteId(null);
-          }}
-          className="px-3 py-1 rounded text-sm bg-red-600 text-white hover:bg-red-700"
-        >
-          Yes, Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-?
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+            <p className="text-sm text-gray-800 mb-4">
+              Are you sure you want to delete this job? This can’t be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-3 py-1 rounded text-sm bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await deleteDoc(doc(db, "jobsByField", confirmDeleteId));
+                  setFieldJobs((prev) =>
+                    prev.filter((j) => j.id !== confirmDeleteId)
+                  );
+                  setConfirmDeleteId(null);
+                }}
+                className="px-3 py-1 rounded text-sm bg-red-600 text-white hover:bg-red-700"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      ?
     </div>
   );
 }

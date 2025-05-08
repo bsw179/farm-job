@@ -100,8 +100,8 @@ const incompleteProduct = editableProducts.find(p =>
   crop: p.crop || '',
 
   // Optional but useful for seed/chemical reports
-  vendorId: p.vendorId || '',
-  vendorName: p.vendorName || '',
+vendorId: p.vendorId || '', // 🔹 reserved for future matching if needed
+vendorName: p.vendorName || p.vendor || '', // 🔹 fallback to per-product vendor selection
   unitSize: p.unitSize || '',
   seedsPerUnit: p.seedsPerUnit || '',
   form: p.form || '',

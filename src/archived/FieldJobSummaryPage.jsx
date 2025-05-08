@@ -49,6 +49,7 @@ const [showEditAreaModal, setShowEditAreaModal] = useState(false);
 const [fieldToEdit, setFieldToEdit] = useState(null);
 const [seedTreatmentStatus, setSeedTreatmentStatus] = useState('');
 const [seedTreatments, setSeedTreatments] = useState([]);
+const [productVendors, setProductVendors] = useState([]);
 
 const isLeveeJob = job?.jobType?.name?.toLowerCase().includes('levee') || job?.jobType?.name?.toLowerCase().includes('pack');
 const handleProductChange = (index, field, value) => {
@@ -120,6 +121,8 @@ useEffect(() => {
     setJobType(job.jobType || null);
     setVendor(job.vendor || '');
     setApplicator(job.applicator || '');
+    setProductVendors((job.products || []).map(p => p.vendorName || ''));
+
     // ❌ DO NOT setEditableProducts here anymore
   }
 }, [job]);
@@ -137,7 +140,8 @@ useEffect(() => {
       getDocs(collection(db, 'vendors')),
       getDocs(collection(db, 'applicators'))
     ]);
-    setVendors(vendorSnap.docs.map(doc => doc.data().name));
+    setVendors(vendorSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
     setApplicators(applicatorSnap.docs.map(doc => doc.data().name));
   };
 
@@ -152,6 +156,7 @@ useEffect(() => {
 
   fetchUsedProducts();
 }, []);
+
 
 
  useEffect(() => {
@@ -395,7 +400,8 @@ const finalAcres = leveeAcres ?? job.drawnAcres ?? job.acres ?? 0;
         const remainingFields = (groupData.fields || []).filter(f => f.id !== job.fieldId);
 
         if (remainingFields.length === 1) {
-          const lastFieldId = remainingFields[0].fieldId || remainingFields[0].id;
+          const lastFieldId = remainingFields[0].fieldId;
+
           const lastFieldDoc = doc(db, 'jobsByField', `${job.linkedToJobId}_${lastFieldId}`);
           await updateDoc(lastFieldDoc, {
             linkedToJobId: null,
@@ -585,8 +591,10 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 </div>
 
 <div className="mb-4 flex gap-4">
-  <div>
+  {/* Vendor dropdown and apply-to-all */}
+  <div className="flex flex-col gap-1">
     <label className="block text-sm font-medium text-gray-700">Vendor</label>
+
     <select
       className="border p-2 rounded"
       value={job.vendor || ''}
@@ -594,12 +602,38 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
     >
       <option value="">Select Vendor</option>
       {vendors.map(v => (
-        <option key={v} value={v}>{v}</option>
+        <option key={v.id} value={v.name}>{v.name}</option>
       ))}
     </select>
+
+  <button
+  type="button"
+  onClick={() => {
+    const name = job.vendor || '';
+    const selectedVendor = vendors.find(v => v.name === name);
+    const id = selectedVendor?.id || '';
+
+    setProductVendors(job.products.map(() => name));
+    setJob(prev => ({
+      ...prev,
+      products: prev.products.map(p => ({
+        ...p,
+        vendorName: name,
+        vendorId: id
+      }))
+    }));
+  }}
+  className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition w-fit self-start"
+>
+  Apply Vendor to All Products
+</button>
+
   </div>
-<div className="mb-4 flex gap-4">
-  {/* Vendor dropdown */}
+
+  {/* Leave this open so the next applicator dropdown fits here */}
+  <div className="mb-4 flex gap-4">
+
+  
   {/* Applicator dropdown */}
 </div>
 
@@ -706,6 +740,8 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 />
 
 
+  
+
 {(() => {
   const rateType = p.rateType?.toLowerCase() || '';
 
@@ -718,6 +754,7 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
   "seeds/acre",
   "%v/v"
 ];
+
 
 
   if (rateType === 'weight') {
@@ -763,6 +800,39 @@ const requiresWater = job.jobType?.parentName === 'Spraying';
 
   );
 })()}
+
+{/* Vendor dropdown */}
+<select
+  className="border p-2 rounded w-full"
+  value={productVendors[i] || ''}
+  onChange={e => {
+    const name = e.target.value;
+    const updated = [...productVendors];
+    updated[i] = name;
+    setProductVendors(updated);
+
+    const selectedVendor = vendors.find(v => v.name === name);
+    handleProductChange(i, 'vendorName', name);
+    handleProductChange(i, 'vendorId', selectedVendor?.id || '');
+  }}
+>
+  <option value="">Select Vendor</option>
+  {vendors.map(v => (
+    <option key={v.id} value={v.name}>{v.name}</option>
+  ))}
+</select>
+<button
+  type="button"
+  onClick={() => {
+    const updatedProducts = job.products.filter((_, idx) => idx !== i);
+    const updatedVendors = productVendors.filter((_, idx) => idx !== i);
+    setJob(prev => ({ ...prev, products: updatedProducts }));
+    setProductVendors(updatedVendors);
+  }}
+  className="text-xs px-3 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded shadow-sm"
+>
+  🗑 Remove Product
+</button>
 
           </div>
           

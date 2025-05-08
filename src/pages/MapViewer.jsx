@@ -18,6 +18,7 @@ import { useMap } from 'react-leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import * as turf from '@turf/turf';
+import clsx from 'clsx';
 
 function GeomanControls({ enabled }) {
   const map = useMap();
@@ -157,6 +158,8 @@ const [mapRenderTick, setMapRenderTick] = useState(0);
 const [neighborPolygons, setNeighborPolygons] = useState([]);
 const [showNeighborZones, setShowNeighborZones] = useState(false);
 const [colorBy, setColorBy] = useState('tech'); // or 'crop'
+const [isExportMode, setIsExportMode] = useState(false);
+const [exportLayout, setExportLayout] = useState('portrait'); // or 'landscape'
 
   const { cropYear } = useContext(CropYearContext);
 
@@ -362,17 +365,25 @@ const exportPNG = () => {
 };
 
 const exportPDF = async () => {
+  setIsExportMode(true); // 🔁 switch to fixed layout
+
+  await new Promise((res) => setTimeout(res, 250)); // Let layout settle
+
   const node = document.getElementById('map-export-area');
-  if (!node) return;
+  if (!node) {
+    setIsExportMode(false);
+    return;
+  }
 
   try {
     const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 3 });
 
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: [612, 792], // Letter size in points
-    });
+   const pdf = new jsPDF({
+  orientation: exportLayout,
+  unit: 'pt',
+  format: [612, 792], // doesn't matter: jsPDF flips these based on orientation
+});
+
 
     const imgProps = pdf.getImageProperties(dataUrl);
     const pageWidth = 612;
@@ -387,14 +398,17 @@ const exportPDF = async () => {
     const imgHeight = imgProps.height * ratio;
 
     const x = (pageWidth - imgWidth) / 2;
-    const y = 0; // Top aligned
+    const y = 0;
 
     pdf.addImage(dataUrl, 'PNG', x, y, imgWidth, imgHeight);
     pdf.save('map-export.pdf');
   } catch (err) {
     console.error('PDF export failed', err);
   }
+
+  setIsExportMode(false); // 🔁 revert layout
 };
+
 const saveSnapshotToFirebase = async () => {
   const node = document.getElementById('map-export-area');
   
@@ -480,149 +494,162 @@ useEffect(() => {
   return (
 
     
-    <div className="relative flex flex-col items-center bg-gray-100 min-h-screen">
-      <div className="w-[500px] mt-6 z-[1000]">
-        <div className="bg-white border border-gray-300 rounded shadow p-3">
-          <div className="flex overflow-x-auto gap-2 mb-2 whitespace-nowrap max-h-[34px]">
-            {labelFields.map((fieldKey) => (
-              <span key={fieldKey} className="bg-blue-500 text-white px-2 py-1 rounded text-sm flex items-center">
-                {availableFields.find(f => f.key === fieldKey)?.label}
-                <button
-                  className="ml-2 text-white"
-                  onClick={() => setLabelFields(labelFields.filter(f => f !== fieldKey))}
-                >×</button>
-              </span>
-            ))}
-          </div>
-          <select
-            className="text-sm p-2 border rounded w-full mb-2"
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val && !labelFields.includes(val)) {
-                setLabelFields([...labelFields, val]);
-              }
-            }}
-          >
-            <option value="">+ Add Field</option>
-            {availableFields.filter(f => !labelFields.includes(f.key)).map(field => (
-              <option key={field.key} value={field.key}>{field.label}</option>
-            ))}
-          </select>
+<div className="relative flex flex-col items-center bg-gray-100 min-h-screen">
+  {!isExportMode && (
+    <div className="relative flex justify-center px-2 mt-4 z-10">
+      <div className="bg-white shadow-lg border border-gray-300 rounded-md w-full max-w-[774px] px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex overflow-x-auto gap-2 mb-2 whitespace-nowrap max-h-[34px]">
+          {labelFields.map((fieldKey) => (
+            <span key={fieldKey} className="bg-blue-500 text-white px-2 py-1 rounded text-sm flex items-center">
+              {availableFields.find(f => f.key === fieldKey)?.label}
+              <button
+                className="ml-2 text-white"
+                onClick={() => setLabelFields(labelFields.filter(f => f !== fieldKey))}
+              >×</button>
+            </span>
+          ))}
+        </div>
+
+        <select
+          className="text-sm p-2 border rounded w-full mb-2"
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && !labelFields.includes(val)) {
+              setLabelFields([...labelFields, val]);
+            }
+          }}
+        >
+          <option value="">+ Add Field</option>
+          {availableFields.filter(f => !labelFields.includes(f.key)).map(field => (
+            <option key={field.key} value={field.key}>{field.label}</option>
+          ))}
+        </select>
 
         <div className="mt-2 flex flex-wrap items-center gap-4 w-full justify-between">
-  <div className="flex flex-wrap items-center gap-4">
-    <div className="flex items-center">
-      <label className="text-sm font-medium mr-2">Color by:</label>
-      <select
-        className="text-sm p-1 border rounded"
-        value={colorMode}
-        onChange={(e) => setColorMode(e.target.value)}
-      >
-        <option value="crop">Crop</option>
-        <option value="variety">Variety</option>
-        <option value="tech">Technology</option>
-      </select>
-    </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center">
+              <label className="text-sm font-medium mr-2">Color by:</label>
+              <select
+                className="text-sm p-1 border rounded"
+                value={colorMode}
+                onChange={(e) => setColorMode(e.target.value)}
+              >
+                <option value="crop">Crop</option>
+                <option value="variety">Variety</option>
+                <option value="tech">Technology</option>
+              </select>
+            </div>
 
-    <div className="flex items-center">
-      <label className="text-sm font-medium mr-2">Font size:</label>
-      <input
-        type="number"
-        min={8}
-        max={40}
-        step={1}
-        value={labelFontSize}
-        onChange={(e) => setLabelFontSize(Number(e.target.value))}
-        className="w-[60px] text-sm border rounded px-1 py-0.5"
-      />
-    </div>
+            <div className="flex items-center">
+              <label className="text-sm font-medium mr-2">Font size:</label>
+              <input
+                type="number"
+                min={8}
+                max={40}
+                step={1}
+                value={labelFontSize}
+                onChange={(e) => setLabelFontSize(Number(e.target.value))}
+                className="w-[60px] text-sm border rounded px-1 py-0.5"
+              />
+            </div>
 
-    <div className="flex items-center">
-      <label className="text-sm font-medium mr-2">Farm:</label>
-      <select
-        className="text-sm p-1 border rounded"
-        value={farmFilter}
-        onChange={(e) => setFarmFilter(e.target.value)}
-      >
-        <option value="">All Farms</option>
-        {uniqueFarms.map(farm => (
-          <option key={farm} value={farm}>{farm}</option>
-        ))}
-      </select>
-    </div>
+            <div className="flex items-center">
+              <label className="text-sm font-medium mr-2">Farm:</label>
+              <select
+                className="text-sm p-1 border rounded"
+                value={farmFilter}
+                onChange={(e) => setFarmFilter(e.target.value)}
+              >
+                <option value="">All Farms</option>
+                {uniqueFarms.map(farm => (
+                  <option key={farm} value={farm}>{farm}</option>
+                ))}
+              </select>
+            </div>
 
-    <div className="flex items-center">
-      <label className="text-sm font-medium mr-2">Operator:</label>
-      <select
-        className="text-sm p-1 border rounded"
-        value={operatorFilter}
-        onChange={(e) => setOperatorFilter(e.target.value)}
-      >
-        <option value="">All Operators</option>
-        {uniqueOperators.map(op => (
-          <option key={op} value={op}>{op}</option>
-        ))}
-      </select>
-    </div>
-  </div>
-<div className="flex items-center">
-  <input
-    type="checkbox"
-    id="dragLabelsMode"
-    checked={dragLabelsMode}
-    onChange={(e) => setDragLabelsMode(e.target.checked)}
-    className="mr-1"
-  />
-  <label htmlFor="dragLabelsMode" className="text-sm font-medium">✏️ Drag Labels</label>
+            <div className="flex items-center">
+              <label className="text-sm font-medium mr-2">Operator:</label>
+              <select
+                className="text-sm p-1 border rounded"
+                value={operatorFilter}
+                onChange={(e) => setOperatorFilter(e.target.value)}
+              >
+                <option value="">All Operators</option>
+                {uniqueOperators.map(op => (
+                  <option key={op} value={op}>{op}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="dragLabelsMode"
+              checked={dragLabelsMode}
+              onChange={(e) => setDragLabelsMode(e.target.checked)}
+              className="mr-1"
+            />
+            <label htmlFor="dragLabelsMode" className="text-sm font-medium">✏️ Drag Labels</label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportPNG}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
+            >
+              📸 Export PNG
+            </button>
+            <button
+              onClick={exportPDF}
+              className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
+            >
+              🧾 Export PDF
+            </button>
+            <button
+              onClick={saveSnapshotToFirebase}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
+            >
+              <div className="flex items-center text-sm">
+  <label className="mr-2 font-medium">Layout:</label>
+  <select
+    className="border rounded p-1 text-sm"
+    value={exportLayout}
+    onChange={(e) => setExportLayout(e.target.value)}
+  >
+    <option value="portrait">Portrait</option>
+    <option value="landscape">Landscape</option>
+  </select>
 </div>
 
+              💾 Save Snapshot
+            </button>
 
-  <div className="flex items-center gap-2">
-    <button
-      onClick={exportPNG}
-      className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
-    >
-      📸 Export PNG
-    </button>
-    <button
-      onClick={exportPDF}
-      className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
-    >
-      🧾 Export PDF
-    </button>
-<button
-  onClick={saveSnapshotToFirebase}
-  className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2 rounded shadow"
->
-  💾 Save Snapshot
-</button>
+            <div className="mb-4">
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={showDrawingTools}
+                  onChange={(e) => setShowDrawingTools(e.target.checked)}
+                />
+                Show Drawing Tools
+              </label>
+            </div>
 
-<div className="mb-4">
-  <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-    <input
-      type="checkbox"
-      checked={showDrawingTools}
-      onChange={(e) => setShowDrawingTools(e.target.checked)}
-    />
-    Show Drawing Tools
-  </label>
-</div>
-<label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 mb-4 mr-6">
-  <input
-    type="checkbox"
-    checked={showNeighborZones}
-    onChange={(e) => setShowNeighborZones(e.target.checked)}
-  />
-  Show Neighbor Zones
-</label>
-  </div>
-</div>
-
-
-
-
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 mb-4 mr-6">
+              <input
+                type="checkbox"
+                checked={showNeighborZones}
+                onChange={(e) => setShowNeighborZones(e.target.checked)}
+              />
+              Show Neighbor Zones
+            </label>
+          </div>
         </div>
       </div>
+    </div>
+  )}
+
 
 
 
@@ -630,19 +657,15 @@ useEffect(() => {
 
 <div
   id="map-export-area"
-  className="bg-white shadow-xl"
-  style={{
-    width: '774px',                // 🔥 was 794px — shaved 20px
-    height: '1123px',
-    margin: '0 auto',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    padding: '10px',
-    boxSizing: 'border-box',
-    overflow: 'visible'
-  }}
+ className={clsx("shadow-xl bg-white mx-auto mt-6", {
+  "w-[774px] h-[1123px]": isExportMode && exportLayout === 'portrait',
+  "w-[1123px] h-[774px]": isExportMode && exportLayout === 'landscape',
+  "w-full": !isExportMode
+})}
+
 >
+
+
 
 
 
@@ -656,10 +679,12 @@ useEffect(() => {
     zoomSnap={0.1}
     zoomDelta={0.1}
     wheelPxPerZoomLevel={500}
-    style={{
-      width: '100%',
-      height: '75%' // 💡 Enough room to breathe
-    }}
+   style={{
+  width: '100%',
+height: 100,
+  minHeight: '300px'
+}}
+
   >
 
   <MapReadySetter setMapReady={setMapReady} mapRef={mapRef} />

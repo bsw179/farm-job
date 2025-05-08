@@ -86,6 +86,9 @@ const [usedProductIds, setUsedProductIds] = useState([]);
 const [showFieldSelectModal, setShowFieldSelectModal] = useState(false);
 const [allFields, setAllFields] = useState([]); // all available fields from DB
 const [seedTreatmentStatus, setSeedTreatmentStatus] = useState('');
+const [productVendors, setProductVendors] = useState(
+  (location.state?.products || []).map(p => p.vendor || '')
+);
 
 console.log("🧪 Full initial product objects:", location.state?.products || []);
 (location.state?.products || []).forEach(p =>
@@ -242,6 +245,8 @@ const editableProductsFromJob = safeProducts.filter(
 
 setSeedTreatments(seedTreatmentsFromJob);
 setEditableProducts(editableProductsFromJob);
+setProductVendors(editableProductsFromJob.map(p => p.vendorName || p.vendor || ''));
+
 console.log('🧠 jobData.seedTreatmentStatus →', jobData.seedTreatmentStatus);
 setSeedTreatmentStatus(jobData.seedTreatmentStatus || '');
 
@@ -411,6 +416,11 @@ const totalAcres = selectedFields.reduce((sum, f) => {
 
 const linkedSeed = editableProducts.find(p => (p.type || '').toLowerCase() === 'seed');
 
+// 🔁 Attach vendor name to each product
+editableProducts.forEach((prod, i) => {
+  prod.vendor = productVendors[i] || '';
+});
+
 const allProducts = [
   ...editableProducts,
   ...(seedTreatmentStatus === 'separate' ? seedTreatments : [])
@@ -528,19 +538,32 @@ return (
           className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
+    
+
       <div>
-        <label className="block text-sm font-medium">Vendor</label>
-        <select
-          value={vendor}
-          onChange={e => setVendor(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select Vendor</option>
-          {vendors.map(v => (
-            <option key={v} value={v}>{v}</option>
-          ))}
-        </select>
-      </div>
+  <label className="block text-sm font-medium mb-1">Vendor</label>
+  <div className="flex items-center gap-2">
+    <select
+      value={vendor}
+      onChange={e => setVendor(e.target.value)}
+      className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">Select Vendor</option>
+      {vendors.map(v => (
+        <option key={v} value={v}>{v}</option>
+      ))}
+    </select>
+
+    <button
+      type="button"
+      onClick={() => setProductVendors(editableProducts.map(() => vendor))}
+      className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition"
+    >
+      Apply to All
+    </button>
+  </div>
+</div>
+
       <div>
         <label className="block text-sm font-medium">Applicator</label>
         <select
@@ -580,88 +603,111 @@ return (
   });
 
   return (
-    <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3 items-center">
+   <div key={i} className="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-2 items-start">
 
-      <ProductComboBox
-        productType={selectedProductType}
-        allProducts={productsList
-          .filter(prod => {
-            const parent = jobType?.parentName;
-            if (parent === 'Seeding') return prod.type === 'Seed';
-            if (parent === 'Spraying') return prod.type === 'Chemical';
-            if (parent === 'Fertilizing') return prod.type === 'Fertilizer';
-            return true;
-          })
-          .sort((a, b) => {
-            const aUsed = usedProductIds.includes(a.id);
-            const bUsed = usedProductIds.includes(b.id);
-            if (aUsed && !bUsed) return -1;
-            if (!aUsed && bUsed) return 1;
-            return (a.name || '').localeCompare(b.name || '');
-          })
-        }
-        usedProductIds={usedProductIds}
-        value={{ id: p.productId, name: p.productName }}
-        onChange={(selected) => {
-          handleProductChange(i, 'productId', selected.id);
-          handleProductChange(i, 'productName', selected.name);
-          handleProductChange(i, 'crop', selected.crop || '');
-          handleProductChange(i, 'unit', selected.unit || '');
-          handleProductChange(i, 'rateType', selected.rateType || '');
-          handleProductChange(i, 'type', selected.type || '');
-        }}
-      />
+    {/* Product selector */}
+    <ProductComboBox
+      productType={selectedProductType}
+      allProducts={productsList
+        .filter(prod => {
+          const parent = jobType?.parentName;
+          if (parent === 'Seeding') return prod.type === 'Seed';
+          if (parent === 'Spraying') return prod.type === 'Chemical';
+          if (parent === 'Fertilizing') return prod.type === 'Fertilizer';
+          return true;
+        })
+        .sort((a, b) => {
+          const aUsed = usedProductIds.includes(a.id);
+          const bUsed = usedProductIds.includes(b.id);
+          if (aUsed && !bUsed) return -1;
+          if (!aUsed && bUsed) return 1;
+          return (a.name || '').localeCompare(b.name || '');
+        })}
+      usedProductIds={usedProductIds}
+      value={{ id: p.productId, name: p.productName }}
+      onChange={(selected) => {
+        handleProductChange(i, 'productId', selected.id);
+        handleProductChange(i, 'productName', selected.name);
+        handleProductChange(i, 'crop', selected.crop || '');
+        handleProductChange(i, 'unit', selected.unit || '');
+        handleProductChange(i, 'rateType', selected.rateType || '');
+        handleProductChange(i, 'type', selected.type || '');
+      }}
+    />
 
-      <input
-        type="number"
-        placeholder="Rate"
-        className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={p.rate}
-        onChange={e => handleProductChange(i, 'rate', e.target.value)}
-      />
+    {/* Rate input */}
+    <input
+      type="number"
+      placeholder="Rate"
+      className="border border-gray-300 rounded-md px-3 py-2 bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+      value={p.rate}
+      onChange={e => handleProductChange(i, 'rate', e.target.value)}
+    />
 
-      <select
-        className="border p-2 rounded w-full"
-        value={p.unit}
-        onChange={async (e) => {
-          const newUnit = e.target.value;
-          const oldUnit = p.unit;
+    {/* Unit selector */}
+    <select
+      className="border p-2 rounded w-full"
+      value={p.unit}
+      onChange={async (e) => {
+        const newUnit = e.target.value;
+        const oldUnit = p.unit;
 
-          handleProductChange(i, 'unit', newUnit);
+        handleProductChange(i, 'unit', newUnit);
 
-          if (newUnit !== oldUnit) {
-            const confirmUpdate = window.confirm("Update Product's Unit in Database?");
-            if (confirmUpdate) {
-              console.log('Updating productId:', p.productId, 'New Unit:', newUnit);
-              try {
-                await updateProductUnit(p.productId, newUnit);
-                alert("Product unit updated successfully.");
-              } catch (error) {
-                console.error("Failed to update unit:", error);
-                alert("Failed to update product unit.");
-              }
+        if (newUnit !== oldUnit) {
+          const confirmUpdate = window.confirm("Update Product's Unit in Database?");
+          if (confirmUpdate) {
+            try {
+              await updateProductUnit(p.productId, newUnit);
+              alert("Product unit updated successfully.");
+            } catch (error) {
+              alert("Failed to update product unit.");
             }
           }
+        }
+      }}
+    >
+      <option value="">Select Unit</option>
+      {[
+        'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
+        'lbs/acre', 'oz dry/acre', 'tons/acre',
+        'seeds/acre', 'units/acre', '%v/v'
+      ].map(unit => (
+        <option key={unit} value={unit}>{unit}</option>
+      ))}
+    </select>
+
+    {/* Vendor + Remove column */}
+    <div className="flex flex-col gap-1 w-full sm:w-[180px]">
+      <select
+        className="border p-2 rounded w-full text-red-600"
+        value={productVendors[i] || ''}
+        onChange={e => {
+          const updated = [...productVendors];
+          updated[i] = e.target.value;
+          setProductVendors(updated);
         }}
       >
-        <option value="">Select Unit</option>
-        {[
-          'fl oz/acre', 'pt/acre', 'qt/acre', 'gal/acre',
-          'lbs/acre', 'oz dry/acre', 'tons/acre',
-          'seeds/acre', 'units/acre', '%v/v'
-        ].map(unit => (
-          <option key={unit} value={unit}>{unit}</option>
+        <option value="">Select Vendor</option>
+        {vendors.map(v => (
+          <option key={v} value={v}>{v}</option>
         ))}
       </select>
 
       <button
-        className={redLinkBtn}
-        onClick={() => setEditableProducts(prev => prev.filter((_, idx) => idx !== i))}
+        type="button"
+        onClick={() => {
+          setEditableProducts(prev => prev.filter((_, idx) => idx !== i));
+          setProductVendors(prev => prev.filter((_, idx) => idx !== i));
+        }}
+        className="text-xs px-3 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded shadow-sm"
       >
-        🗑️ Remove
+        🗑 Remove Product
       </button>
     </div>
-  );
+  </div>
+);
+
 })}
 
 

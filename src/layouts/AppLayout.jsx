@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
-import TopBar from "@/components/TopBar";
+import TopBar from "@/archived/TopBar";
 import { CropYearProvider } from "@/context/CropYearContext";
 import { UserProvider } from "@/context/UserContext";
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -27,10 +27,8 @@ import Reports from "@/pages/Reports";
 import FieldMetrics from "@/pages/FieldMetrics";
 import BoundaryUploadMapbox from "@/pages/BoundaryUploadMapbox";
 import ManageJobTypes from "@/pages/Setup/ManageJobTypes";
-import JobSummaryPage from "@/pages/JobSummaryPage";
 import EditJobPolygonForCreate from "../pages/EditJobPolygonForCreate";
 import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
-import FieldJobSummaryPage from "../pages/FieldJobSummaryPage";
 import SeedingReport from "../pages/Reports/SeedingReport";
 import AdminCleanupTools from "../pages/AdminCleanupTools";
 import RequireRole from "@/components/RequireRole"; // add this at the top
@@ -45,6 +43,7 @@ import RainfallPage from '@/pages/RainfallPage';
 import FieldFinancialSummary from '@/pages/FieldFinancialSummary'; // place this at the top with imports
 import FieldCostSummary from "../pages/Reports/FieldCostSummary";
 import VendorSummary from "../pages/Reports/VendorSummary";
+import AppHeader from '@/components/AppHeader';
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
@@ -52,13 +51,24 @@ import VendorSummary from "../pages/Reports/VendorSummary";
 export default function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) setMobileNavOpen(false);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+ useEffect(() => {
+  const handleResize = () => {
+    if (window.innerWidth >= 768) setMobileNavOpen(false);
+  };
+
+  const handleToggle = () => {
+    setMobileNavOpen(prev => !prev);
+  };
+
+  window.addEventListener("resize", handleResize);
+  window.addEventListener("toggle-mobile-nav", handleToggle);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+    window.removeEventListener("toggle-mobile-nav", handleToggle);
+  };
+}, []);
+
 
   const getPathFromPage = (page) => {
     const clean = page?.toLowerCase().trim();
@@ -99,35 +109,32 @@ export default function AppLayout() {
   return (
     <UserProvider>
       <CropYearProvider>
-        <div className="flex min-h-screen font-sans text-gray-800 relative">
-          {/* Sidebar */}
-          <div
-            className={`fixed md:static top-0 left-0 z-40 bg-blue-800 w-64 h-full md:h-screen transform transition-transform duration-300 ease-in-out ${
-              mobileNavOpen ? "translate-x-0" : "-translate-x-full"
-            } md:translate-x-0`}
-          >
-            <Sidebar onNavigate={() => setMobileNavOpen(false)} />
-          </div>
+        <div className="relative min-h-screen flex font-sans text-gray-800">
 
-          {/* Mobile Header */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-blue-800 text-white px-4 py-3 flex items-center justify-between border-b border-blue-700">
-            <button
-              onClick={() => setMobileNavOpen(!mobileNavOpen)}
-              className="text-white text-xl"
-            >
-              ☰
-            </button>
-            <span className="font-bold text-lg">Farm Job</span>
-          </div>
+          {/* Sidebar */}
+        <div className="relative">
+  {/* Blue background that stretches full page height */}
+  <div className="hidden md:block fixed top-0 left-0 w-64 h-full bg-blue-800 z-0" />
+
+  {/* Sticky sidebar content */}
+  <div
+    className={`fixed md:sticky top-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${
+      mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+    } md:translate-x-0`}
+  >
+    <Sidebar onNavigate={() => setMobileNavOpen(false)} />
+  </div>
+</div>
+
+
+      
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col pt-[64px] md:pt-0">
-            <main className="flex-1 p-4 overflow-y-auto">
-              <TopBar
-                onNavigate={(page) =>
-                  (window.location.href = getPathFromPage(page))
-                }
-              />
+         <div className="flex-1 flex flex-col">
+  <AppHeader />
+  <main className="flex-1 p-4 overflow-y-auto pt-16">
+
+           
 
            <Routes>
   <Route path="/login" element={<LoginPage />} />
@@ -154,14 +161,7 @@ export default function AppLayout() {
 
           {/* Protected Pages */}
       
-          <Route
-            path="/jobs/field/:jobId"
-            element={
-              <ProtectedRoute path="/jobs/field/:jobId">
-                <FieldJobSummaryPage />
-              </ProtectedRoute>
-            }
-          />
+       
 
           <Route
             path="/map-viewer"
@@ -273,14 +273,7 @@ import LogProductPurchase from './pages/LogProductPurchase';
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/jobs/summary"
-            element={
-              <ProtectedRoute path="/jobs/summary">
-                <JobSummaryPage />
-              </ProtectedRoute>
-            }
-          />
+      
            <Route
             path="/inputs"
             element={

@@ -307,7 +307,11 @@ useEffect(() => {
           };
 
           const filteredFields = farmFields
-            .filter((field) => field.fieldName.toLowerCase().includes(search.toLowerCase()))
+            .filter(
+              (field) =>
+                field?.fieldName ||
+                "".toLowerCase().includes(search.toLowerCase())
+            )
             .filter(filterByCrop)
             .sort(sortFields);
 
@@ -337,28 +341,29 @@ useEffect(() => {
                         className="px-4 py-3 hover:bg-blue-50 cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
-                         <div className="font-medium text-sm text-gray-800">
-  {field.fieldName}
-  <div className="flex items-center gap-2 mt-0.5">
-    <span>{icon} {crop}</span>
-  </div>
-  {rain24Data[field.id] !== undefined && (
-    <div className="mt-1">
-      <Link
-        to="/rainfall"
-        title="View rainfall log"
-        className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full w-fit
-          ${getRainBadgeColor(rain24Data[field.id])}
+                          <div className="font-medium text-sm text-gray-800">
+                         {field.fieldName}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span>
+                                {icon} {crop}
+                              </span>
+                            </div>
+                            {rain24Data[field.id] !== undefined && (
+                              <div className="mt-1">
+                                <Link
+                                  to="/rainfall"
+                                  title="View rainfall log"
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full w-fit
+                                  ${getRainBadgeColor(rain24Data[field.id])}
         `}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <CloudRain className="w-3 h-3" />
-        {rain24Data[field.id].toFixed(2)} in
-      </Link>
-    </div>
-  )}
-</div>
-
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <CloudRain className="w-3 h-3" />
+                                  {rain24Data[field.id].toFixed(2)} in
+                                </Link>
+                              </div>
+                            )}
+                          </div>
 
                           {renderMiniPreview(field)}
                         </div>

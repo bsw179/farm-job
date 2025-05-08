@@ -137,8 +137,15 @@ try {
 
   // 🖼️ Modal Layout
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-4 w-full max-w-md h-[80vh] overflow-y-auto shadow-xl relative">
+  <div
+  className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center"
+  onClick={onClose} // ✅ Click outside closes
+>
+  <div
+    className="bg-white rounded-lg p-4 w-full max-w-md h-[80vh] overflow-y-auto shadow-xl relative"
+    onClick={(e) => e.stopPropagation()} // ✅ Prevent closing when clicking inside
+  >
+
         <button
           onClick={onClose}
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -168,15 +175,23 @@ try {
               <span>Product</span>
               <span>Rate</span>
             </div>
-            {job.products.map((p, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-2 gap-2 text-sm text-gray-800 border-b py-1"
-              >
-                <span>{p.productName || p.name || '—'}</span>
-                <span>{p.rate || '—'} {p.unit || ''}</span>
-              </div>
-            ))}
+          {job.products.map((p, i) => (
+  <div
+    key={i}
+    className="border-b py-1 text-sm text-gray-800"
+  >
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+      <span>{p.productName || p.name || '—'}</span>
+      <span>{p.rate || '—'} {p.unit || ''}</span>
+    </div>
+    {p.vendorName && (
+      <div className="text-xs text-gray-500 italic pl-1 sm:pl-0 sm:text-right">
+        Vendor: {p.vendorName}
+      </div>
+    )}
+  </div>
+))}
+
           </div>
         )}
 
@@ -242,67 +257,73 @@ try {
         </div>
 
         {/* 📦 Product Totals */}
-        {job.products?.length > 0 && (
-          <div className="mt-6 border-t pt-4">
-            <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
-            {job.products.map((p, i) => {
-              const rate = parseFloat(p.rate);
-              const unit = p.unit?.toLowerCase() || '';
-              const crop = p.crop?.toLowerCase?.() || '';
-              const acres = Array.isArray(job.fields)
-  ? job.fields.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0)
-  : (job.acres || job.drawnAcres || 0);
+       {job.products?.length > 0 && (
+  <div className="mt-6 border-t pt-4">
+    <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
+    {job.products.map((p, i) => {
+      const rate = parseFloat(p.rate);
+      const unit = p.unit?.toLowerCase() || '';
+      const crop = p.crop?.toLowerCase?.() || '';
+      const type = p.type?.toLowerCase?.() || '';
+      const acres = Array.isArray(job.fields)
+        ? job.fields.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0)
+        : (job.acres || job.drawnAcres || 0);
 
-              const totalAmount = rate * acres;
-              let display = '';
-if (p.type === 'Seed Treatment' && ['units', 'bushels'].includes(unit)) {
-  display = `${rate} ${unit} (matched to seed)`;
+      const totalAmount = rate * acres;
+      let display = '';
+
+      if (type === 'seed treatment' && ['units', 'bushels'].includes(unit)) {
+        display = `${rate} ${unit} (matched to seed)`;
+      } else if (type === 'seed' && unit === 'lbs/acre') {
+        const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+        const bushels = totalAmount / lbsPerBushel;
+        display = `${bushels.toFixed(1)} bushels`;
+      } else if (unit === 'lbs/acre') {
+  if (type === 'seed') {
+    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
+    const bushels = totalAmount / lbsPerBushel;
+    display = `${bushels.toFixed(1)} bushels`;
+  } else {
+    const tons = totalAmount / 2000;
+    display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
+  }
 }
-else if (unit === 'lbs/acre') {
-  const total = rate * acres;
-  display = `${total.toFixed(1)} lbs`;
-}
-// ... and the rest follows
+ else if (['seeds/acre', 'population'].includes(unit)) {
+        const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
+        const totalSeeds = rate * acres;
+        const units = totalSeeds / seedsPerUnit;
+        display = `${units.toFixed(1)} units`;
+      } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
+        const gal = totalAmount / 128;
+        display = `${gal.toFixed(2)} gallons`;
+      } else if (unit === 'pt/acre') {
+        const gal = totalAmount / 8;
+        display = `${gal.toFixed(2)} gallons`;
+      } else if (unit === 'qt/acre') {
+        const gal = totalAmount / 4;
+        display = `${gal.toFixed(2)} gallons`;
+      } else if (unit === 'oz dry/acre') {
+        const lbs = totalAmount / 16;
+        display = `${lbs.toFixed(2)} lbs`;
+      } else if (unit === '%v/v') {
+        const water = parseFloat(job.waterVolume || 0);
+        const gal = (rate / 100) * water * acres;
+        display = `${gal.toFixed(2)} gallons`;
+      } else if (unit === 'tons/acre') {
+        display = `${totalAmount.toFixed(2)} tons`;
+      } else {
+        display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
+      }
 
-              if (['seeds/acre', 'population'].includes(unit)) {
-                const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-                const totalSeeds = rate * acres;
-                const units = totalSeeds / seedsPerUnit;
-                display = `${units.toFixed(1)} units`;
-              } else if (['lbs/acre'].includes(unit)) {
-                const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-                const bushels = totalAmount / lbsPerBushel;
-                display = `${bushels.toFixed(1)} bushels`;
-              } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
-                const gal = totalAmount / 128;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'pt/acre') {
-                const gal = totalAmount / 8;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'qt/acre') {
-                const gal = totalAmount / 4;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'oz dry/acre') {
-                const lbs = totalAmount / 16;
-                display = `${lbs.toFixed(2)} lbs`;
-              } else if (unit === '%v/v') {
-                const water = parseFloat(job.waterVolume || 0);
-                const gal = (rate / 100) * water * acres;
-                display = `${gal.toFixed(2)} gallons`;
-              } else if (unit === 'tons/acre') {
-                display = `${totalAmount.toFixed(2)} tons`;
-              } else {
-                display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
-              }
+      return (
+        <div key={i} className="text-sm text-gray-700">
+          {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
+        </div>
+      );
+    })}
+  </div>
+)}
 
-              return (
-                <div key={i} className="text-sm text-gray-700">
-                  {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -369,7 +390,8 @@ function renderBoundarySVG(baseGeometries, overlayGeoJSONList) {
   });
 
   return (
-    <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-full max-w-xs bg-white border rounded shadow mx-auto">
+    <svg viewBox={`0 0 ${boxSize} ${boxSize}`} className="w-48 h-48 bg-white border rounded shadow mx-auto">
+
    {paths.map((p, i) => (
     <path
       key={i}
