@@ -597,7 +597,12 @@ console.log("🔍 jobType", jobType);
             </select>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-6 border rounded-lg shadow-sm p-4 bg-white space-y-4">
+            <div className="text-sm font-semibold text-gray-700">
+              Select Fields
+            </div>
+
+            {/* Selected Field Tags */}
             <button
               onClick={() => setShowFieldDropdown((prev) => !prev)}
               className="w-full text-left border rounded p-2 bg-white"
@@ -633,7 +638,9 @@ console.log("🔍 jobType", jobType);
               </div>
             </button>
 
-            <div className="text-sm text-gray-600 ml-1">Selected Field(s)</div>
+            <div className="text-sm text-gray-600 ml-1">
+              Grouped by Operator & Farm
+            </div>
 
             {[...new Set(allFields.map((f) => f.operator))]
               .sort()
@@ -681,7 +688,7 @@ console.log("🔍 jobType", jobType);
                       ]
                         .sort()
                         .map((farm) => (
-                          <div className="ml-3 mb-2">
+                          <div key={farm} className="ml-3 mb-2">
                             <div className="font-semibold text-blue-700 text-sm mb-1">
                               {farm}
                             </div>
@@ -750,200 +757,227 @@ console.log("🔍 jobType", jobType);
           </div>
 
           {selectedFields.length > 0 && (
-            <div className="space-y-3 mt-4">
-              {selectedFields.map((field) => (
-                <div
-                  key={field.id}
-                  className="relative bg-gray-100 border rounded p-4"
-                >
-                  <button
-                    className="absolute top-2 left-2 text-sm text-red-500"
-                    onClick={() =>
-                      setSelectedFields((prev) =>
-                        prev.filter((f) => f.id !== field.id)
-                      )
-                    }
-                  >
-                    X
-                  </button>
-                  <div className="font-medium mb-2">
-                    {field.fieldName} –{" "}
-                    {field.drawnAcres ?? field.acres ?? field.gpsAcres} ac –{" "}
-                    {cropYear} {field.crop}
-                  </div>
+            <div className="mt-6 border rounded-lg shadow-sm p-4 bg-white space-y-4">
+              <div className="text-sm font-semibold text-gray-700">
+                Selected Fields
+              </div>
 
-                  {field.geojson && (
-                    <div
-                      id={`field-canvas-${field.id}`}
-                      className="absolute top-1/2 right-4 -translate-y-1/2 w-[80px] h-[80px] border rounded bg-white flex items-center justify-center"
+              <div className="space-y-3">
+                {selectedFields.map((field) => (
+                  <div
+                    key={field.id}
+                    className="relative bg-gray-100 border rounded p-4"
+                  >
+                    <button
+                      className="absolute top-2 left-2 text-sm text-red-500"
+                      onClick={() =>
+                        setSelectedFields((prev) =>
+                          prev.filter((f) => f.id !== field.id)
+                        )
+                      }
                     >
-                      <svg viewBox="0 0 100 100" className="w-full h-full">
-                        {(() => {
-                          console.log(
-                            "🧭 drawnPolygon check:",
-                            field.fieldName,
-                            field.drawnPolygon
-                          );
-
-                          // --- Shared scaling setup based on base boundary
-                          let base = field.boundary?.geojson || field.boundary;
-                          if (typeof base === "string") {
-                            try {
-                              base = JSON.parse(base);
-                            } catch {
-                              return (
-                                <text
-                                  x={5}
-                                  y={20}
-                                  className="text-xs fill-red-600"
-                                >
-                                  Invalid base
-                                </text>
-                              );
-                            }
-                          }
-
-                          const baseCoords = base?.coordinates?.[0] || [];
-                          console.log(
-                            "🧭 drawnPolygon check:",
-                            field.fieldName,
-                            field.drawnPolygon
-                          );
-
-                          const isValidPolygon = (poly) => {
-                            if (!poly) return false;
-
-                            try {
-                              if (typeof poly === "string") {
-                                poly = JSON.parse(poly);
-                              }
-
-                              if (
-                                poly.type === "Feature" &&
-                                poly.geometry?.type === "Polygon"
-                              ) {
-                                poly = poly.geometry;
-                              }
-
-                              return (
-                                poly.type === "Polygon" &&
-                                Array.isArray(poly.coordinates?.[0]) &&
-                                poly.coordinates[0].length > 2
-                              );
-                            } catch {
-                              return false;
-                            }
-                          };
-
-                          const xs = baseCoords.map(([x]) => x);
-                          const ys = baseCoords.map(([_, y]) => y);
-                          const minX = Math.min(...xs);
-                          const maxX = Math.max(...xs);
-                          const minY = Math.min(...ys);
-                          const maxY = Math.max(...ys);
-                          const padding = 5;
-                          const width = maxX - minX;
-                          const height = maxY - minY;
-                          const scale =
-                            Math.min(100 - 2 * padding, 100 - 2 * padding) /
-                            Math.max(width, height);
-
-                          // --- Normalize a set of coords to fit preview box
-                          const normalize = (coords) =>
-                            coords.map(([x, y]) => [
-                              (x - minX) * scale + padding,
-                              100 - ((y - minY) * scale + padding),
-                            ]);
-
-                          // --- Base field boundary
-                          const basePoints = normalize(baseCoords)
-                            .map(([x, y]) => `${x},${y}`)
-                            .join(" ");
-
-                          return (
-                            <>
-                              <polygon
-                                points={basePoints}
-                                fill={
-                                  isValidPolygon(field.drawnPolygon)
-                                    ? "#c41e3a"
-                                    : "#4ade80"
-                                }
-                                // 🟥 or 🟩
-                                stroke={
-                                  field.drawnPolygon ? "#7a1025" : "#166534"
-                                }
-                                strokeWidth="0.5"
-                              />
-
-                              {isValidPolygon(field.drawnPolygon) &&
-                                (() => {
-                                  let overlay = field.drawnPolygon;
-                                  if (typeof overlay === "string") {
-                                    try {
-                                      overlay = JSON.parse(overlay);
-                                    } catch {
-                                      return null;
-                                    }
-                                  }
-                                  if (overlay?.type === "Feature") {
-                                    overlay = overlay.geometry;
-                                  }
-
-                                  const overlayCoords =
-                                    overlay?.coordinates?.[0] || [];
-                                  const overlayPoints = normalize(overlayCoords)
-                                    .map(([x, y]) => `${x},${y}`)
-                                    .join(" ");
-
-                                  return (
-                                    <polygon
-                                      points={overlayPoints}
-                                      fill="#4ade80"
-                                      stroke="#166534"
-                                      strokeWidth="0.5"
-                                    />
-                                  );
-                                })()}
-                            </>
-                          );
-                        })()}
-                      </svg>
+                      X
+                    </button>
+                    <div className="font-medium mb-2">
+                      {field.fieldName} –{" "}
+                      {field.drawnAcres ?? field.acres ?? field.gpsAcres} ac –{" "}
+                      {cropYear} {field.crop}
                     </div>
-                  )}
 
-                  <div className="text-sm text-gray-600">
-                    {field.farmName} / {field.operator}
+                    {field.geojson && (
+                      <div
+                        id={`field-canvas-${field.id}`}
+                        className="absolute top-1/2 right-4 -translate-y-1/2 w-[80px] h-[80px] border rounded bg-white flex items-center justify-center"
+                      >
+                        <svg viewBox="0 0 100 100" className="w-full h-full">
+                          {(() => {
+                            let base =
+                              field.boundary?.geojson || field.boundary;
+                            if (typeof base === "string") {
+                              try {
+                                base = JSON.parse(base);
+                              } catch {
+                                return (
+                                  <text
+                                    x={5}
+                                    y={20}
+                                    className="text-xs fill-red-600"
+                                  >
+                                    Invalid base
+                                  </text>
+                                );
+                              }
+                            }
+
+                            const baseCoords = base?.coordinates?.[0] || [];
+
+                            const isValidPolygon = (poly) => {
+                              if (!poly) return false;
+                              try {
+                                if (typeof poly === "string") {
+                                  poly = JSON.parse(poly);
+                                }
+                                if (
+                                  poly.type === "Feature" &&
+                                  poly.geometry?.type === "Polygon"
+                                ) {
+                                  poly = poly.geometry;
+                                }
+                                return (
+                                  poly.type === "Polygon" &&
+                                  Array.isArray(poly.coordinates?.[0]) &&
+                                  poly.coordinates[0].length > 2
+                                );
+                              } catch {
+                                return false;
+                              }
+                            };
+
+                            const xs = baseCoords.map(([x]) => x);
+                            const ys = baseCoords.map(([_, y]) => y);
+                            const minX = Math.min(...xs);
+                            const maxX = Math.max(...xs);
+                            const minY = Math.min(...ys);
+                            const maxY = Math.max(...ys);
+                            const padding = 5;
+                            const width = maxX - minX;
+                            const height = maxY - minY;
+                            const scale =
+                              Math.min(100 - 2 * padding, 100 - 2 * padding) /
+                              Math.max(width, height);
+
+                            const normalize = (coords) =>
+                              coords.map(([x, y]) => [
+                                (x - minX) * scale + padding,
+                                100 - ((y - minY) * scale + padding),
+                              ]);
+
+                            const basePoints = normalize(baseCoords)
+                              .map(([x, y]) => `${x},${y}`)
+                              .join(" ");
+
+                            return (
+                              <>
+                                <polygon
+                                  points={basePoints}
+                                  fill={
+                                    isValidPolygon(field.drawnPolygon)
+                                      ? "#c41e3a"
+                                      : "#4ade80"
+                                  }
+                                  stroke={
+                                    field.drawnPolygon ? "#7a1025" : "#166534"
+                                  }
+                                  strokeWidth="0.5"
+                                />
+
+                                {isValidPolygon(field.drawnPolygon) &&
+                                  (() => {
+                                    let overlay = field.drawnPolygon;
+                                    if (typeof overlay === "string") {
+                                      try {
+                                        overlay = JSON.parse(overlay);
+                                      } catch {
+                                        return null;
+                                      }
+                                    }
+                                    if (overlay?.type === "Feature") {
+                                      overlay = overlay.geometry;
+                                    }
+
+                                    const overlayCoords =
+                                      overlay?.coordinates?.[0] || [];
+                                    const overlayPoints = normalize(
+                                      overlayCoords
+                                    )
+                                      .map(([x, y]) => `${x},${y}`)
+                                      .join(" ");
+
+                                    return (
+                                      <polygon
+                                        points={overlayPoints}
+                                        fill="#4ade80"
+                                        stroke="#166534"
+                                        strokeWidth="0.5"
+                                      />
+                                    );
+                                  })()}
+                              </>
+                            );
+                          })()}
+                        </svg>
+                      </div>
+                    )}
+
+                    <div className="text-sm text-gray-600">
+                      {field.farmName} / {field.operator}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        console.log("🧲 Field passed to polygon modal:", field);
+                        setPolygonEditField(field);
+                      }}
+                      className="absolute right-[120px] top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-600"
+                      title="Edit Area"
+                    >
+                      <Pencil size={18} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      console.log("🧲 Field passed to polygon modal:", field);
-                      setPolygonEditField(field);
-                    }}
-                    className="absolute right-[120px] top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-600"
-                    title="Edit Area"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* 🔹 Total Job Acres Summary */}
+              <div className="text-sm font-semibold text-blue-700 pt-2">
+                Job Acres {totalJobAcres.toFixed(1)} – (
+                {isLeveeJob
+                  ? "levee acres"
+                  : selectedFields.some(
+                      (f) =>
+                        !!f.drawnPolygon &&
+                        !!f.drawnAcres &&
+                        parseFloat(f.drawnAcres) > 0
+                    )
+                  ? "partial"
+                  : "full"}
+                )
+              </div>
             </div>
           )}
-          {/* 🔹 Total Job Acres Summary */}
-          <div className="mb-4 text-sm font-semibold">
-            Job Acres {totalJobAcres.toFixed(1)} – (
-            {isLeveeJob
-              ? "levee acres"
-              : selectedFields.some(
-                  (f) =>
-                    !!f.drawnPolygon &&
-                    !!f.drawnAcres &&
-                    parseFloat(f.drawnAcres) > 0
-                )
-              ? "partial"
-              : "full"}
-            )
-          </div>
+
+          {(jobType?.parentName === "Tillage" ||
+            jobType?.parentName === "Spraying") && (
+            <div className="mt-6 border rounded-lg shadow-sm p-4 bg-white space-y-4">
+              {jobType?.parentName === "Tillage" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number of Passes
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={passes}
+                    onChange={(e) => setPasses(e.target.value)}
+                    className="border border-gray-300 rounded-md px-3 py-2 w-32 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
+              {jobType?.parentName === "Spraying" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Water Volume (gal/acre)
+                  </label>
+                  <input
+                    type="number"
+                    className="border border-gray-300 rounded-md px-3 py-2 w-48 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={waterVolume}
+                    onChange={(e) => setWaterVolume(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {(isSeeding || isSpraying || isFertilizing) && (
             <>
@@ -1005,40 +1039,28 @@ console.log("🔍 jobType", jobType);
 
               {/* Product List */}
               <div className="space-y-3 mt-4">
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    setJobProducts((prev) => [
-                      ...prev,
-                      {
-                        productId: "",
-                        productName: "",
-                        rate: "",
-                        unit: "",
-                        type: "",
-                        crop: "",
-                        rateType: "",
-                        vendor: "",
-                      },
-                    ])
-                  }
-                >
-                  + Add Product
-                </Button>
-
                 {jobProducts.map((product, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        setJobProducts((prev) =>
-                          prev.filter((_, i) => i !== index)
-                        )
-                      }
-                      className="text-red-600 ml-1"
-                      title="Remove Product"
-                    >
-                      🗑
-                    </button>
+                  <div
+                    key={index}
+                    className="border rounded-md shadow-sm p-4 bg-white flex flex-col gap-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm font-semibold text-gray-700">
+                        Product {index + 1}
+                      </div>
+                      <button
+                        onClick={() =>
+                          setJobProducts((prev) =>
+                            prev.filter((_, i) => i !== index)
+                          )
+                        }
+                        className="text-red-600 text-sm hover:underline"
+                        title="Remove Product"
+                      >
+                        🗑 Remove
+                      </button>
+                    </div>
+
                     <ProductComboBox
                       value={{
                         id: product.productId,
@@ -1067,91 +1089,93 @@ console.log("🔍 jobType", jobType);
                       usedProductIds={usedProductIds}
                     />
 
-                    <input
-                      type="text"
-                      placeholder="Rate"
-                      value={product.rate}
-                      onChange={(e) => {
-                        const updated = [...jobProducts];
-                        updated[index].rate = e.target.value;
-                        setJobProducts(updated);
-                      }}
-                      className="border p-2 rounded w-[70px]"
-                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        placeholder="Rate"
+                        value={product.rate}
+                        onChange={(e) => {
+                          const updated = [...jobProducts];
+                          updated[index].rate = e.target.value;
+                          setJobProducts(updated);
+                        }}
+                        className="border p-2 rounded w-full sm:w-1/2"
+                      />
 
-                    <select
-                      value={product.unit}
-                      onChange={async (e) => {
-                        const newUnit = e.target.value;
-                        const oldUnit = product.unit;
+                      <select
+                        value={product.unit}
+                        onChange={async (e) => {
+                          const newUnit = e.target.value;
+                          const oldUnit = product.unit;
 
-                        const updated = [...jobProducts];
-                        updated[index].unit = newUnit;
-                        setJobProducts(updated);
+                          const updated = [...jobProducts];
+                          updated[index].unit = newUnit;
+                          setJobProducts(updated);
 
-                        if (newUnit !== oldUnit && product.productId) {
-                          const confirmUpdate = window.confirm(
-                            "Update Product's Unit in Database?"
-                          );
-                          if (confirmUpdate) {
-                            try {
-                              const ref = doc(
-                                db,
-                                "products",
-                                product.productId
-                              );
-                              await updateDoc(ref, { unit: newUnit });
-                              alert("Product unit updated successfully.");
-                            } catch (err) {
-                              alert("Failed to update product unit.");
+                          if (newUnit !== oldUnit && product.productId) {
+                            const confirmUpdate = window.confirm(
+                              "Update Product's Unit in Database?"
+                            );
+                            if (confirmUpdate) {
+                              try {
+                                const ref = doc(
+                                  db,
+                                  "products",
+                                  product.productId
+                                );
+                                await updateDoc(ref, { unit: newUnit });
+                                alert("Product unit updated successfully.");
+                              } catch (err) {
+                                alert("Failed to update product unit.");
+                              }
                             }
                           }
-                        }
-                      }}
-                      className="border p-2 rounded w-[120px]"
-                    >
-                      <option value="">Unit</option>
-                      {(() => {
-                        const type = product.type?.toLowerCase() || "";
+                        }}
+                        className="border p-2 rounded w-full sm:w-1/2"
+                      >
+                        <option value="">Unit</option>
+                        {(() => {
+                          const type = product.type?.toLowerCase() || "";
 
-                        if (type === "chemical") {
-                          return [
-                            "fl oz/acre",
-                            "pt/acre",
-                            "qt/acre",
-                            "gal/acre",
-                          ].map((u) => (
-                            <option key={u} value={u}>
-                              {u}
-                            </option>
-                          ));
-                        }
-
-                        if (type === "fertilizer") {
-                          return ["lbs/acre", "tons/acre"].map((u) => (
-                            <option key={u} value={u}>
-                              {u}
-                            </option>
-                          ));
-                        }
-
-                        if (type === "seed") {
-                          return ["seeds/acre", "units/acre", "lbs/acre"].map(
-                            (u) => (
+                          if (type === "chemical") {
+                            return [
+                              "fl oz/acre",
+                              "pt/acre",
+                              "qt/acre",
+                              "gal/acre",
+                            ].map((u) => (
                               <option key={u} value={u}>
                                 {u}
                               </option>
-                            )
-                          );
-                        }
+                            ));
+                          }
 
-                        return ["lbs/acre", "units/acre"].map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ));
-                      })()}
-                    </select>
+                          if (type === "fertilizer") {
+                            return ["lbs/acre", "tons/acre"].map((u) => (
+                              <option key={u} value={u}>
+                                {u}
+                              </option>
+                            ));
+                          }
+
+                          if (type === "seed") {
+                            return ["seeds/acre", "units/acre", "lbs/acre"].map(
+                              (u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              )
+                            );
+                          }
+
+                          return ["lbs/acre", "units/acre"].map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ));
+                        })()}
+                      </select>
+                    </div>
 
                     <select
                       value={product.vendor}
@@ -1160,7 +1184,7 @@ console.log("🔍 jobType", jobType);
                         updated[index].vendor = e.target.value;
                         setJobProducts(updated);
                       }}
-                      className="border p-2 rounded w-[140px]"
+                      className="border p-2 rounded w-full"
                     >
                       <option value="">Select Vendor</option>
                       {vendors.map((v) => (
@@ -1174,12 +1198,34 @@ console.log("🔍 jobType", jobType);
               </div>
             </>
           )}
+          <Button
+            size="sm"
+            onClick={() =>
+              setJobProducts((prev) => [
+                ...prev,
+                {
+                  productId: "",
+                  productName: "",
+                  rate: "",
+                  unit: "",
+                  type: "",
+                  crop: "",
+                  rateType: "",
+                  vendor: "",
+                },
+              ])
+            }
+          >
+            + Add Product
+          </Button>
 
           {jobProducts.some((p) => (p.type || "").toLowerCase() === "seed") && (
-            <div className="space-y-2 mt-4">
-              <div className="text-sm font-medium text-gray-700">
+            <div className="mt-6 border rounded-lg shadow-sm p-4 bg-white space-y-4">
+              <div className="text-sm font-semibold text-gray-700">
                 Seed Treatment
               </div>
+
+              {/* Radio Options */}
               <div className="space-y-1">
                 <label className="block text-sm">
                   <input
@@ -1216,8 +1262,9 @@ console.log("🔍 jobType", jobType);
                 </label>
               </div>
 
+              {/* Seed Treatment Entries */}
               {seedTreatmentStatus === "separate" && (
-                <div className="mt-3 space-y-2">
+                <div className="space-y-3">
                   {seedTreatments.map((t, i) => (
                     <div
                       key={i}
@@ -1300,75 +1347,50 @@ console.log("🔍 jobType", jobType);
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="border rounded w-full p-2"
-              >
-                <option value="Planned">Planned</option>
-                <option value="Completed">Completed</option>
-              </select>
+          <div className="mt-6 border rounded-lg shadow-sm p-4 bg-white space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="border rounded w-full p-2"
+                >
+                  <option value="Planned">Planned</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {status === "Completed" ? "Date Completed" : "Planned Date"}
+                </label>
+                <DatePicker
+                  selected={jobDate ? new Date(jobDate + "T00:00") : null}
+                  onChange={(date) => {
+                    const iso = date?.toISOString().split("T")[0] || "";
+                    setJobDate(iso);
+                  }}
+                  dateFormat="MM/dd/yyyy"
+                  className="border rounded w-full p-2"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {status === "Completed" ? "Date Completed" : "Planned Date"}
-              </label>
-              <DatePicker
-                selected={jobDate ? new Date(jobDate + "T00:00") : null}
-                onChange={(date) => {
-                  const iso = date?.toISOString().split("T")[0] || "";
-                  setJobDate(iso);
-                }}
-                dateFormat="MM/dd/yyyy"
-                className="border rounded w-full p-2"
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
-            <textarea
-              rows={3}
-              className="w-full border rounded p-2"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Type a note"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes
+              </label>
+              <textarea
+                rows={3}
+                className="w-full border rounded p-2"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Type a note"
+              />
+            </div>
           </div>
-          {jobType?.parentName === "Tillage" && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium">
-                Number of Passes
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={passes}
-                onChange={(e) => setPasses(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 w-32 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          )}
-          {jobType?.parentName === "Spraying" && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium">
-                Water Volume (gal/acre)
-              </label>
-              <input
-                type="number"
-                className="border border-gray-300 rounded-md px-3 py-2 w-48 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={waterVolume}
-                onChange={(e) => setWaterVolume(e.target.value)}
-              />
-            </div>
-          )}
 
           <div className="text-sm text-gray-700 space-y-1">
             {jobProducts.map((p, i) => {

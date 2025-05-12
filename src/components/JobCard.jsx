@@ -57,7 +57,7 @@ export default function JobCard({
             <img
               src={getJobTypeIcon(getJobTypeName(job))}
               alt={getJobTypeName(job)}
-              className="w-4 h-4 inline-block"
+              className="w-8 h-8 inline-block"
             />
             {getJobTypeName(job)}
           </div>
@@ -134,15 +134,15 @@ export default function JobCard({
       </div>
 
       {/* 🟦 Card Content */}
-      <div className="text-sm text-gray-600 mt-2">
-        {(() => {
-          const p = job.products?.[0];
-          if (!p) return "—";
-          return `${p.productName || p.name || "—"} • ${p.rate || ""} ${
-            p.unit || ""
-          }`;
-        })()}
-      </div>
+      {Array.isArray(job.products) && job.products.length > 0 && (
+        <ul className="text-sm text-gray-600 mt-2 space-y-0.5 list-disc list-inside">
+          {job.products.map((p, i) => (
+            <li key={i}>
+              {p.productName || p.name || "—"} • {p.rate || ""} {p.unit || ""}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* 🏷️ Badges and Acres */}
       <div className="flex flex-col gap-0.5 text-xs text-gray-500 mt-2">
