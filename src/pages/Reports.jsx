@@ -5,53 +5,67 @@ import { Link } from 'react-router-dom';
 export default function Reports() {
 const reports = [
   {
-    title: 'Field Cost Summary',
-    path: '/reports/field-cost',
-    description: 'Breakdown of seed, fertilizer, chemical, and job costs per acre by field.',
-    icon: '🧾'
+    title: "Field Cost Summary",
+    path: "/reports/field-cost",
+    description:
+      "Breakdown of seed, fertilizer, chemical, and job costs per acre by field.",
+    icon: "🧾",
   },
   {
-    title: 'Operator & Landowner Summary',
-    path: '/reports/partner-summary',
-    description: 'Usage and cost share by operator and landowner, based on expense splits.',
-    icon: '👥'
+    title: "Operator & Landowner Summary",
+    path: "/reports/partner-summary",
+    description:
+      "Usage and cost share by operator and landowner, based on expense splits.",
+    icon: "👥",
   },
   {
-    title: 'Vendor Summary',
-    path: '/reports/vendor-summary',
-    description: 'Products purchased and used by vendor, with average cost per unit.',
-    icon: '🏪'
+    title: "Product Usage Report",
+    path: "/reports/product-usage",
+    description:
+      "Track applied totals, vendor splits, and partner shares across completed jobs.",
+    icon: "🧪",
+  },
+
+  {
+    title: "Vendor Summary",
+    path: "/reports/vendor-summary",
+    description:
+      "Products purchased and used by vendor, with average cost per unit.",
+    icon: "🏪",
   },
   {
-    title: 'Crop Rotation History',
-    path: '/reports/crop-rotation',
-    description: 'Multi-year crop history and spending per field.',
-    icon: '🌾'
+    title: "Crop Rotation History",
+    path: "/reports/crop-rotation",
+    description: "Multi-year crop history and spending per field.",
+    icon: "🌾",
   },
   {
-    title: 'Invoice Ledger',
-    path: '/reports/invoice-ledger',
-    description: 'Line-by-line field expense breakdown with unit conversions.',
-    icon: '📑'
+    title: "Invoice Ledger",
+    path: "/reports/invoice-ledger",
+    description: "Line-by-line field expense breakdown with unit conversions.",
+    icon: "📑",
   },
   {
-    title: 'Seeding Report',
-    path: '/reports/seeding',
-    description: 'Detailed breakdown of seeding jobs by field, variety, operator, and vendor.',
-    icon: '🌱'
+    title: "Seeding Report",
+    path: "/reports/seeding",
+    description:
+      "Detailed breakdown of seeding jobs by field, variety, operator, and vendor.",
+    icon: "🌱",
   },
   {
-    title: 'Crop Insurance Report',
-    path: '/reports/crop-insurance',
-    description: 'Placeholder for crop insurance summaries grouped by FSA and county data.',
-    icon: '🛡️'
+    title: "Crop Insurance Report",
+    path: "/reports/crop-insurance",
+    description:
+      "Placeholder for crop insurance summaries grouped by FSA and county data.",
+    icon: "🛡️",
   },
   {
-    title: 'FSA Planting Date Report',
-    path: '/reports/planting-dates',
-    description: 'Placeholder for generating FSA-compliant planting date reports.',
-    icon: '🗓️'
-  }
+    title: "FSA Planting Date Report",
+    path: "/reports/planting-dates",
+    description:
+      "Placeholder for generating FSA-compliant planting date reports.",
+    icon: "🗓️",
+  },
 ];
 
 

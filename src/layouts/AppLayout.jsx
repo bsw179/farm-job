@@ -44,6 +44,7 @@ import FieldFinancialSummary from '@/pages/FieldFinancialSummary'; // place this
 import FieldCostSummary from "../pages/Reports/FieldCostSummary";
 import VendorSummary from "../pages/Reports/VendorSummary";
 import AppHeader from '@/components/AppHeader';
+import ProductUsageReport from "../pages/Reports/ProductUsageReport";
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
@@ -110,203 +111,194 @@ export default function AppLayout() {
     <UserProvider>
       <CropYearProvider>
         <div className="relative min-h-screen flex font-sans text-gray-800">
-
           {/* Sidebar */}
-        <div className="relative">
-  {/* Blue background that stretches full page height */}
-  <div className="hidden md:block fixed top-0 left-0 w-64 h-full bg-blue-800 z-0" />
+          <div className="relative">
+            {/* Blue background that stretches full page height */}
+            <div className="hidden md:block fixed top-0 left-0 w-64 h-full bg-blue-800 z-0" />
 
-  {/* Sticky sidebar content */}
-  <div
-    className={`fixed md:sticky top-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${
-      mobileNavOpen ? "translate-x-0" : "-translate-x-full"
-    } md:translate-x-0`}
-  >
-    <Sidebar onNavigate={() => setMobileNavOpen(false)} />
-  </div>
-</div>
-
-
-      
+            {/* Sticky sidebar content */}
+            <div
+              className={`fixed md:sticky top-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${
+                mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+              } md:translate-x-0`}
+            >
+              <Sidebar onNavigate={() => setMobileNavOpen(false)} />
+            </div>
+          </div>
 
           {/* Main Content */}
-         <div className="flex-1 flex flex-col">
-  <AppHeader />
-  <main className="flex-1 p-4 overflow-y-auto pt-16">
+          <div className="flex-1 flex flex-col">
+            <AppHeader />
+            <main className="flex-1 p-4 overflow-y-auto pt-16">
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
 
-           
-
-           <Routes>
-  <Route path="/login" element={<LoginPage />} />
-
-  <Route
-    path="*"
-    element={
-      <RequireLogin>
-        <Routes>
-          {/* Public Pages */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/fields" element={<Fields />} />
-          <Route path="/profile-settings" element={<ProfileSettings />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/reports/seeding" element={<SeedingReport />} />
-          <Route path="/metrics" element={<FieldMetrics />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/calendar" element={<JobsCalendar />} />
-          <Route path="/fields/:fieldId" element={<FieldDetail />} />
-          <Route path="/crop-maps" element={<CropMaps />} />
-          <Route path="/rainfall" element={<RainfallPage />} />
-          <Route path="/reports/field-cost" element={<FieldCostSummary />} />
-          <Route path="/reports/vendor-summary" element={<VendorSummary />} />
-
-          {/* Protected Pages */}
-      
-       
-
-          <Route
-            path="/map-viewer"
-            element={
-              <ProtectedRoute path="/map-viewer">
-                <MapViewer />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/fields/:fieldId/boundary-editor"
-            element={
-              <ProtectedRoute path="/fields/:fieldId/boundary-editor">
-                <FieldBoundaryEditor />
-              </ProtectedRoute>
-            }
-          />
-<Route
-  path="/financial/products"
-  element={
-    <ProtectedRoute path="/financial/products">
-      <ProductsTracker />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/financial/ledger"
-  element={
-    <ProtectedRoute path="/financial/ledger">
-      <ProductLedger />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/financial/summary"
-  element={
-    <ProtectedRoute path="/financial/summary">
-      <FieldFinancialSummary />
-    </ProtectedRoute>
-  }
-/>
-
-
-
-
-          <Route
-            path="/manage-users"
-            element={
-              <ProtectedRoute path="/manage-users">
-                <ManageUsers />
-              </ProtectedRoute>
-            }
-          />
-import LogProductPurchase from './pages/LogProductPurchase';
-
-
-
-          <Route
-            path="/products"
-            element={
-              <ProtectedRoute path="/products">
-                <Products />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/manage-partners"
-            element={
-              <ProtectedRoute path="/manage-partners">
-                <ManagePartners />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/setup/manage-crop-types"
-            element={
-              <ProtectedRoute path="/setup/manage-crop-types">
-                <ManageCropTypes />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/setup/import-boundaries"
-            element={
-              <ProtectedRoute path="/setup/import-boundaries">
-                <BoundaryUploadMapbox />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/setup/manage-job-types"
-            element={
-              <ProtectedRoute path="/setup/manage-job-types">
-                <ManageJobTypes />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin-tools"
-            element={
-              <ProtectedRoute path="/admin-tools">
-                <AdminCleanupTools />
-              </ProtectedRoute>
-            }
-          />
-      
-           <Route
-            path="/inputs"
-            element={
-              <ProtectedRoute path="/inputs">
-               <InputsPage />
-             </ProtectedRoute>
-           }
-         />
-
-          <Route
-  path="/jobs/edit-area/create/:fieldId"
-  element={
-    <ProtectedRoute path="/jobs/edit-area/create/:fieldId">
-      <EditJobPolygonForCreate />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/jobs/edit-area/field-job/:fieldId"
-  element={
-    <ProtectedRoute path="/jobs/edit-area/field-job/:fieldId">
-      <EditJobPolygonForFieldJob />
-    </ProtectedRoute>
-  }
-/>
-
-        </Routes>
-      </RequireLogin>
-    }
-  />
-</Routes>
-
-
+                <Route
+                  path="*"
+                  element={
+                    <RequireLogin>
+                      <Routes>
+                        {/* Public Pages */}
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/fields" element={<Fields />} />
+                        <Route
+                          path="/profile-settings"
+                          element={<ProfileSettings />}
+                        />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route
+                          path="/reports/seeding"
+                          element={<SeedingReport />}
+                        />
+                        <Route path="/metrics" element={<FieldMetrics />} />
+                        <Route path="/jobs" element={<Jobs />} />
+                        <Route path="/calendar" element={<JobsCalendar />} />
+                        <Route
+                          path="/fields/:fieldId"
+                          element={<FieldDetail />}
+                        />
+                        <Route path="/crop-maps" element={<CropMaps />} />
+                        <Route path="/rainfall" element={<RainfallPage />} />
+                        <Route
+                          path="/reports/field-cost"
+                          element={<FieldCostSummary />}
+                        />
+                        <Route
+                          path="/reports/vendor-summary"
+                          element={<VendorSummary />}
+                        />
+                        <Route
+                          path="/reports/product-usage"
+                          element={<ProductUsageReport />}
+                        />
+                        {/* Protected Pages */}
+                        <Route
+                          path="/map-viewer"
+                          element={
+                            <ProtectedRoute path="/map-viewer">
+                              <MapViewer />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/fields/:fieldId/boundary-editor"
+                          element={
+                            <ProtectedRoute path="/fields/:fieldId/boundary-editor">
+                              <FieldBoundaryEditor />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/financial/products"
+                          element={
+                            <ProtectedRoute path="/financial/products">
+                              <ProductsTracker />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/financial/ledger"
+                          element={
+                            <ProtectedRoute path="/financial/ledger">
+                              <ProductLedger />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/financial/summary"
+                          element={
+                            <ProtectedRoute path="/financial/summary">
+                              <FieldFinancialSummary />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/manage-users"
+                          element={
+                            <ProtectedRoute path="/manage-users">
+                              <ManageUsers />
+                            </ProtectedRoute>
+                          }
+                        />
+                        import LogProductPurchase from
+                        './pages/LogProductPurchase';
+                        <Route
+                          path="/products"
+                          element={
+                            <ProtectedRoute path="/products">
+                              <Products />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/manage-partners"
+                          element={
+                            <ProtectedRoute path="/manage-partners">
+                              <ManagePartners />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/setup/manage-crop-types"
+                          element={
+                            <ProtectedRoute path="/setup/manage-crop-types">
+                              <ManageCropTypes />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/setup/import-boundaries"
+                          element={
+                            <ProtectedRoute path="/setup/import-boundaries">
+                              <BoundaryUploadMapbox />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/setup/manage-job-types"
+                          element={
+                            <ProtectedRoute path="/setup/manage-job-types">
+                              <ManageJobTypes />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin-tools"
+                          element={
+                            <ProtectedRoute path="/admin-tools">
+                              <AdminCleanupTools />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/inputs"
+                          element={
+                            <ProtectedRoute path="/inputs">
+                              <InputsPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/jobs/edit-area/create/:fieldId"
+                          element={
+                            <ProtectedRoute path="/jobs/edit-area/create/:fieldId">
+                              <EditJobPolygonForCreate />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/jobs/edit-area/field-job/:fieldId"
+                          element={
+                            <ProtectedRoute path="/jobs/edit-area/field-job/:fieldId">
+                              <EditJobPolygonForFieldJob />
+                            </ProtectedRoute>
+                          }
+                        />
+                      </Routes>
+                    </RequireLogin>
+                  }
+                />
+              </Routes>
             </main>
           </div>
         </div>

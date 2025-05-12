@@ -516,11 +516,24 @@ const [jobDate, setJobDate] = useState(() => {
 
       const { generateBatchPDF } = await import("../utils/generatePDF");
       const blob = await generateBatchPDF(allJobs);
-      const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      // Open PDF in a new tab so user can use native "share" or "print"
+      window.open(url, "_blank");
+    } else {
+      // Standard download for desktop and Android
       const a = document.createElement("a");
       a.href = url;
       a.download = `Job_Batch_${Date.now()}.pdf`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
+    }
+
     }
   }
 console.log("🔍 jobType", jobType);
