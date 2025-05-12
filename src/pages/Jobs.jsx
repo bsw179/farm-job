@@ -43,7 +43,8 @@ export default function Jobs() {
     typeof job.jobType === "string" ? job.jobType : job.jobType?.name || "";
 
   const jobsToShow = fieldJobs
-    .filter((j) => j.cropYear === cropYear)
+    .filter((j) => String(j.cropYear) === String(cropYear))
+
     .filter(
       (j) =>
         (filterStatus === "All" || j.status === filterStatus) &&
@@ -73,12 +74,28 @@ export default function Jobs() {
       return 0;
     });
 
+const groupedJobs = jobsToShow.reduce((acc, job) => {
+  const key = job.isDetachedFromGroup ? job.id : job.batchTag || job.id;
+  if (!acc[key]) acc[key] = [];
+  acc[key].push(job);
+  return acc;
+}, {});
+
+
   const handleDelete = async (jobId) => {
     await deleteDoc(doc(db, "jobsByField", jobId));
     setFieldJobs((prev) => prev.filter((j) => j.id !== jobId));
   };
 
   if (loading || !role) return null;
+  
+useEffect(() => {
+  const openModal = () => setShowJobModal(true);
+  window.addEventListener("open-job-editor", openModal);
+  return () => window.removeEventListener("open-job-editor", openModal);
+}, []);
+console.log("🧪 jobsToShow:", jobsToShow);
+console.log("🧪 groupedJobs:", groupedJobs);
 
   return (
     <div className="p-4 md:p-6">
@@ -86,7 +103,12 @@ export default function Jobs() {
         title="Jobs"
         actions={
           role !== "viewer" && (
-            <Button onClick={() => setShowJobModal(true)}>
+            <Button
+              onClick={() => {
+                setSelectedJob(null); // 👈 this is what was missing
+                setShowJobModal(true);
+              }}
+            >
               <Plus className="mr-2" size={16} /> Create Job
             </Button>
           )
@@ -163,29 +185,74 @@ export default function Jobs() {
         </div>
       </div>
 
-      <div>
-        {jobsToShow.map((job) => (
-          <JobCard
-            key={job.id}
-            job={job}
-            isFieldJob={true}
-            onSelect={setSelectedJob}
-            onDelete={() => handleDelete(job.id)}
-            onStatusChange={(jobId, newStatus) => {
-              setFieldJobs((prev) =>
-                prev.map((j) =>
-                  j.id === jobId ? { ...j, status: newStatus } : j
-                )
-              );
-            }}
-          />
-        ))}
-      </div>
+      {Object.entries(groupedJobs).map(([groupKey, jobs]) => (
+        <div key={groupKey} className="mb-6 border-l-4 border-blue-400 pl-3">
+          {jobs.length > 1 && jobs.every((j) => !j.isDetachedFromGroup) && (
+            <div className="flex justify-between items-center mb-2">
+              <div className="text-sm text-blue-700 font-semibold">
+                Batch of {jobs.length} jobs –{" "}
+                {jobs[0].jobType?.name || "Unknown"} on {jobs[0].jobDate}
+              </div>
+              {role === "admin" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedJob(jobs);
+                    setShowJobModal(true);
+                  }}
+                >
+                  ✏️ Edit Batch
+                </Button>
+              )}
+            </div>
+          )}
 
-      {selectedJob && (
+          <div className="space-y-2">
+            {jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                isFieldJob={true}
+                onSelect={(j) => {
+                  setSelectedJob(j);
+                  setShowJobModal(false); // 👈 open preview only
+                }}
+                onDelete={() => handleDelete(job.id)}
+                onStatusChange={(jobId, newStatus) => {
+                  setFieldJobs((prev) =>
+                    prev.map((j) =>
+                      j.id === jobId ? { ...j, status: newStatus } : j
+                    )
+                  );
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+      
+      {selectedJob && !showJobModal && (
         <JobDetailsModal
           job={selectedJob}
           onClose={() => setSelectedJob(null)}
+        />
+      )}
+
+      {showJobModal && (
+        <JobEditorModal
+          isOpen={showJobModal}
+          onClose={() => {
+            setShowJobModal(false);
+            setSelectedJob(null);
+          }}
+          initialJobs={
+            Array.isArray(selectedJob)
+              ? selectedJob
+              : selectedJob
+              ? [selectedJob]
+              : []
+          }
         />
       )}
 
@@ -215,11 +282,6 @@ export default function Jobs() {
           </div>
         </div>
       )}
-
-      <JobEditorModal
-        isOpen={showJobModal}
-        onClose={() => setShowJobModal(false)}
-      />
     </div>
   );
 }

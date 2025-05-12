@@ -15,7 +15,7 @@ import {
   serverTimestamp         // ✅ You can move this up to combine
 } from 'firebase/firestore';
 import EditAreaModal from "../components/EditAreaModal";
-import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
+import EditJobPolygonForFieldJob from "./EditJobPolygonForFieldJob";
 import html2canvas from 'html2canvas';
 import ProductComboBox from '../components/ProductComboBox';
 

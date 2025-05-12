@@ -93,51 +93,11 @@ export default function JobCard({
             <Button
               size="icon"
               variant="ghost"
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-
-                try {
-                  if (isFieldJob) {
-                    navigate(`/jobs/field/${job.id}`);
-                  } else {
-                    const snap = await getDocs(
-                      query(
-                        collection(db, "jobsByField"),
-                        where("linkedToJobId", "==", job.id)
-                      )
-                    );
-
-                    const freshFields = snap.docs
-                      .map((doc) => ({ id: doc.id, ...doc.data() }))
-                      .filter((f) => !f.isDetachedFromGroup);
-
-                    if (!freshFields.length) {
-                      alert("No fields found for this grouped job.");
-                      return;
-                    }
-
-                    navigate("/jobs/summary", {
-                      state: {
-                        isEditing: true,
-                        jobId: job.id,
-                        jobType: job.jobType,
-                        jobDate: job.jobDate,
-                        vendor: job.vendor,
-                        applicator: job.applicator,
-                        products: job.products,
-                        selectedFields: freshFields,
-                        cropYear: job.cropYear,
-                        notes: job.notes || "",
-                        passes: job.passes || 1,
-                        waterVolume: job.waterVolume || "",
-                      },
-                    });
-                  }
-                } catch (error) {
-                  console.error("❌ Failed to load grouped fields:", error);
-                  alert("Something went wrong loading fields. Try again.");
-                }
+                onSelect(job); // sets selectedJob
+                window.dispatchEvent(new CustomEvent("open-job-editor")); // trigger modal
               }}
             >
               <Pencil size={16} />

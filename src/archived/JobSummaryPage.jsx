@@ -18,7 +18,7 @@ import { saveJob } from '../utils/saveJob'; // NEW!
 import Select from 'react-select';
 import ProductComboBox from '../components/ProductComboBox';
 import EditAreaModal from "../components/EditAreaModal";
-import EditJobPolygonForCreate from "../pages/EditJobPolygonForCreate";
+import EditJobPolygonForCreate from "./EditJobPolygonForCreate";
 
 async function updateProductUnit(productId, newUnit) {
   if (!productId) return;

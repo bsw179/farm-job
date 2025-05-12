@@ -27,8 +27,8 @@ import Reports from "@/pages/Reports";
 import FieldMetrics from "@/pages/FieldMetrics";
 import BoundaryUploadMapbox from "@/pages/BoundaryUploadMapbox";
 import ManageJobTypes from "@/pages/Setup/ManageJobTypes";
-import EditJobPolygonForCreate from "../pages/EditJobPolygonForCreate";
-import EditJobPolygonForFieldJob from "../pages/EditJobPolygonForFieldJob";
+import EditJobPolygonForCreate from "../archived/EditJobPolygonForCreate";
+import EditJobPolygonForFieldJob from "../archived/EditJobPolygonForFieldJob";
 import SeedingReport from "../pages/Reports/SeedingReport";
 import AdminCleanupTools from "../pages/AdminCleanupTools";
 import RequireRole from "@/components/RequireRole"; // add this at the top

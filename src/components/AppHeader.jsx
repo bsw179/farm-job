@@ -34,18 +34,20 @@ export default function AppHeader() {
         <button
           className="md:hidden text-white text-2xl"
           onClick={() => {
-            const event = new CustomEvent('toggle-mobile-nav');
+            const event = new CustomEvent("toggle-mobile-nav");
             window.dispatchEvent(event);
           }}
         >
           ☰
         </button>
-        <div className="font-extrabold text-xl tracking-wide">🌾 Farm Job</div>
+
         <button
-          onClick={() => navigate('/')}
-          className="text-sm text-white bg-blue-800 hover:bg-blue-700 border border-white rounded px-3 py-1 shadow-sm hidden sm:block"
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 font-extrabold text-xl tracking-wide hover:underline focus:underline focus:outline-none"
+          title="Go to Dashboard"
         >
-          Dashboard
+          🌾 <span>Farm Job</span>
+          <span className="underline sm:no-underline">🏠</span>
         </button>
       </div>
 
@@ -55,12 +57,16 @@ export default function AppHeader() {
           <button
             onClick={() => setCropYear((y) => y - 1)}
             className="text-white hover:text-blue-300 text-lg font-bold"
-          >⬅</button>
+          >
+            ⬅
+          </button>
           <span className="text-white font-semibold text-lg">{cropYear}</span>
           <button
             onClick={() => setCropYear((y) => y + 1)}
             className="text-white hover:text-blue-300 text-lg font-bold"
-          >➡</button>
+          >
+            ➡
+          </button>
         </div>
 
         <div className="relative" ref={menuRef}>
@@ -73,14 +79,25 @@ export default function AppHeader() {
 
           {showMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50 text-gray-800">
-              <div className="px-4 py-2 border-b font-semibold">User Profile</div>
-              <button onClick={() => navigate('/profile-settings')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <div className="px-4 py-2 border-b font-semibold">
+                User Profile
+              </div>
+              <button
+                onClick={() => navigate("/profile-settings")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Account Settings
               </button>
-              <button onClick={() => navigate('/manage-users')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/manage-users")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Manage Users
               </button>
-              <button onClick={() => navigate('/admin-tools')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/admin-tools")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Admin Tools
               </button>
 
@@ -88,7 +105,7 @@ export default function AppHeader() {
                 onClick={() => {
                   setShowMenu(false);
                   signOut(auth).catch((err) => {
-                    console.error('Logout failed:', err);
+                    console.error("Logout failed:", err);
                   });
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 font-semibold"
@@ -97,19 +114,34 @@ export default function AppHeader() {
               </button>
 
               <div className="px-4 py-2 border-t font-semibold">Setup</div>
-              <button onClick={() => navigate('/products')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/products")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Manage Products
               </button>
-              <button onClick={() => navigate('/manage-partners')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/manage-partners")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Manage Partners
               </button>
-              <button onClick={() => navigate('/setup/manage-crop-types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/setup/manage-crop-types")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Manage Crop Types
               </button>
-              <button onClick={() => navigate('/setup/import-boundaries')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/setup/import-boundaries")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Import Boundaries
               </button>
-              <button onClick={() => navigate('/setup/manage-job-types')} className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                onClick={() => navigate("/setup/manage-job-types")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
                 Manage Job Types
               </button>
             </div>
