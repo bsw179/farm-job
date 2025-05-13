@@ -124,6 +124,10 @@ if (loading || !role) return null;
     (data.riceLeveeAcres ? +(data.riceLeveeAcres * 0.5).toFixed(2) : ''),
 }));
 
+console.log(
+  "📦 Running Leaflet setup — L loaded:",
+  typeof window.L !== "undefined"
+);
 
       // 🧠 Add boundary preview map if boundary exists
   setTimeout(() => {
