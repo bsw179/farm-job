@@ -45,6 +45,7 @@ import FieldCostSummary from "../pages/Reports/FieldCostSummary";
 import VendorSummary from "../pages/Reports/VendorSummary";
 import AppHeader from '@/components/AppHeader';
 import ProductUsageReport from "../pages/Reports/ProductUsageReport";
+import JobSummaryReport from "@/pages/reports/JobSummaryReport";
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
@@ -132,6 +133,10 @@ export default function AppLayout() {
             <main className="flex-1 p-4 overflow-y-auto pt-16">
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route
+                  path="/reports/job-summary"
+                  element={<JobSummaryReport />}
+                />
 
                 <Route
                   path="*"

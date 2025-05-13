@@ -44,6 +44,70 @@ export default function JobCard({
       day: "numeric",
     });
   };
+async function handleDownloadPDF(job) {
+  try {
+    
+    const { generateBatchPDF } = await import("@/utils/generatePDF");
+    const fieldRef = doc(db, "fields", job.fieldId);
+    const fieldSnap = await getDoc(fieldRef);
+    const fieldData = fieldSnap.exists() ? fieldSnap.data() : null;
+
+    if (!fieldData) {
+      alert("Field data missing — can't generate PDF.");
+      return;
+    }
+
+    const isLeveeJob =
+      (job.jobType?.name || "").toLowerCase().includes("levee") ||
+      (job.jobType?.name || "").toLowerCase().includes("pack");
+
+    const crop = job.crop || fieldData?.crops?.[job.cropYear]?.crop || "";
+    const isRice = crop.toLowerCase().includes("rice");
+    const isSoy = crop.toLowerCase().includes("soybean");
+
+    let acres = job.drawnAcres ?? job.acres ?? fieldData.gpsAcres ?? 0;
+    if (isLeveeJob) {
+      if (isRice && fieldData.riceLeveeAcres)
+        acres = parseFloat(fieldData.riceLeveeAcres);
+      if (isSoy && fieldData.beanLeveeAcres)
+        acres = parseFloat(fieldData.beanLeveeAcres);
+    }
+
+   const enrichedJob = {
+     ...job,
+     fields: [
+       {
+         id: job.fieldId,
+         fieldName: fieldData.fieldName || "",
+         operator: fieldData.operator || "",
+         landowner: fieldData.landowner || "",
+         operatorExpenseShare: fieldData.operatorExpenseShare ?? 0,
+         landownerExpenseShare: fieldData.landownerExpenseShare ?? 0,
+         acres,
+         imageBase64: null,
+       },
+     ],
+   };
+
+console.log("🧾 Enriched field payload for PDF:", {
+  operator: fieldData.operator,
+  landowner: fieldData.landowner,
+  operatorExpenseShare: fieldData.operatorExpenseShare,
+  landownerExpenseShare: fieldData.landownerExpenseShare,
+});
+
+    const blob = await generateBatchPDF([enrichedJob]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Job_${job.fieldName || job.id}.pdf`;
+    a.click();
+  } catch (err) {
+    console.error("PDF generation failed", err);
+    alert("Failed to generate PDF.");
+  }
+}
+
 
   return (
     <div
@@ -85,60 +149,68 @@ export default function JobCard({
         {/* 🛠 Actions */}
         {role !== "viewer" && (
           <div className="flex gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isFieldJob) {
-                  setShowStatusModal(true);
-                }
-              }}
-            >
-              <span role="img" aria-label="status">
-                📍
-              </span>
-            </Button>
+            <span title="Change Status">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isFieldJob) {
+                    setShowStatusModal(true);
+                  }
+                }}
+              >
+                <span role="img" aria-label="status">
+                  📍
+                </span>
+              </Button>
+            </span>
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onSelect(job); // sets selectedJob
-                window.dispatchEvent(new CustomEvent("open-job-editor")); // trigger modal
-              }}
-            >
-              <Pencil size={16} />
-            </Button>
+            <span title="Edit Job">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onSelect(job);
+                  window.dispatchEvent(new CustomEvent("open-job-editor"));
+                }}
+              >
+                <Pencil size={16} />
+              </Button>
+            </span>
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                const confirmDelete = window.confirm(
-                  `Are you sure you want to delete this job?`
-                );
-                if (confirmDelete) {
-                  onDelete(job.id, isFieldJob);
-                }
-              }}
-            >
-              <Trash2 size={16} />
-            </Button>
+            <span title="Delete Job">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const confirmDelete = window.confirm(
+                    `Are you sure you want to delete this job?`
+                  );
+                  if (confirmDelete) {
+                    onDelete(job.id, isFieldJob);
+                  }
+                }}
+              >
+                <Trash2 size={16} />
+              </Button>
+            </span>
 
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                // Optional: trigger PDF export
-              }}
-            >
-              <FileText size={16} />
-            </Button>
+            <span title="Generate PDF">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadPDF(job);
+                }}
+              >
+                <FileText size={16} />
+              </Button>
+            </span>
           </div>
         )}
       </div>

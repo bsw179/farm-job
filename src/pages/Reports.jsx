@@ -5,6 +5,13 @@ import { Link } from 'react-router-dom';
 export default function Reports() {
 const reports = [
   {
+    title: "Job Summary",
+    path: "/reports/job-summary",
+    description:
+      "Filter jobs by field, type, vendor, operator, and more. Export selected columns to PDF or CSV.",
+    icon: "📋",
+  },
+  {
     title: "Field Cost Summary",
     path: "/reports/field-cost",
     description:
