@@ -10,6 +10,7 @@ import ProductComboBox from "../components/ProductComboBox";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import html2canvas from "html2canvas";
+import { updateDoc } from "firebase/firestore";
 
   const allProducts = [
     { id: "rdup", name: "Roundup", type: "chemical" },
@@ -30,7 +31,8 @@ const [jobType, setJobType] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("Planned");
   const [waterVolume, setWaterVolume] = useState("");
-  const [passes, setPasses] = useState("");
+  const [passes, setPasses] = useState("1");
+
   const [showSeedTreatment, setShowSeedTreatment] = useState(false);
   const [jobTypeOptions, setJobTypeOptions] = useState([]);
   const [showFieldDropdown, setShowFieldDropdown] = useState(false);
@@ -303,6 +305,73 @@ const [jobDate, setJobDate] = useState(() => {
     setSeedTreatmentStatus("none");
   }
 
+  const jobProductsAreDifferent = (current = [], original = []) => {
+    if (current.length !== original.length) return true;
+
+    const normalize = (arr) =>
+      [...arr]
+        .map((p) => ({
+          productId: p.productId || "",
+          rate: Number(p.rate) || 0,
+          unit: p.unit || "",
+          vendor: p.vendor || "",
+        }))
+        .sort((a, b) => a.productId.localeCompare(b.productId));
+
+    const a = normalize(current);
+    const b = normalize(original);
+console.log("🧪 Normalized products comparison:", { a, b });
+console.log("🧪 DIFF CHECK", {
+  current: a,
+  original: b,
+  diffs: a.map((p, i) => ({
+    index: i,
+    diff: {
+      productId: p.productId !== b[i].productId,
+      rate: p.rate !== b[i].rate,
+      unit: p.unit !== b[i].unit,
+      vendor: p.vendor !== b[i].vendor,
+    },
+  })),
+});
+
+    return a.some((p, i) => {
+      const q = b[i];
+      return (
+        p.productId !== q.productId ||
+        p.rate !== q.rate ||
+        p.unit !== q.unit ||
+        p.vendor !== q.vendor
+      );
+    });
+  };
+
+
+const shouldUnbatchSingleFieldEdit = (originalJob, modalState) => {
+
+console.log("🧪 jobType.name check", {
+  original: originalJob.jobType?.name,
+  modal: modalState.jobType?.name,
+});
+
+  const { jobProducts } = modalState;
+
+  if (!originalJob || !modalState || !Array.isArray(originalJob.products))
+    return false;
+
+  return (
+    (modalState.jobType?.name || "") !== (originalJob.jobType?.name || "") ||
+    modalState.jobDate !== originalJob.jobDate ||
+    modalState.status !== originalJob.status ||
+    modalState.vendor !== originalJob.vendor ||
+    modalState.applicator !== originalJob.applicator ||
+    modalState.notes !== originalJob.notes ||
+    modalState.passes !== (originalJob.passes ?? "") ||
+    modalState.waterVolume !== (originalJob.waterVolume ?? "") ||
+    jobProductsAreDifferent(jobProducts, originalJob.products || [])
+  );
+};
+
   async function handleSaveJob() {
     console.log("🧪 Save triggered");
     console.log("📌 selectedFields state at save time:", selectedFields);
@@ -317,6 +386,7 @@ const [jobDate, setJobDate] = useState(() => {
       alert("Missing required info: fields, job type, or date.");
       return;
     }
+    const isBatchEdit = isEditing && initialJobs.length > 1;
 
     const existingBatchTag = initialJobs[0]?.batchTag || null;
     const batchId = existingBatchTag || `batch_${Date.now()}`;
@@ -324,7 +394,6 @@ const [jobDate, setJobDate] = useState(() => {
     const cropYear = 2025; // swap if dynamic later
 
     const sharedData = {
-      jobType,
       jobDate,
       status,
       vendor,
@@ -357,28 +426,12 @@ const [jobDate, setJobDate] = useState(() => {
       unit: t.unit || "",
       type: "Seed Treatment",
     }));
+const jobProductsSnapshot = [...jobProducts];
 
     const allProducts = [
       ...enrichedProducts,
       ...(seedTreatmentStatus === "separate" ? enrichedTreatments : []),
     ];
-
-    const shouldDetachField = (fieldId) => {
-      const original = initialJobs.find((j) => j.fieldId === fieldId);
-      if (!isEditing || !original) return false;
-
-      const latest = selectedFields.find((f) => f.id === fieldId);
-      if (!latest) return true;
-
-      return (
-        latest.drawnPolygon !== original.drawnPolygon ||
-        JSON.stringify(latest.products || []) !==
-          JSON.stringify(original.products || []) ||
-        latest.notes !== original.notes ||
-        latest.status !== original.status ||
-        latest.jobDate !== original.jobDate
-      );
-    };
 
     for (const field of selectedFields) {
       console.log("💾 Attempting to save:", field.fieldName, field.id);
@@ -402,14 +455,62 @@ const [jobDate, setJobDate] = useState(() => {
           acres = parseFloat(field.beanLeveeAcres);
       }
 
+      const originalJob = initialJobs.find((j) => j.fieldId === field.id);
+      console.log("🔍 Comparing for unbatch:", {
+        fieldId: field.id,
+        originalProducts: originalJob?.products,
+        currentProducts: jobProducts,
+      });
+
+      let shouldUnbatch = false;
+      if (!isBatchEdit && originalJob) {
+ shouldUnbatch = shouldUnbatchSingleFieldEdit(originalJob, {
+   jobType,
+   jobDate,
+   status,
+   vendor,
+   applicator,
+   notes,
+   passes,
+   waterVolume,
+   jobProducts: jobProductsSnapshot,
+ });
+
+
+      }
+
+      if (originalJob?.products) {
+        console.log(
+          "🧪 product diff?",
+          jobProductsAreDifferent(jobProducts, originalJob.products)
+        );
+      }
+console.log("💾 FINAL jobDoc:", {
+  jobId,
+  shouldUnbatch,
+  batchTag: shouldUnbatch ? null : batchId,
+  linkedToJobId: shouldUnbatch ? null : `grouped_${batchId}`,
+});
+
       const jobDoc = {
         ...sharedData,
         jobId,
         id: jobId,
         timestamp: new Date(),
-        isDetachedFromGroup: shouldDetachField(fieldId),
-        batchTag: shouldDetachField(fieldId) ? null : batchId,
-        linkedToJobId: shouldDetachField(fieldId) ? null : `grouped_${batchId}`,
+        jobType,
+
+        ...(shouldUnbatch
+          ? {
+              isDetachedFromGroup: true,
+              batchTag: null,
+              linkedToJobId: null,
+            }
+          : {
+              isDetachedFromGroup: false,
+              batchTag: batchId,
+              linkedToJobId: `grouped_${batchId}`,
+            }),
+
         fieldId,
         fieldName: field.fieldName || "",
         farmName: field.farmName || "",
@@ -443,8 +544,6 @@ const [jobDate, setJobDate] = useState(() => {
             : null,
         products: allProducts,
         createdAt: new Date().toISOString(),
-        linkedToJobId: null,
-        isDetachedFromGroup: isEditing,
       };
 
       try {
@@ -459,7 +558,9 @@ const [jobDate, setJobDate] = useState(() => {
     console.log("🎉 All jobs attempted to save");
     alert("Job(s) saved.");
     onClose();
-    window.location.reload();
+    setTimeout(() => {
+      window.location.reload();
+    }, 25000); // Delay 5 seconds so you can inspect console logs
 
     window.__SAVE_RUNNING__ = false;
 
@@ -516,24 +617,11 @@ const [jobDate, setJobDate] = useState(() => {
 
       const { generateBatchPDF } = await import("../utils/generatePDF");
       const blob = await generateBatchPDF(allJobs);
-    const url = URL.createObjectURL(blob);
-
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-    if (isIOS) {
-      // Open PDF in a new tab so user can use native "share" or "print"
-      window.open(url, "_blank");
-    } else {
-      // Standard download for desktop and Android
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `Job_Batch_${Date.now()}.pdf`;
-      document.body.appendChild(a);
       a.click();
-      a.remove();
-    }
-
     }
   }
 console.log("🔍 jobType", jobType);
@@ -1107,11 +1195,15 @@ console.log("🔍 jobType", jobType);
                         type="text"
                         placeholder="Rate"
                         value={product.rate}
-                        onChange={(e) => {
-                          const updated = [...jobProducts];
-                          updated[index].rate = e.target.value;
-                          setJobProducts(updated);
-                        }}
+                      onChange={(e) => {
+  const updated = [...jobProducts];
+  updated[index] = {
+    ...updated[index],
+    rate: Number(e.target.value) || 0,
+  };
+  setJobProducts(updated);
+}}
+
                         className="border p-2 rounded w-full sm:w-1/2"
                       />
 
