@@ -118,20 +118,15 @@ console.log("🧾 Enriched field payload for PDF:", {
       <div className="flex justify-between items-start">
         <div>
           <div className="text-sm font-semibold text-blue-700 flex items-center gap-1">
-            {job.jobType?.icon ? (
-              <img
-                src={`/src/assets/icons/${job.jobType.icon}.svg`}
-                alt={job.jobType.icon}
-                className="w-12 h-12 inline-block"
-              />
-            ) : (
-              <img
-                src={getJobTypeIcon(getJobTypeName(job))}
-                alt={getJobTypeName(job)}
-                className="w-8 h-8
-               inline-block"
-              />
-            )}
+            <img
+              src={
+                job.jobType?.icon
+                  ? `/icons/${job.jobType.icon}.svg`
+                  : getJobTypeIcon(getJobTypeName(job))
+              }
+              alt={job.jobType?.icon || getJobTypeName(job)}
+              className="w-12 h-12 inline-block"
+            />
 
             {getJobTypeName(job)}
           </div>

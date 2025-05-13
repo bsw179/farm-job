@@ -134,21 +134,28 @@ export default function ManageJobTypes() {
                 {/* Dynamically show icons in the dropdown */}
 {/* Automatically pull icons from assets/icons using import.meta.glob */}
 {(() => {
-  const iconFiles = import.meta.glob('../../assets/icons/*.svg', { eager: true });
-  const iconOptions = Object.keys(iconFiles).map(path => {
-    const label = path.split('/').pop().replace('.svg', '');
-    return { name: label, path };
-  });
+const iconOptions = [
+  "Aerial Spraying.svg",
+  "Ground Spraying.svg",
+  "Drone Spraying.svg",
+  "Fertilizing.svg",
+  "Seeding.svg",
+  "Tillage.svg",
+  "Custom.svg",
+].map((name) => ({ name }));
+
 
   return (
     <select
       className="border p-2 rounded w-full"
       value={form.icon}
-      onChange={e => setForm({ ...form, icon: e.target.value })}
+      onChange={(e) => setForm({ ...form, icon: e.target.value })}
     >
       <option value="">Select Icon</option>
-      {iconOptions.map(opt => (
-        <option key={opt.name} value={opt.name}>{opt.name}</option>
+      {iconOptions.map((opt) => (
+        <option key={opt.name} value={opt.name}>
+          {opt.name.replace(".svg", "")}
+        </option>
       ))}
     </select>
   );
