@@ -45,7 +45,7 @@ import FieldCostSummary from "../pages/Reports/FieldCostSummary";
 import VendorSummary from "../pages/Reports/VendorSummary";
 import AppHeader from '@/components/AppHeader';
 import ProductUsageReport from "../pages/Reports/ProductUsageReport";
-import JobSummaryReport from "@/pages/reports/JobSummaryReport";
+import JobSummaryReport from "../pages/Reports/JobSummaryReport";
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
