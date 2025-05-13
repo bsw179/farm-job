@@ -17,6 +17,7 @@ import { useCropYear } from '../context/CropYearContext';
 import area from '@turf/area';
 import { Pencil, Trash2, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { useRef } from "react";
 
 const updateFieldNameInJobs = async (fieldId, newFieldName) => {
   const q = query(collection(db, 'jobsByField'), where('fieldId', '==', fieldId));
@@ -78,6 +79,7 @@ if (loading || !role) return null;
   const [fieldJobs, setFieldJobs] = useState([]);
   const [cropOptions, setCropOptions] = useState([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const mapRef = useRef(null);
 
 
  useEffect(() => {
@@ -124,14 +126,14 @@ if (loading || !role) return null;
     (data.riceLeveeAcres ? +(data.riceLeveeAcres * 0.5).toFixed(2) : ''),
 }));
 
-console.log(
-  "📦 Running Leaflet setup — L loaded:",
-  typeof window.L !== "undefined"
-);
+
 
       // 🧠 Add boundary preview map if boundary exists
-  setTimeout(() => {
-  requestAnimationFrame(() => {
+const observer = new IntersectionObserver(
+  (entries) => {
+    const entry = entries[0];
+    if (!entry.isIntersecting) return;
+
     if (!data.boundary?.geojson || typeof window.L === "undefined") return;
 
     const raw = data.boundary.geojson;
@@ -140,7 +142,6 @@ console.log(
 
     const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
 
-    // 🧼 DROP THIS RIGHT HERE:
     const existing = L.DomUtil.get("boundary-preview-map");
     if (existing && existing._leaflet_id) {
       existing._leaflet_id = null;
@@ -169,8 +170,19 @@ console.log(
       fillOpacity: 0.4,
     }).addTo(map);
     map.fitBounds(polygon.getBounds(), { padding: [10, 10] });
-  });
-}, 0);
+
+    observer.disconnect();
+  },
+  { threshold: 0.1 }
+);
+
+requestAnimationFrame(() => {
+  if (mapRef.current) {
+    observer.observe(mapRef.current);
+  }
+});
+
+
 
     }
   };
@@ -568,6 +580,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
           <>
             <div
               id="boundary-preview-map"
+              ref={mapRef}
               className="h-52 w-full rounded border"
             />
 
