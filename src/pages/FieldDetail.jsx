@@ -176,11 +176,16 @@ const observer = new IntersectionObserver(
   { threshold: 0.1 }
 );
 
-requestAnimationFrame(() => {
+const waitForMapElement = () => {
   if (mapRef.current) {
     observer.observe(mapRef.current);
+  } else {
+    setTimeout(waitForMapElement, 50);
   }
-});
+};
+
+waitForMapElement();
+
 
 
 
