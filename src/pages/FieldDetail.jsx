@@ -126,38 +126,46 @@ if (loading || !role) return null;
 
 
       // 🧠 Add boundary preview map if boundary exists
-     setTimeout(() => {
-  if (!data.boundary?.geojson || typeof window.L === 'undefined') return;
+  setTimeout(() => {
+  requestAnimationFrame(() => {
+    if (!data.boundary?.geojson || typeof window.L === "undefined") return;
 
-  const raw = data.boundary.geojson;
-  const geo = raw.type === 'Feature' && raw.geometry ? raw.geometry : raw;
-  if (geo?.type !== 'Polygon') return;
+    const raw = data.boundary.geojson;
+    const geo = raw.type === "Feature" && raw.geometry ? raw.geometry : raw;
+    if (geo?.type !== "Polygon") return;
 
-  const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
+    const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
 
-  // 🧼 DROP THIS RIGHT HERE:
-  const existing = L.DomUtil.get('boundary-preview-map');
-  if (existing && existing._leaflet_id) {
-    existing._leaflet_id = null;
-  }
+    // 🧼 DROP THIS RIGHT HERE:
+    const existing = L.DomUtil.get("boundary-preview-map");
+    if (existing && existing._leaflet_id) {
+      existing._leaflet_id = null;
+    }
 
-  const map = L.map('boundary-preview-map', {
-    attributionControl: false,
-    zoomControl: false,
-    dragging: false,
-    scrollWheelZoom: false,
-    doubleClickZoom: false,
-    boxZoom: false,
-    keyboard: false,
+    const map = L.map("boundary-preview-map", {
+      attributionControl: false,
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+    });
+
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        attribution: "Tiles © Esri",
+        maxZoom: 22,
+      }
+    ).addTo(map);
+
+    const polygon = L.polygon(coords, {
+      color: "#2563eb",
+      fillOpacity: 0.4,
+    }).addTo(map);
+    map.fitBounds(polygon.getBounds(), { padding: [10, 10] });
   });
-
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © Esri',
-    maxZoom: 22,
-  }).addTo(map);
-
-  const polygon = L.polygon(coords, { color: '#2563eb', fillOpacity: 0.4 }).addTo(map);
-  map.fitBounds(polygon.getBounds(), { padding: [10, 10] });
 }, 0);
 
     }
