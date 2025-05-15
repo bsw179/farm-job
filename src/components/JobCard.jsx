@@ -356,6 +356,23 @@ console.log("🧾 Enriched field payload for PDF:", {
                                 isDetachedFromGroup: true,
                               });
                               await deleteDoc(groupRef);
+                              // 🔁 Also check if this was the last field-level job still linked
+                              const q = query(
+                                collection(db, "jobsByField"),
+                                where(
+                                  "linkedToJobId",
+                                  "==",
+                                  jobData.linkedToJobId
+                                )
+                              );
+                              const snap = await getDocs(q);
+                              if (snap.size === 1) {
+                                const loneDoc = snap.docs[0];
+                                await updateDoc(loneDoc.ref, {
+                                  linkedToJobId: null,
+                                  isDetachedFromGroup: true,
+                                });
+                              }
                             } else {
                               await setDoc(groupRef, {
                                 ...group,

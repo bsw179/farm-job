@@ -426,7 +426,7 @@ console.log("🧪 jobType.name check", {
       unit: t.unit || "",
       type: "Seed Treatment",
     }));
-const jobProductsSnapshot = [...jobProducts];
+    const jobProductsSnapshot = [...jobProducts];
 
     const allProducts = [
       ...enrichedProducts,
@@ -464,19 +464,17 @@ const jobProductsSnapshot = [...jobProducts];
 
       let shouldUnbatch = false;
       if (!isBatchEdit && originalJob) {
- shouldUnbatch = shouldUnbatchSingleFieldEdit(originalJob, {
-   jobType,
-   jobDate,
-   status,
-   vendor,
-   applicator,
-   notes,
-   passes,
-   waterVolume,
-   jobProducts: jobProductsSnapshot,
- });
-
-
+        shouldUnbatch = shouldUnbatchSingleFieldEdit(originalJob, {
+          jobType,
+          jobDate,
+          status,
+          vendor,
+          applicator,
+          notes,
+          passes,
+          waterVolume,
+          jobProducts: jobProductsSnapshot,
+        });
       }
 
       if (originalJob?.products) {
@@ -485,12 +483,12 @@ const jobProductsSnapshot = [...jobProducts];
           jobProductsAreDifferent(jobProducts, originalJob.products)
         );
       }
-console.log("💾 FINAL jobDoc:", {
-  jobId,
-  shouldUnbatch,
-  batchTag: shouldUnbatch ? null : batchId,
-  linkedToJobId: shouldUnbatch ? null : `grouped_${batchId}`,
-});
+      console.log("💾 FINAL jobDoc:", {
+        jobId,
+        shouldUnbatch,
+        batchTag: shouldUnbatch ? null : batchId,
+        linkedToJobId: shouldUnbatch ? null : `grouped_${batchId}`,
+      });
 
       const jobDoc = {
         ...sharedData,
@@ -560,9 +558,30 @@ console.log("💾 FINAL jobDoc:", {
     onClose();
     setTimeout(() => {
       window.location.reload();
-    }, 25000); // Delay 5 seconds so you can inspect console logs
+    }, 1000); // Delay 5 seconds so you can inspect console logs
 
     window.__SAVE_RUNNING__ = false;
+    // 🧹 Unlink this job if it's now the last one in the group
+    if (
+      isEditing &&
+      initialJobs.length === 1 &&
+      !isBatchEdit &&
+      initialJobs[0].linkedToJobId
+    ) {
+      const loneGroupId = initialJobs[0].linkedToJobId;
+      const q = query(
+        collection(db, "jobsByField"),
+        where("linkedToJobId", "==", loneGroupId)
+      );
+      const snap = await getDocs(q);
+      if (snap.size === 1) {
+        const loneDoc = snap.docs[0];
+        await updateDoc(loneDoc.ref, {
+          linkedToJobId: null,
+          isDetachedFromGroup: true,
+        });
+      }
+    }
 
     resetJobForm();
     if (shouldGeneratePDF) {
