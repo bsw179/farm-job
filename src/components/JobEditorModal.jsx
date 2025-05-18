@@ -558,7 +558,7 @@ console.log("🧪 jobType.name check", {
     onClose();
     setTimeout(() => {
       window.location.reload();
-    }, 1000); // Delay 5 seconds so you can inspect console logs
+    }, 5000); // Delay 5 seconds so you can inspect console logs
 
     window.__SAVE_RUNNING__ = false;
     // 🧹 Unlink this job if it's now the last one in the group
@@ -584,6 +584,8 @@ console.log("🧪 jobType.name check", {
     }
 
     resetJobForm();
+    console.log("📄 Starting PDF generation...");
+
     if (shouldGeneratePDF) {
       const fieldSnapshots = await Promise.all(
         selectedFields.map(async (field) => {
@@ -1214,15 +1216,14 @@ console.log("🔍 jobType", jobType);
                         type="text"
                         placeholder="Rate"
                         value={product.rate}
-                      onChange={(e) => {
-  const updated = [...jobProducts];
-  updated[index] = {
-    ...updated[index],
-    rate: Number(e.target.value) || 0,
-  };
-  setJobProducts(updated);
-}}
-
+                        onChange={(e) => {
+                          const updated = [...jobProducts];
+                          updated[index] = {
+                            ...updated[index],
+                            rate: e.target.value,
+                          };
+                          setJobProducts(updated);
+                        }}
                         className="border p-2 rounded w-full sm:w-1/2"
                       />
 
@@ -1261,18 +1262,20 @@ console.log("🔍 jobType", jobType);
                         {(() => {
                           const type = product.type?.toLowerCase() || "";
 
-                          if (type === "chemical") {
-                            return [
-                              "fl oz/acre",
-                              "pt/acre",
-                              "qt/acre",
-                              "gal/acre",
-                            ].map((u) => (
-                              <option key={u} value={u}>
-                                {u}
-                              </option>
-                            ));
-                          }
+                  if (type === "chemical") {
+                    return [
+                      "fl oz/acre",
+                      "pt/acre",
+                      "qt/acre",
+                      "gal/acre",
+                      "%v/v",
+                    ].map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ));
+                  }
+
 
                           if (type === "fertilizer") {
                             return ["lbs/acre", "tons/acre"].map((u) => (
@@ -1522,30 +1525,42 @@ console.log("🔍 jobType", jobType);
               const unit = p.unit?.toLowerCase() || "";
               const crop = p.crop?.toLowerCase?.() || "";
 
-              const totalAcres = selectedFields.reduce((sum, f) => {
-                const cropName = f.crop || "";
-                if (
-                  jobParent === "levee" ||
-                  jobType?.name?.toLowerCase().includes("levee") ||
-                  jobType?.name?.toLowerCase().includes("pack")
-                ) {
-                  if (
-                    cropName.toLowerCase().includes("rice") &&
-                    f.riceLeveeAcres
-                  )
-                    return sum + parseFloat(f.riceLeveeAcres);
-                  if (
-                    cropName.toLowerCase().includes("soybean") &&
-                    f.beanLeveeAcres
-                  )
-                    return sum + parseFloat(f.beanLeveeAcres);
-                  return sum;
-                }
+        const totalAcres = selectedFields.reduce((sum, f) => {
+          const cropName = f.crop?.toLowerCase?.() || "";
 
-                return sum + (f.drawnAcres ?? f.acres ?? f.gpsAcres ?? 0);
-              }, 0);
+          // ✅ If this is a levee job, use levee acres
+          if (
+            jobType?.name?.toLowerCase().includes("levee") ||
+            jobType?.name?.toLowerCase().includes("pack")
+          ) {
+            if (cropName.includes("rice") && f.riceLeveeAcres) {
+              return sum + parseFloat(f.riceLeveeAcres) || 0;
+            }
+            if (cropName.includes("soybean") && f.beanLeveeAcres) {
+              return sum + parseFloat(f.beanLeveeAcres) || 0;
+            }
+            return sum;
+          }
 
-              const totalAmount = rate * totalAcres;
+          // ✅ Otherwise, use drawnAcres or gpsAcres
+          const raw =
+            f.drawnAcres !== undefined && f.drawnAcres !== null
+              ? f.drawnAcres
+              : f.gpsAcres;
+
+          const parsed = parseFloat(raw);
+          console.log("🌾 FINAL ACRE DEBUG", { raw, parsed });
+          return sum + (isNaN(parsed) ? 0 : parsed);
+        }, 0);
+
+console.log("🔍 RATE DEBUG", {
+  rateRaw: p.rate,
+  rateParsed: parseFloat(p.rate),
+  acres: totalAcres,
+});
+
+              const totalAmount = parseFloat(rate) * totalAcres;
+
               let display = "";
 
               if (["seeds/acre", "population"].includes(unit)) {
@@ -1579,6 +1594,12 @@ console.log("🔍 jobType", jobType);
                 display = `${totalAmount.toFixed(1)} fl oz (${gal.toFixed(
                   2
                 )} gal)`;
+              } else if (unit === "%v/v") {
+                const water = parseFloat(waterVolume) || 0;
+                const ozPerAcre = (rate / 100) * water * 128; // convert % to oz
+                const totalOz = ozPerAcre * totalAcres;
+                const gal = totalOz / 128;
+                display = `${totalOz.toFixed(1)} fl oz (${gal.toFixed(2)} gal)`;
               } else if (unit === "pt/acre") {
                 const gal = totalAmount / 8;
                 display = `${totalAmount.toFixed(1)} pt (${gal.toFixed(

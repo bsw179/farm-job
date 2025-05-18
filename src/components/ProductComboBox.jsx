@@ -4,23 +4,36 @@ function ProductComboBox({ value, onChange, productType, allProducts = [], usedP
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-  const filteredProducts = allProducts
-    .filter(p => !search || p.name?.toLowerCase().includes(search.toLowerCase()))
-.filter(p => {
-  if (!productType) return true;
-  if (productType === 'Seeding') return p.type === 'Seed';
-  if (productType === 'Spraying') return p.type === 'Chemical';
-  if (productType === 'Fertilizing') return p.type === 'Fertilizer';
-  return true;
-})
-    .sort((a, b) => a.name.localeCompare(b.name));
+ const filtered = useMemo(() => {
+console.log(
+  "🧪 Petrichor check:",
+  allProducts.find((p) => (p.name || "").toLowerCase() === "petrichor")
+);
 
-  const used = filteredProducts.filter(p => usedProductIds.includes(p.id));
-  const others = filteredProducts.filter(p => !usedProductIds.includes(p.id));
+   const filteredProducts = allProducts
+     .filter(
+       (p) => !search || p.name?.toLowerCase().includes(search.toLowerCase())
+     )
+     .filter((p) => {
+       if (!productType) return true;
+       if (productType === "Seeding")
+         return (p.type || "").toLowerCase() === "seed";
+       if (productType === "Spraying")
+         return (p.type || "").toLowerCase() === "chemical";
+       if (productType === "Fertilizing")
+         return (p.type || "").toLowerCase() === "fertilizer";
+       return true;
+     })
+     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return { used, others };
-}, [allProducts, productType, usedProductIds, search]);
+   const used = filteredProducts.filter((p) => usedProductIds.includes(p.id));
+   const others = filteredProducts.filter(
+     (p) => !usedProductIds.includes(p.id)
+   );
+
+   return { used, others };
+ }, [allProducts, productType, usedProductIds, search]);
+
 
 // ✅ Add this line!
 const { used, others } = filtered;
