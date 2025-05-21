@@ -6,6 +6,11 @@
 .leaflet-container {
     z-index: 0 !important;
   }
+/* Force Leaflet to fully fill the export container */
+#map-export-area .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+}
 
 @layer base {
   :root {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useMemo } from 'react';
+import { useUser } from "@/context/UserContext";
 
 export default function FieldCostSummary() {
   const [jobsByField, setJobsByField] = useState([]);
@@ -9,6 +10,11 @@ export default function FieldCostSummary() {
   const [jobTypes, setJobTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+const { role, user } = useUser();
+
+if (!user || role === "viewer") {
+  return <div className="p-6 text-red-600 font-semibold">Access denied</div>;
+}
 
   // Fetch jobsByField
  useEffect(() => {

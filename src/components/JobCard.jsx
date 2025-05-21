@@ -139,7 +139,41 @@ console.log("🧾 Enriched field payload for PDF:", {
             <br />
             {formatShortDate(job.jobDate)}
           </div>
+          {job.jobType?.parentName === "Spraying" && job.waterVolume && (
+            <>
+              <br />
+              <span className="text-[10px] text-gray-500">
+                💧 Water Volume: {job.waterVolume} gal/acre
+              </span>
+            </>
+          )}
+
+          {job.jobType?.parentName === "Tillage" && job.passes && (
+            <>
+              <br />
+              <span className="text-[10px] text-gray-500">
+                🚜 Passes: {job.passes}
+              </span>
+            </>
+          )}
         </div>
+        {job.jobType?.parentName === "Spraying" && job.waterVolume && (
+          <>
+            <br />
+            <span className="text-[10px] text-gray-500">
+              💧 Water Volume: {job.waterVolume} gal/acre
+            </span>
+          </>
+        )}
+
+        {job.jobType?.parentName === "Tillage" && job.passes && (
+          <>
+            <br />
+            <span className="text-[10px] text-gray-500">
+              🚜 Passes: {job.passes}
+            </span>
+          </>
+        )}
 
         {/* 🛠 Actions */}
         {role !== "viewer" && (

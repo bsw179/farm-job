@@ -137,15 +137,14 @@ try {
 
   // 🖼️ Modal Layout
   return (
-  <div
-  className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center"
-  onClick={onClose} // ✅ Click outside closes
->
-  <div
-    className="bg-white rounded-lg p-4 w-full max-w-md h-[80vh] overflow-y-auto shadow-xl relative"
-    onClick={(e) => e.stopPropagation()} // ✅ Prevent closing when clicking inside
-  >
-
+    <div
+      className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center"
+      onClick={onClose} // ✅ Click outside closes
+    >
+      <div
+        className="bg-white rounded-lg p-4 w-full max-w-md h-[80vh] overflow-y-auto shadow-xl relative"
+        onClick={(e) => e.stopPropagation()} // ✅ Prevent closing when clicking inside
+      >
         <button
           onClick={onClose}
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -156,17 +155,32 @@ try {
         {/* 📌 Header */}
         <h2 className="text-lg font-semibold mb-2">{getJobTypeName(job)}</h2>
         <p className="text-sm text-gray-600 mb-1">
-  {job.cropYear} • {Array.isArray(job.fields)
-    ? job.fields.map(f => f.fieldName).filter(Boolean).join(', ')
-    : job.fieldName || 'Unnamed Field'}
-</p>
-
+          {job.cropYear} •{" "}
+          {Array.isArray(job.fields)
+            ? job.fields
+                .map((f) => f.fieldName)
+                .filter(Boolean)
+                .join(", ")
+            : job.fieldName || "Unnamed Field"}
+        </p>
 
         {/* 📅 Date + Status */}
         <div className="text-xs text-gray-600 mb-2 space-x-2">
-          {job.jobDate && <span><span className="font-medium">Date:</span> {job.jobDate}</span>}
+          {job.jobDate && (
+            <span>
+              <span className="font-medium">Date:</span> {job.jobDate}
+            </span>
+          )}
+          
           <Badge variant={job.status?.toLowerCase()}>{job.status}</Badge>
         </div>
+        {/* 💧 Water Volume */}
+        {job.jobType?.parentName === "Spraying" && job.waterVolume && (
+          <div className="mb-2 text-sm text-gray-700">
+            <span className="font-medium">Water Volume:</span> {job.waterVolume}{" "}
+            gal/acre
+          </div>
+        )}
 
         {/* 🧪 Products */}
         {job.products?.length > 0 && (
@@ -175,155 +189,196 @@ try {
               <span>Product</span>
               <span>Rate</span>
             </div>
-          {job.products.map((p, i) => (
-  <div
-    key={i}
-    className="border-b py-1 text-sm text-gray-800"
-  >
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-      <span>{p.productName || p.name || '—'}</span>
-      <span>{p.rate || '—'} {p.unit || ''}</span>
-    </div>
-    {p.vendorName && (
-      <div className="text-xs text-gray-500 italic pl-1 sm:pl-0 sm:text-right">
-        Vendor: {p.vendorName}
-      </div>
-    )}
-  </div>
-))}
-
+            {job.products.map((p, i) => (
+              <div key={i} className="border-b py-1 text-sm text-gray-800">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                  <span>{p.productName || p.name || "—"}</span>
+                  <span>
+                    {p.rate || "—"} {p.unit || ""}
+                  </span>
+                </div>
+                {p.vendorName && (
+                  <div className="text-xs text-gray-500 italic pl-1 sm:pl-0 sm:text-right">
+                    Vendor: {p.vendorName}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
         {/* 👷 Vendor / Applicator */}
         {(job.vendor || job.applicator) && (
           <div className="mb-4 text-sm text-gray-700 space-y-1">
-            {job.vendor && <p><span className="font-medium">Vendor:</span> {job.vendor}</p>}
-            {job.applicator && <p><span className="font-medium">Applicator:</span> {job.applicator}</p>}
+            {job.vendor && (
+              <p>
+                <span className="font-medium">Vendor:</span> {job.vendor}
+              </p>
+            )}
+            {job.applicator && (
+              <p>
+                <span className="font-medium">Applicator:</span>{" "}
+                {job.applicator}
+              </p>
+            )}
           </div>
         )}
 
         {/* 📐 Acres + Passes */}
         <div className="text-xs text-gray-600 mb-4 space-y-1">
-         <p>
-  {(() => {
-    const isLeveeJob = (job.jobType?.name || '').toLowerCase().includes('levee') ||
-                       (job.jobType?.name || '').toLowerCase().includes('pack');
+          <p>
+            {(() => {
+              const isLeveeJob =
+                (job.jobType?.name || "").toLowerCase().includes("levee") ||
+                (job.jobType?.name || "").toLowerCase().includes("pack");
 
-    if (isLeveeJob && Array.isArray(job.fields)) {
-      let total = 0;
-      job.fields.forEach(f => {
-        const crop = f.crop || f.crops?.[job.cropYear]?.crop || '';
-        if (crop.includes('Rice')) total += parseFloat(f.riceLeveeAcres || 0);
-        else if (crop.includes('Soybean')) total += parseFloat(f.beanLeveeAcres || 0);
-      });
-      return `${total.toFixed(2)} acres (Levee)`;
-    }
+              if (isLeveeJob && Array.isArray(job.fields)) {
+                let total = 0;
+                job.fields.forEach((f) => {
+                  const crop = f.crop || f.crops?.[job.cropYear]?.crop || "";
+                  if (crop.includes("Rice"))
+                    total += parseFloat(f.riceLeveeAcres || 0);
+                  else if (crop.includes("Soybean"))
+                    total += parseFloat(f.beanLeveeAcres || 0);
+                });
+                return `${total.toFixed(2)} acres (Levee)`;
+              }
 
-    if (Array.isArray(job.fields)) {
-      const total = job.fields.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0);
-      return `${total.toFixed(2)} acres`;
-    }
+              if (Array.isArray(job.fields)) {
+                const total = job.fields.reduce(
+                  (sum, f) => sum + (parseFloat(f.acres) || 0),
+                  0
+                );
+                return `${total.toFixed(2)} acres`;
+              }
 
-    return `${job.acres ?? job.drawnAcres ?? '—'} acres`;
-  })()}
-</p>
+              return `${job.acres ?? job.drawnAcres ?? "—"} acres`;
+            })()}
+          </p>
 
-
-          {job.jobType?.parentName === 'Tillage' && job.passes && (
+          {job.jobType?.parentName === "Tillage" && job.passes && (
             <p>Passes: {job.passes}</p>
           )}
         </div>
 
         {/* 🗺️ Map */}
-       <div className="mt-4">
-  {(() => {
-    const cleanedFieldBoundaries = fieldBoundaries.filter(b => b?.type === 'Polygon' && Array.isArray(b.coordinates));
-    const cleanedParsedPolygons = parsedPolygons.filter(p => p?.type === 'Polygon' && Array.isArray(p.coordinates));
+        <div className="mt-4">
+          {(() => {
+            const cleanedFieldBoundaries = fieldBoundaries.filter(
+              (b) => b?.type === "Polygon" && Array.isArray(b.coordinates)
+            );
+            const cleanedParsedPolygons = parsedPolygons.filter(
+              (p) => p?.type === "Polygon" && Array.isArray(p.coordinates)
+            );
 
-    return (cleanedFieldBoundaries.length > 0 || cleanedParsedPolygons.length > 0)
-      ? renderBoundarySVG(cleanedFieldBoundaries, cleanedParsedPolygons)
-      : <div className="text-gray-400 text-sm text-center">No map available</div>;
-  })()}
-</div>
-
+            return cleanedFieldBoundaries.length > 0 ||
+              cleanedParsedPolygons.length > 0 ? (
+              renderBoundarySVG(cleanedFieldBoundaries, cleanedParsedPolygons)
+            ) : (
+              <div className="text-gray-400 text-sm text-center">
+                No map available
+              </div>
+            );
+          })()}
+        </div>
 
         {/* 📝 Notes */}
         <div className="mt-4">
           <label className="block text-sm font-medium mb-1">Notes</label>
           <div className="text-sm text-gray-700 whitespace-pre-line border border-gray-200 rounded p-2 bg-gray-50">
-            {job.notes || '—'}
+            {job.notes || "—"}
           </div>
         </div>
 
         {/* 📦 Product Totals */}
-       {job.products?.length > 0 && (
-  <div className="mt-6 border-t pt-4">
-    <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
-    {job.products.map((p, i) => {
-      const rate = parseFloat(p.rate);
-      const unit = p.unit?.toLowerCase() || '';
-      const crop = p.crop?.toLowerCase?.() || '';
-      const type = p.type?.toLowerCase?.() || '';
-      const acres = Array.isArray(job.fields)
-        ? job.fields.reduce((sum, f) => sum + (parseFloat(f.acres) || 0), 0)
-        : (job.acres || job.drawnAcres || 0);
+        {job.products?.length > 0 && (
+          <div className="mt-6 border-t pt-4">
+            <h4 className="font-semibold text-sm mb-2">Product Totals</h4>
+            {job.products.map((p, i) => {
+              const rate = parseFloat(p.rate);
+              const unit = p.unit?.toLowerCase() || "";
+              const crop = p.crop?.toLowerCase?.() || "";
+              const type = p.type?.toLowerCase?.() || "";
+              const acres = Array.isArray(job.fields)
+                ? job.fields.reduce(
+                    (sum, f) => sum + (parseFloat(f.acres) || 0),
+                    0
+                  )
+                : job.acres || job.drawnAcres || 0;
 
-      const totalAmount = rate * acres;
-      let display = '';
+              const totalAmount = rate * acres;
+              let display = "";
 
-      if (type === 'seed treatment' && ['units', 'bushels'].includes(unit)) {
-        display = `${rate} ${unit} (matched to seed)`;
-      } else if (type === 'seed' && unit === 'lbs/acre') {
-        const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-        const bushels = totalAmount / lbsPerBushel;
-        display = `${bushels.toFixed(1)} bushels`;
-      } else if (unit === 'lbs/acre') {
-  if (type === 'seed') {
-    const lbsPerBushel = crop.includes('rice') ? 45 : crop.includes('soybean') ? 60 : 50;
-    const bushels = totalAmount / lbsPerBushel;
-    display = `${bushels.toFixed(1)} bushels`;
-  } else {
-    const tons = totalAmount / 2000;
-    display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(2)} tons)`;
-  }
-}
- else if (['seeds/acre', 'population'].includes(unit)) {
-        const seedsPerUnit = crop.includes('rice') ? 900000 : crop.includes('soybean') ? 140000 : 1000000;
-        const totalSeeds = rate * acres;
-        const units = totalSeeds / seedsPerUnit;
-        display = `${units.toFixed(1)} units`;
-      } else if (['fl oz/acre', 'oz/acre'].includes(unit)) {
-        const gal = totalAmount / 128;
-        display = `${gal.toFixed(2)} gallons`;
-      } else if (unit === 'pt/acre') {
-        const gal = totalAmount / 8;
-        display = `${gal.toFixed(2)} gallons`;
-      } else if (unit === 'qt/acre') {
-        const gal = totalAmount / 4;
-        display = `${gal.toFixed(2)} gallons`;
-      } else if (unit === 'oz dry/acre') {
-        const lbs = totalAmount / 16;
-        display = `${lbs.toFixed(2)} lbs`;
-      } else if (unit === '%v/v') {
-        const water = parseFloat(job.waterVolume || 0);
-        const gal = (rate / 100) * water * acres;
-        display = `${gal.toFixed(2)} gallons`;
-      } else if (unit === 'tons/acre') {
-        display = `${totalAmount.toFixed(2)} tons`;
-      } else {
-        display = `${totalAmount.toFixed(1)} ${unit.replace('/acre', '').trim()}`;
-      }
+              if (
+                type === "seed treatment" &&
+                ["units", "bushels"].includes(unit)
+              ) {
+                display = `${rate} ${unit} (matched to seed)`;
+              } else if (type === "seed" && unit === "lbs/acre") {
+                const lbsPerBushel = crop.includes("rice")
+                  ? 45
+                  : crop.includes("soybean")
+                  ? 60
+                  : 50;
+                const bushels = totalAmount / lbsPerBushel;
+                display = `${bushels.toFixed(1)} bushels`;
+              } else if (unit === "lbs/acre") {
+                if (type === "seed") {
+                  const lbsPerBushel = crop.includes("rice")
+                    ? 45
+                    : crop.includes("soybean")
+                    ? 60
+                    : 50;
+                  const bushels = totalAmount / lbsPerBushel;
+                  display = `${bushels.toFixed(1)} bushels`;
+                } else {
+                  const tons = totalAmount / 2000;
+                  display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(
+                    2
+                  )} tons)`;
+                }
+              } else if (["seeds/acre", "population"].includes(unit)) {
+                const seedsPerUnit = crop.includes("rice")
+                  ? 900000
+                  : crop.includes("soybean")
+                  ? 140000
+                  : 1000000;
+                const totalSeeds = rate * acres;
+                const units = totalSeeds / seedsPerUnit;
+                display = `${units.toFixed(1)} units`;
+              } else if (["fl oz/acre", "oz/acre"].includes(unit)) {
+                const gal = totalAmount / 128;
+                display = `${gal.toFixed(2)} gallons`;
+              } else if (unit === "pt/acre") {
+                const gal = totalAmount / 8;
+                display = `${gal.toFixed(2)} gallons`;
+              } else if (unit === "qt/acre") {
+                const gal = totalAmount / 4;
+                display = `${gal.toFixed(2)} gallons`;
+              } else if (unit === "oz dry/acre") {
+                const lbs = totalAmount / 16;
+                display = `${lbs.toFixed(2)} lbs`;
+              } else if (unit === "%v/v") {
+                const water = parseFloat(job.waterVolume || 0);
+                const gal = (rate / 100) * water * acres;
+                display = `${gal.toFixed(2)} gallons`;
+              } else if (unit === "tons/acre") {
+                display = `${totalAmount.toFixed(2)} tons`;
+              } else {
+                display = `${totalAmount.toFixed(1)} ${unit
+                  .replace("/acre", "")
+                  .trim()}`;
+              }
 
-      return (
-        <div key={i} className="text-sm text-gray-700">
-          {p.productName || p.name || 'Unnamed'} → <span className="font-mono">{display}</span>
-        </div>
-      );
-    })}
-  </div>
-)}
-
+              return (
+                <div key={i} className="text-sm text-gray-700">
+                  {p.productName || p.name || "Unnamed"} →{" "}
+                  <span className="font-mono">{display}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

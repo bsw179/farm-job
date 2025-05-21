@@ -2,7 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Dialog } from "@headlessui/react";
 import { X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+  query,
+  where,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/firebase";
 import { v4 as uuidv4 } from "uuid";
 import EditAreaModal from "../components/EditAreaModal";
@@ -10,7 +19,6 @@ import ProductComboBox from "../components/ProductComboBox";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import html2canvas from "html2canvas";
-import { updateDoc } from "firebase/firestore";
 
   const allProducts = [
     { id: "rdup", name: "Roundup", type: "chemical" },
@@ -555,12 +563,8 @@ console.log("🧪 jobType.name check", {
 
     console.log("🎉 All jobs attempted to save");
     alert("Job(s) saved.");
-    onClose();
-    setTimeout(() => {
-      window.location.reload();
-    }, 5000); // Delay 5 seconds so you can inspect console logs
+ 
 
-    window.__SAVE_RUNNING__ = false;
     // 🧹 Unlink this job if it's now the last one in the group
     if (
       isEditing &&
@@ -583,10 +587,20 @@ console.log("🧪 jobType.name check", {
       }
     }
 
-    resetJobForm();
+    
     console.log("📄 Starting PDF generation...");
 
     if (shouldGeneratePDF) {
+      console.log("🧪 Field preview check BEFORE SNAPSHOT:");
+selectedFields.forEach((f) => {
+  const el = document.getElementById(`field-canvas-${f.id}`);
+  console.log(`🔍 fieldId=${f.id}`, {
+    exists: !!el,
+    width: el?.offsetWidth,
+    height: el?.offsetHeight,
+  });
+});
+
       const fieldSnapshots = await Promise.all(
         selectedFields.map(async (field) => {
           const el = document.getElementById(`field-canvas-${field.id}`);
@@ -642,8 +656,13 @@ console.log("🧪 jobType.name check", {
       const a = document.createElement("a");
       a.href = url;
       a.download = `Job_Batch_${Date.now()}.pdf`;
-      a.click();
-    }
+      a.click(); }
+          onClose();
+          resetJobForm();
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+          window.__SAVE_RUNNING__ = false;
   }
 console.log("🔍 jobType", jobType);
 

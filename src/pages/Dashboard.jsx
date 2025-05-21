@@ -8,66 +8,57 @@ import {
   Activity
 } from 'lucide-react';
 import { CalendarDays } from 'lucide-react';
+import { useUser } from "@/context/UserContext";
+import { useState } from "react";
+import JobEditorModal from "@/components/JobEditorModal";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { role } = useUser();
+
+  const [showJobModal, setShowJobModal] = useState(false);
 
   const cards = [
     {
-      title: 'Fields',
+      title: "Fields",
       icon: <MapPin className="w-6 h-6 text-blue-600" />,
-      onClick: () => navigate('/fields'),
+      onClick: () => navigate("/fields"),
     },
     {
-      title: 'Jobs',
+      title: "Jobs",
       icon: <ClipboardList className="w-6 h-6 text-green-600" />,
-      onClick: () => navigate('/jobs'),
+      onClick: () => navigate("/jobs"),
     },
-  {
-  title: 'Create Job',
-  icon: <PlusSquare className="w-6 h-6 text-indigo-600" />,
-  onClick: () => navigate('/jobs/summary', {
-    state: {
-      cropYear: new Date().getFullYear(),
-      selectedFields: [],
-      isEditing: false,
-    }
-  }),
-},
-
+    role !== "viewer" && {
+      title: "Create Job",
+      icon: <PlusSquare className="w-6 h-6 text-indigo-600" />,
+      onClick: () => setShowJobModal(true),
+    },
     {
-      title: 'Reports',
+      title: "Reports",
       icon: <BarChart2 className="w-6 h-6 text-purple-600" />,
-      onClick: () => navigate('/reports'),
+      onClick: () => navigate("/reports"),
     },
     {
-      title: 'Field Metrics',
+      title: "Field Metrics",
       icon: <Activity className="w-6 h-6 text-red-600" />,
-      onClick: () => navigate('/metrics'),
+      onClick: () => navigate("/metrics"),
     },
     {
-  title: 'Calendar',
-icon: <CalendarDays className="w-6 h-6 text-teal-600" />,
-  onClick: () => navigate('/calendar'),
-},
-{
-  title: 'Crop Maps',
-  icon: <MapPin className="w-6 h-6 text-yellow-600" />, // or swap icon if you'd rather
-  onClick: () => navigate('/crop-maps'),
-},
-{
-  title: 'Rainfall',
-  icon: <Activity className="w-6 h-6 text-sky-600" />,
-  onClick: () => navigate('/rainfall'),
-},
+      title: "Calendar",
+      icon: <CalendarDays className="w-6 h-6 text-teal-600" />,
+      onClick: () => navigate("/calendar"),
+    },
+    {
+      title: "Crop Maps",
+      icon: <MapPin className="w-6 h-6 text-yellow-600" />,
+      onClick: () => navigate("/crop-maps"),
+    },
 
-  ];
+  ].filter(Boolean); // removes false items like Create Job for viewers
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      {/* Room for stats/widgets later */}
-      {/* <div>Future stats/graphs here</div> */}
-
       <h1 className="text-2xl font-bold">📊 Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -82,6 +73,15 @@ icon: <CalendarDays className="w-6 h-6 text-teal-600" />,
           </div>
         ))}
       </div>
+
+      {showJobModal && (
+        <JobEditorModal
+          isOpen={showJobModal}
+          onClose={() => setShowJobModal(false)}
+          initialJobs={[]}
+        />
+      )}
     </div>
   );
 }
+

@@ -1,13 +1,13 @@
-import React, { useContext, useRef, useEffect, useState } from 'react';
-import { CropYearContext } from '../context/CropYearContext';
-import { useUser } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import React, { useContext, useRef, useEffect, useState } from "react";
+import { CropYearContext } from "../context/CropYearContext";
+import { useUser } from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 
 export default function AppHeader() {
   const { cropYear, setCropYear } = useContext(CropYearContext);
-  const { user } = useUser();
+  const { user, role } = useUser();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -15,7 +15,7 @@ export default function AppHeader() {
   const initials =
     user?.firstName && user?.lastName
       ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-      : user?.email?.slice(0, 2).toUpperCase() || '??';
+      : user?.email?.slice(0, 2).toUpperCase() || "??";
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -23,8 +23,8 @@ export default function AppHeader() {
         setShowMenu(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -53,6 +53,7 @@ export default function AppHeader() {
 
       {/* Year + User */}
       <div className="flex items-center gap-4">
+        {user && (
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCropYear((y) => y - 1)}
@@ -68,7 +69,7 @@ export default function AppHeader() {
             ➡
           </button>
         </div>
-
+        )}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowMenu((prev) => !prev)}
@@ -77,7 +78,7 @@ export default function AppHeader() {
             {initials}
           </button>
 
-          {showMenu && (
+          {user && showMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white border shadow rounded text-sm z-50 text-gray-800">
               <div className="px-4 py-2 border-b font-semibold">
                 User Profile
@@ -88,18 +89,23 @@ export default function AppHeader() {
               >
                 Account Settings
               </button>
-              <button
-                onClick={() => navigate("/manage-users")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Manage Users
-              </button>
-              <button
-                onClick={() => navigate("/admin-tools")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Admin Tools
-              </button>
+
+              {role && role !== "viewer" && (
+                <>
+                  <button
+                    onClick={() => navigate("/manage-users")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Manage Users
+                  </button>
+                  <button
+                    onClick={() => navigate("/admin-tools")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Admin Tools
+                  </button>
+                </>
+              )}
 
               <button
                 onClick={() => {
@@ -113,37 +119,41 @@ export default function AppHeader() {
                 Logout
               </button>
 
-              <div className="px-4 py-2 border-t font-semibold">Setup</div>
-              <button
-                onClick={() => navigate("/products")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Manage Products
-              </button>
-              <button
-                onClick={() => navigate("/manage-partners")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Manage Partners
-              </button>
-              <button
-                onClick={() => navigate("/setup/manage-crop-types")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Manage Crop Types
-              </button>
-              <button
-                onClick={() => navigate("/setup/import-boundaries")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Import Boundaries
-              </button>
-              <button
-                onClick={() => navigate("/setup/manage-job-types")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Manage Job Types
-              </button>
+              {role !== "viewer" && (
+                <>
+                  <div className="px-4 py-2 border-t font-semibold">Setup</div>
+                  <button
+                    onClick={() => navigate("/products")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Manage Products
+                  </button>
+                  <button
+                    onClick={() => navigate("/manage-partners")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Manage Partners
+                  </button>
+                  <button
+                    onClick={() => navigate("/setup/manage-crop-types")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Manage Crop Types
+                  </button>
+                  <button
+                    onClick={() => navigate("/setup/import-boundaries")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Import Boundaries
+                  </button>
+                  <button
+                    onClick={() => navigate("/setup/manage-job-types")}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Manage Job Types
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

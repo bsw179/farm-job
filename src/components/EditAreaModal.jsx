@@ -235,7 +235,7 @@ if (drawnPolygon && layers.current.length > 0) {
 
 onSavePolygon({
   ...field,
-  drawnPolygon: drawnPolygon || null,
+  drawnPolygon: drawnPolygon ? JSON.stringify(drawnPolygon) : null,
   drawnAcres: drawnPolygon ? parseFloat(drawnAcres) : null,
 });
 
