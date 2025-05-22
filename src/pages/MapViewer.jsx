@@ -706,7 +706,7 @@ useEffect(() => {
           wheelPxPerZoomLevel={500}
           style={{
             width: "100%",
-            height: isExportMode ? "880px" : "500px",
+       height: isExportMode ? "880px" : "calc(100vh - 220px)",
             minHeight: "300px",
             margin: "0 auto",
           }}
