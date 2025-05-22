@@ -695,7 +695,7 @@ useEffect(() => {
           "w-full": !isExportMode,
         })}
       >
-        <div className="w-full max-w-screen-xl mx-auto px-4"></div>
+
         <div className={clsx({
   "w-full h-[880px]": isExportMode,
   "w-full h-[500px]": !isExportMode,
