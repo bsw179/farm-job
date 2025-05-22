@@ -46,6 +46,7 @@ import VendorSummary from "../pages/Reports/VendorSummary";
 import AppHeader from '@/components/AppHeader';
 import ProductUsageReport from "../pages/Reports/ProductUsageReport";
 import JobSummaryReport from "../pages/Reports/JobSummaryReport";
+import CropInsuranceReport from "../pages/Reports/CropInsuranceReport";
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
@@ -182,6 +183,14 @@ export default function AppLayout() {
                           element={
                             <ProtectedRoute path="/map-viewer">
                               <MapViewer />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/reports/crop-insurance"
+                          element={
+                            <ProtectedRoute path="/reports/crop-insurance">
+                              <CropInsuranceReport />
                             </ProtectedRoute>
                           }
                         />

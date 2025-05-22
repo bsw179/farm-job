@@ -233,7 +233,28 @@ waitForMapElement();
   
 
   const handleUpdate = async () => {
-    const clean = { ...updatedField };
+    const clean = JSON.parse(JSON.stringify(updatedField)); // Deep clone to retain nested values
+    // ✅ Auto-default to completed + planted if planting job exists
+    if (clean.crops?.[cropYear]) {
+      const cropEntry = clean.crops[cropYear];
+      const plantingJobExists = fieldJobs.some(
+        (job) =>
+          job.cropYear === cropYear &&
+          job.jobType?.parentName === "Seeding" &&
+          job.jobDate
+      );
+
+      if (cropEntry.isCompleted === undefined && plantingJobExists) {
+        cropEntry.isCompleted = true;
+        cropEntry.outcome = "planted";
+      }
+
+      // ❌ Validate: outcome must be selected if marked complete
+      if (cropEntry.isCompleted && !cropEntry.outcome) {
+        alert("Please select an outcome before saving.");
+        return;
+      }
+    }
 
     // 🧠 Auto-fill bean levee acres if blank
     if (
@@ -513,9 +534,115 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                       ))}
                   </select>
                 )}
+
+              {/* ✅ Mark as Completed */}
+              <div className="flex items-center gap-2 mt-4">
+                <input
+                  type="checkbox"
+                  checked={updatedField.crops?.[cropYear]?.isCompleted || false}
+                  onChange={(e) =>
+                    setUpdatedField((prev) => ({
+                      ...prev,
+                      crops: {
+                        ...prev.crops,
+                        [cropYear]: {
+                          ...prev.crops?.[cropYear],
+                          isCompleted: e.target.checked,
+                        },
+                      },
+                    }))
+                  }
+                />
+                <label className="text-sm text-gray-700">
+                  Mark as Completed
+                </label>
+              </div>
+
+              {/* ✅ Outcome dropdown */}
+              {updatedField.crops?.[cropYear]?.isCompleted && (
+                <div className="mt-2">
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Outcome
+                  </label>
+                  <select
+                    className="border p-2 rounded w-full"
+                    value={updatedField.crops?.[cropYear]?.outcome || ""}
+                    onChange={(e) =>
+                      setUpdatedField((prev) => ({
+                        ...prev,
+                        crops: {
+                          ...prev.crops,
+                          [cropYear]: {
+                            ...prev.crops?.[cropYear],
+                            outcome: e.target.value,
+                          },
+                        },
+                      }))
+                    }
+                  >
+                    <option value="">Select outcome</option>
+                    <option value="planted">Planted</option>
+                    <option value="prevented">Prevented Planting</option>
+                    <option value="fallow">Fallow / Idle</option>
+                  </select>
+                </div>
+              )}
             </>
           ) : (
             <div className="col-span-2 space-y-1">
+              {(() => {
+                const cropData = field.crops?.[cropYear] || {};
+                const outcome = cropData.outcome;
+                const isCompleted = cropData.isCompleted;
+
+                const plantingJobs = fieldJobs
+                  .filter(
+                    (job) =>
+                      job.cropYear === cropYear &&
+                      job.jobType?.parentName === "Seeding" &&
+                      job.jobDate
+                  )
+                  .sort((a, b) => new Date(a.jobDate) - new Date(b.jobDate));
+
+                const plantingDates = [
+                  ...new Set(
+                    plantingJobs.map((job) =>
+                      new Date(job.jobDate).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    )
+                  ),
+                ];
+
+                let statusText = "Assigned";
+                let statusColor = "text-yellow-600";
+
+                if (isCompleted) {
+                  statusText = "Completed";
+                  if (outcome === "planted") statusText += " (Planted)";
+                  else if (outcome === "fallow") statusText += " (Fallow)";
+                  else if (outcome === "prevented")
+                    statusText += " (Prevented Planting)";
+                  statusColor = "text-green-700";
+                }
+
+                return (
+                  <>
+                    <div>
+                      Status:{" "}
+                      <span className={`font-semibold ${statusColor}`}>
+                        {statusText}
+                      </span>
+                    </div>
+
+                    {outcome === "planted" && plantingDates.length > 0 && (
+                      <div>Planted: {plantingDates.join(", ")}</div>
+                    )}
+                  </>
+                );
+              })()}
+
               <div className="font-medium">Crop: {crop || "—"}</div>
               {crop === "Rice" && (
                 <div className="text-sm text-gray-600">

@@ -17,6 +17,8 @@ export default function JobSummaryReport() {
   const [filterOptions, setFilterOptions] = useState({});
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [sortKey, setSortKey] = useState("Date");
+  const [sortOrder, setSortOrder] = useState("asc");
 
 const columnOptions = [
   "Field",
@@ -47,6 +49,8 @@ const exportPDF = async () => {
 
   const imgWidth = pageWidth - 40;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  const [sortKey, setSortKey] = useState("Date");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   let y = 20;
 
@@ -187,123 +191,173 @@ const exportPDF = async () => {
           </p>
         ) : (
           <div>
+            <div className="flex flex-wrap items-center gap-4 mb-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Sort By
+                </label>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value="Date">Date</option>
+                  <option value="Farm">Farm</option>
+                  <option value="Field">Field</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Order
+                </label>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </div>
+            </div>
+
             <p className="text-sm text-gray-500 mb-2">
               Showing {filteredJobs.length} results
             </p>
             <div className="overflow-auto border rounded">
               <div id="reportTable">
-  <table className="min-w-full text-sm">
-
-                <thead className="bg-gray-100 text-left">
-                  <tr>
-                    {selectedColumns.map((col) => (
-                      <th key={col} className="p-2 font-medium">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredJobs.map((job) => (
-                    <tr key={job.id} className="border-t">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-100 text-left">
+                    <tr>
                       {selectedColumns.map((col) => (
-                        <td key={col} className="p-2">
-                          {(() => {
-                            switch (col) {
-                              case "Field":
-                                return job.fieldName;
-                              case "Farm":
-                                return job.farmName;
-                              case "Crop":
-                                return job.crop;
-                              case "Date":
-                                return job.jobDate;
-
-                              case "Acres":
-                                return job.acres;
-                              case "Job Type":
-                                return job.jobType?.name;
-                              case "Input":
-                                return (
-                                  <div className="whitespace-pre-line">
-                                    {(job.products || [])
-                                      .map((p) => `${p.productName || "—"}`)
-                                      .join("\n")}
-                                  </div>
-                                );
-
-                              case "Rate":
-                                return (
-                                  <div className="whitespace-pre-line">
-                                    {(job.products || [])
-                                      .map(
-                                        (p) =>
-                                          `${p.rate ?? "—"} ${p.unit || ""}`
-                                      )
-                                      .join("\n")}
-                                  </div>
-                                );
-
-                              case "Total Applied":
-                                return (
-                                  <div className="whitespace-pre-line">
-                                    {(job.products || [])
-                                      .map((p) => {
-                                        const rawTotal =
-                                          (p.rate ?? 0) * (job.acres || 0);
-                                        const isSeed =
-                                          p.unit?.includes("seeds") ||
-                                          p.unit?.includes("population");
-                                        let final = rawTotal;
-                                        let suffix =
-                                          p.unit?.split("/")?.[0] || "";
-
-                                        if (isSeed) {
-                                          const crop =
-                                            p.crop?.toLowerCase?.() ||
-                                            job.crop?.toLowerCase?.() ||
-                                            "";
-                                          const seedsPerUnit = crop.includes(
-                                            "rice"
-                                          )
-                                            ? 900000
-                                            : crop.includes("soy")
-                                            ? 140000
-                                            : null;
-
-                                          if (seedsPerUnit) {
-                                            final = rawTotal / seedsPerUnit;
-                                            suffix = "units";
-                                          }
-                                        }
-
-                                        return `${final.toFixed(2)} ${suffix}`;
-                                      })
-                                      .join("\n")}
-                                  </div>
-                                );
-
-                              case "Vendor":
-                                return (job.products || [])
-                                  .map((p) => p.vendor)
-                                  .join(", ");
-                              case "Operator":
-                                return job.operator;
-                              case "Landowner":
-                                return job.landowner;
-                              default:
-                                return "";
-                            }
-                          })()}
-                        </td>
+                        <th key={col} className="p-2 font-medium">
+                          {col}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-</div>
+                  </thead>
+                  <tbody>
+                    {[...filteredJobs]
+                      .sort((a, b) => {
+                        let valA, valB;
 
+                        switch (sortKey) {
+                          case "Date":
+                            valA = new Date(a.jobDate);
+                            valB = new Date(b.jobDate);
+                            break;
+                          case "Farm":
+                            valA = a.farmName || "";
+                            valB = b.farmName || "";
+                            break;
+                          case "Field":
+                            valA = a.fieldName || "";
+                            valB = b.fieldName || "";
+                            break;
+                          default:
+                            return 0;
+                        }
+
+                        if (sortOrder === "asc") return valA > valB ? 1 : -1;
+                        if (sortOrder === "desc") return valA < valB ? 1 : -1;
+                        return 0;
+                      })
+                      .map((job) => (
+                        <tr key={job.id} className="border-t">
+                          {selectedColumns.map((col) => (
+                            <td key={col} className="p-2">
+                              {(() => {
+                                switch (col) {
+                                  case "Field":
+                                    return job.fieldName;
+                                  case "Farm":
+                                    return job.farmName;
+                                  case "Crop":
+                                    return job.crop;
+                                  case "Date":
+                                    return job.jobDate;
+                                  case "Acres":
+                                    return job.acres;
+                                  case "Job Type":
+                                    return job.jobType?.name;
+                                  case "Input":
+                                    return (
+                                      <div className="whitespace-pre-line">
+                                        {(job.products || [])
+                                          .map((p) => `${p.productName || "—"}`)
+                                          .join("\n")}
+                                      </div>
+                                    );
+                                  case "Rate":
+                                    return (
+                                      <div className="whitespace-pre-line">
+                                        {(job.products || [])
+                                          .map(
+                                            (p) =>
+                                              `${p.rate ?? "—"} ${p.unit || ""}`
+                                          )
+                                          .join("\n")}
+                                      </div>
+                                    );
+                                  case "Total Applied":
+                                    return (
+                                      <div className="whitespace-pre-line">
+                                        {(job.products || [])
+                                          .map((p) => {
+                                            const rawTotal =
+                                              (p.rate ?? 0) * (job.acres || 0);
+                                            const isSeed =
+                                              p.unit?.includes("seeds") ||
+                                              p.unit?.includes("population");
+                                            let final = rawTotal;
+                                            let suffix =
+                                              p.unit?.split("/")?.[0] || "";
+
+                                            if (isSeed) {
+                                              const crop =
+                                                p.crop?.toLowerCase?.() ||
+                                                job.crop?.toLowerCase?.() ||
+                                                "";
+                                              const seedsPerUnit =
+                                                crop.includes("rice")
+                                                  ? 900000
+                                                  : crop.includes("soy")
+                                                  ? 140000
+                                                  : null;
+
+                                              if (seedsPerUnit) {
+                                                final = rawTotal / seedsPerUnit;
+                                                suffix = "units";
+                                              }
+                                            }
+
+                                            return `${final.toFixed(
+                                              2
+                                            )} ${suffix}`;
+                                          })
+                                          .join("\n")}
+                                      </div>
+                                    );
+                                  case "Vendor":
+                                    return (job.products || [])
+                                      .map((p) => p.vendor)
+                                      .join(", ");
+                                  case "Operator":
+                                    return job.operator;
+                                  case "Landowner":
+                                    return job.landowner;
+                                  default:
+                                    return "";
+                                }
+                              })()}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
