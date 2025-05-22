@@ -696,10 +696,7 @@ useEffect(() => {
         })}
       >
 
-        <div className={clsx({
-  "w-full h-[880px]": isExportMode,
-  "w-full h-[500px]": !isExportMode,
-})}></div>
+ 
         <MapContainer
           center={[35.5, -91]}
           zoom={12}
