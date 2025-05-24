@@ -23,7 +23,8 @@ export default function Fields() {
   const [filterCrop, setFilterCrop] = useState(localStorage.getItem('fieldsFilter') || 'All');
   const navigate = useNavigate();
   const [cropTypes, setCropTypes] = useState([]);
-const [rain24Data, setRain24Data] = useState({});
+  const [rain24Data, setRain24Data] = useState({});
+  const [allJobs, setAllJobs] = useState([]);
 
 const getRainBadgeColor = (inches) => {
   if (inches >= 1.0) return 'bg-red-100 text-red-700';
@@ -54,7 +55,28 @@ const getRainBadgeColor = (inches) => {
       setFields(data);
     };
     fetchFields();
+    
   }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      const fieldsSnap = await getDocs(collection(db, "fields"));
+      const fieldData = fieldsSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setFields(fieldData);
+
+      const jobsSnap = await getDocs(collection(db, "jobsByField"));
+      const jobData = jobsSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAllJobs(jobData);
+    };
+
+    fetchData();
+  }, []);
+
 useEffect(() => {
   const loadRain24 = async () => {
     const dayAgo = format(subDays(new Date(), 1), 'yyyy-MM-dd');
@@ -333,6 +355,29 @@ useEffect(() => {
                   {filteredFields.map((field) => {
                     const crop = getDisplayCrop(field, cropYear);
                     const icon = getCropIcon(crop);
+  const cropData = field.crops?.[cropYear] || {};
+  const isCompleted = cropData.isCompleted;
+  const outcome = cropData.outcome;
+
+  const plantingJobs = allJobs.filter(
+    (job) =>
+      job.fieldId === field.id &&
+      job.cropYear === cropYear &&
+      job.jobType?.parentName === "Seeding" &&
+      job.jobType?.name !== "Levee Seed and Pack" &&
+      job.jobDate
+  );
+
+  const plantingDates = [
+    ...new Set(
+      plantingJobs.map((job) =>
+        new Date(job.jobDate).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })
+      )
+    ),
+  ];
 
                     return (
                       <div
@@ -342,12 +387,27 @@ useEffect(() => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="font-medium text-sm text-gray-800">
-                         {field.fieldName}
+                            {field.fieldName}
                             <div className="flex items-center gap-2 mt-0.5">
                               <span>
                                 {icon} {crop}
                               </span>
                             </div>
+
+                            {isCompleted && outcome && (
+                              <div className="text-sm text-green-700">
+                                Outcome:{" "}
+                                {outcome.charAt(0).toUpperCase() +
+                                  outcome.slice(1)}
+                              </div>
+                            )}
+
+                            {outcome === "planted" &&
+                              plantingDates.length > 0 && (
+                                <div className="text-sm text-blue-700">
+                                  Planted: {plantingDates.join(", ")}
+                                </div>
+                              )}
                             {rain24Data[field.id] !== undefined && (
                               <div className="mt-1">
                                 <Link

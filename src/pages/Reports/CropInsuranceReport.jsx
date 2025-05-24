@@ -51,37 +51,48 @@ const [exportType, setExportType] = useState("operator"); // or "farm"
 const [selectedValue, setSelectedValue] = useState("");
 
 
-const updateFarmInput = (groupKey, cropKey, field, value) => {
-  setFarmInputs((prev) => {
-    const updated = {
-      ...prev,
-      [groupKey]: {
-        ...prev[groupKey],
-        [cropKey]: {
-          ...prev[groupKey]?.[cropKey],
-          [field]: value,
-        },
-      },
-    };
+const updateFarmInput = (
+  farmNumber,
+  county,
+  operator,
+  cropKey,
+  field,
+  value
+) => {
+ setFarmInputs((prev) => {
+   const groupKey = `${farmNumber}_${county}_${operator}`;
 
-    const docRef = doc(db, "farmInsuranceSettings", `${cropYear}_${groupKey}`);
-    setDoc(docRef, {
-      cropYear,
-      groupKey,
-      crops: updated[groupKey],
-    });
+   const updated = {
+     ...prev,
+     [groupKey]: {
+       ...prev[groupKey],
+       [cropKey]: {
+         ...prev[groupKey]?.[cropKey],
+         [field]: value,
+       },
+     },
+   };
 
-    return updated;
-  });
+   const docRef = doc(db, "farmInsuranceSettings", `${cropYear}_${groupKey}`);
+   setDoc(docRef, {
+     cropYear,
+     groupKey,
+     crops: updated[groupKey],
+   });
+
+   return updated;
+ });
+
 };
 
 
   const saveFarmInputs = async (farmNumber) => {
-    const docRef = doc(
-      db,
-      "farmInsuranceSettings",
-      `${cropYear}_${farmNumber}`
-    );
+ const docRef = doc(
+   db,
+   "farmInsuranceSettings",
+   `${cropYear}_${farmNumber}_${county}_${operator}`
+ );
+
     const data = {
       cropYear,
       farmNumber,
@@ -94,11 +105,14 @@ const updateFarmInput = (groupKey, cropKey, field, value) => {
       const snap = await getDocs(collection(db, "farmInsuranceSettings"));
       const result = {};
 
-      snap.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (data.cropYear !== cropYear) return;
-        result[data.farmNumber] = data.crops || {};
-      });
+  snap.forEach((docSnap) => {
+    const data = docSnap.data();
+    if (data.cropYear !== cropYear) return;
+
+    const fullKey = docSnap.id; // uses ID like 2025_3650_Jackson_TCF
+    result[fullKey] = data.crops || {};
+  });
+
 
       setFarmInputs(result);
     };
@@ -708,7 +722,7 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
 
           return (
             <details
-              key={farmNumber}
+              key={`${group.farmNumber}_${group.county}_${group.operator}`}
               className="mb-6 border rounded-lg bg-white farm-block"
               data-operator={group.operator}
               data-farm={farmNumber}
@@ -723,10 +737,19 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                   {[...new Set(group.fields.map((f) => resolveCropKey(f.crop)))]
                     .filter((cropKey) => cropKey !== "FALLOW")
                     .map((cropKey) => {
-                      const inputs = farmInputs[groupKey]?.[cropKey] || {};
+                      const fullKey = `${cropYear}_${group.farmNumber}_${group.county}_${group.operator}`;
+
+                      const inputs = farmInputs[fullKey]?.[cropKey] || {};
 
                       const aph = inputs.aph || "";
-                      const coverage = inputs.coverage || "";
+                      const avgRentShare = group.fields.length
+                        ? group.fields.reduce(
+                            (sum, f) => sum + (f.rentShare ?? 100),
+                            0
+                          ) / group.fields.length
+                        : 100;
+
+                      const coverage = parseFloat(inputs.coverage);
                       const price = inputs.price || "";
                       const ppFactor = inputs.ppFactor || "";
                       const premium = inputs.premium || "";
@@ -756,7 +779,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   defaultValue={aph}
                                   onBlur={(e) => {
                                     updateFarmInput(
-                                      groupKey,
+                                      group.farmNumber,
+                                      group.county,
+                                      group.operator,
                                       cropKey,
                                       "aph",
                                       parseFloat(e.target.value)
@@ -766,7 +791,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       updateFarmInput(
-                                        groupKey,
+                                        group.farmNumber,
+                                        group.county,
+                                        group.operator,
                                         cropKey,
                                         "aph",
                                         parseFloat(e.target.value)
@@ -811,7 +838,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   defaultValue={coverage}
                                   onBlur={(e) => {
                                     updateFarmInput(
-                                      groupKey,
+                                      group.farmNumber,
+                                      group.county,
+                                      group.operator,
                                       cropKey,
                                       "coverage",
                                       parseFloat(e.target.value)
@@ -821,7 +850,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       updateFarmInput(
-                                        groupKey,
+                                        group.farmNumber,
+                                        group.county,
+                                        group.operator,
                                         cropKey,
                                         "coverage",
                                         parseFloat(e.target.value)
@@ -835,6 +866,7 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   <span className="font-mono">
                                     {coverage || "—"}
                                   </span>
+
                                   <button
                                     className="text-blue-500 hover:underline text-xs"
                                     onClick={() =>
@@ -866,7 +898,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   defaultValue={price}
                                   onBlur={(e) => {
                                     updateFarmInput(
-                                      groupKey,
+                                      group.farmNumber,
+                                      group.county,
+                                      group.operator,
                                       cropKey,
                                       "price",
                                       parseFloat(e.target.value)
@@ -876,7 +910,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       updateFarmInput(
-                                        groupKey,
+                                        group.farmNumber,
+                                        group.county,
+                                        group.operator,
                                         cropKey,
                                         "price",
                                         parseFloat(e.target.value)
@@ -921,7 +957,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   defaultValue={ppFactor}
                                   onBlur={(e) => {
                                     updateFarmInput(
-                                      groupKey,
+                                      group.farmNumber,
+                                      group.county,
+                                      group.operator,
                                       cropKey,
                                       "ppFactor",
                                       parseFloat(e.target.value)
@@ -931,7 +969,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       updateFarmInput(
-                                        groupKey,
+                                        group.farmNumber,
+                                        group.county,
+                                        group.operator,
                                         cropKey,
                                         "ppFactor",
                                         parseFloat(e.target.value)
@@ -996,7 +1036,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   defaultValue={premium}
                                   onBlur={(e) => {
                                     updateFarmInput(
-                                      groupKey,
+                                      group.farmNumber,
+                                      group.county,
+                                      group.operator,
                                       cropKey,
                                       "premium",
                                       parseFloat(e.target.value)
@@ -1006,7 +1048,9 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       updateFarmInput(
-                                        groupKey,
+                                        group.farmNumber,
+                                        group.county,
+                                        group.operator,
                                         cropKey,
                                         "premium",
                                         parseFloat(e.target.value)
@@ -1080,7 +1124,8 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                   {[...new Set(group.fields.map((f) => resolveCropKey(f.crop)))]
                     .filter((cropKey) => cropKey !== "FALLOW")
                     .map((cropKey) => {
-                      const inputs = farmInputs[groupKey]?.[cropKey] || {};
+                      const fullKey = `${cropYear}_${group.farmNumber}_${group.county}_${group.operator}`;
+                      const inputs = farmInputs[fullKey]?.[cropKey] || {};
                       const aph = inputs.aph || 0;
                       const cov = inputs.coverage || 0;
                       const price = inputs.price || 0;
@@ -1114,86 +1159,143 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                           0
                         );
 
+                      const avgRentShare = group.fields.length
+                        ? group.fields.reduce(
+                            (sum, f) => sum + (f.rentShare ?? 100),
+                            0
+                          ) / group.fields.length
+                        : 100;
+
                       const coverage = aph * (cov / 100) * price;
                       const ppPay =
                         effectivePPAcres * coverage * (ppFactor / 100);
                       const premium = effectiveInsuredAcres * premPerAc;
                       const net = ppPay - premium;
 
-                      return (
-                        <div
-                          key={cropKey}
-                          className="border rounded p-3 bg-white shadow-sm"
-                        >
-                          <div className="text-sm font-semibold mb-2">
-                            {cropDisplayName[cropKey]}
+                    return (
+                      <div
+                        key={cropKey}
+                        className="border rounded p-3 bg-white shadow-sm"
+                      >
+                        <div className="text-sm font-semibold mb-2">
+                          {cropDisplayName[cropKey]}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-gray-600">
+                              Insured Acres (Planted + PP):{" "}
+                            </span>
+                            <span className="font-mono">
+                              {formatValue(effectiveInsuredAcres)}{" "}
+                              {effectiveInsuredAcres ? (
+                                <span className="text-gray-500 text-xs">
+                                  (
+                                  {formatValue(
+                                    effectiveInsuredAcres / (avgRentShare / 100)
+                                  )}{" "}
+                                  100%)
+                                </span>
+                              ) : null}
+                            </span>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-gray-600">
-                                Insured Acres (Planted + PP):{" "}
-                              </span>
-                              <span className="font-mono">
-                                {formatValue(effectiveInsuredAcres)}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">
-                                Coverage $/ac:{" "}
-                              </span>
-                              <span className="font-mono">
-                                {formatValue(coverage)}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">
-                                PP Acres Only:{" "}
-                              </span>
-                              <span className="font-mono">
-                                {formatValue(effectivePPAcres)}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">PP $/ac: </span>
-                              <span className="font-mono">
-                                {formatValue(coverage * (ppFactor / 100))}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">
-                                Total PP Payment:{" "}
-                              </span>
-                              <span className="font-mono">
-                                {formatValue(ppPay)}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">
-                                Total Premium:{" "}
-                              </span>
-                              <span className="font-mono">
-                                {formatValue(premium)}
-                              </span>
-                            </div>
-                            <div className="md:col-span-2">
-                              <span className="text-gray-600">
-                                Net Return:{" "}
-                              </span>
-                              <span
-                                className={`font-mono font-bold ${
-                                  net > 0
-                                    ? "text-green-600"
-                                    : net < 0
-                                    ? "text-red-600"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {formatValue(net)}
-                              </span>
-                            </div>
+                          <div>
+                            <span className="text-gray-600">
+                              Coverage $/ac:{" "}
+                            </span>
+                            <span className="font-mono">
+                              {formatValue(coverage * (avgRentShare / 100))}{" "}
+                              {coverage ? (
+                                <span className="text-gray-500 text-xs">
+                                  ({formatValue(coverage)} 100%)
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">
+                              PP Acres Only:{" "}
+                            </span>
+                            <span className="font-mono">
+                              {formatValue(effectivePPAcres)}{" "}
+                              {effectivePPAcres ? (
+                                <span className="text-gray-500 text-xs">
+                                  (
+                                  {formatValue(
+                                    effectivePPAcres / (avgRentShare / 100)
+                                  )}{" "}
+                                  100%)
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">PP $/ac: </span>
+                            <span className="font-mono">
+                              {formatValue(
+                                coverage *
+                                  (ppFactor / 100) *
+                                  (avgRentShare / 100)
+                              )}{" "}
+                              {coverage && ppFactor ? (
+                                <span className="text-gray-500 text-xs">
+                                  ({formatValue(coverage * (ppFactor / 100))}{" "}
+                                  100%)
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">
+                              Total PP Payment:{" "}
+                            </span>
+                            <span className="font-mono">
+                              {formatValue(ppPay)}{" "}
+                              {ppPay ? (
+                                <span className="text-gray-500 text-xs">
+                                  ({formatValue(ppPay / (avgRentShare / 100))}{" "}
+                                  100%)
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">
+                              Total Premium:{" "}
+                            </span>
+                            <span className="font-mono">
+                              {formatValue(premium)}{" "}
+                              {premium ? (
+                                <span className="text-gray-500 text-xs">
+                                  ({formatValue(premium / (avgRentShare / 100))}{" "}
+                                  100%)
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                          <div className="md:col-span-2">
+                            <span className="text-gray-600">Net Return: </span>
+                            <span
+                              className={`font-mono font-bold ${
+                                net > 0
+                                  ? "text-green-600"
+                                  : net < 0
+                                  ? "text-red-600"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              {formatValue(net)}{" "}
+                              {net ? (
+                                <span className="text-gray-500 text-xs font-normal">
+                                  ({formatValue(net / (avgRentShare / 100))}{" "}
+                                  100%)
+                                </span>
+                              ) : null}
+                            </span>
                           </div>
                         </div>
-                      );
+                      </div>
+                    );
+
                     })}
                 </div>
               </div>
