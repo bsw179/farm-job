@@ -159,25 +159,46 @@ const [editPurchase, setEditPurchase] = useState(null);
                   const norm = getNormalizedAmount(p, product);
                   return (
                     <tr key={p.id}>
-                      <td className="border px-2 py-1">{p.date || '—'}</td>
-                      <td className="border px-2 py-1">{product.name || '—'}</td>
-                      <td className="border px-2 py-1">{product.type || '—'}</td>
-                      <td className="border px-2 py-1">{getVendorName(p.vendorId)}</td>
-                      <td className="border px-2 py-1">{p.invoiceId || '—'}</td>
-                      <td className="border px-2 py-1 text-right">{p.amount}</td>
+                      <td className="border px-2 py-1">{p.date || "—"}</td>
+                      <td className="border px-2 py-1">
+                        {product.name || "—"}
+                      </td>
+                      <td className="border px-2 py-1">
+                        {product.type || "—"}
+                      </td>
+                      <td className="border px-2 py-1">
+                        {getVendorName(p.vendorId)}
+                      </td>
+                      <td className="border px-2 py-1">{p.invoice || "—"}</td>
+
+                      <td className="border px-2 py-1 text-right">
+                        {p.amount}
+                      </td>
                       <td className="border px-2 py-1">{p.unit}</td>
-                      <td className="border px-2 py-1 text-right">{norm?.toFixed(2) || '—'}</td>
-                      <td className="border px-2 py-1">{product.unit || '—'}</td>
-                      <td className="border px-2 py-1 text-right">${parseFloat(p.cost || 0).toFixed(2)}</td>
-                      <td className="border px-2 py-1 text-right">{p.rate ? `$${parseFloat(p.rate).toFixed(2)}` : '—'}</td>
-                      <td className="border px-2 py-1">{p.note || ''}</td>
+                      <td className="border px-2 py-1 text-right">
+                        {norm?.toFixed(2) || "—"}
+                      </td>
+                      <td className="border px-2 py-1">
+                        {product.unit || "—"}
+                      </td>
+                      <td className="border px-2 py-1 text-right">
+                        ${parseFloat(p.cost || 0).toFixed(2)}
+                      </td>
+                      <td className="border px-2 py-1 text-right">
+                        {p.amount && p.cost
+                          ? `$${(
+                              parseFloat(p.cost) / parseFloat(p.amount)
+                            ).toFixed(2)}`
+                          : "—"}
+                      </td>
+
+                      <td className="border px-2 py-1">{p.note || ""}</td>
                       <td className="border px-2 py-1 text-center">
                         <button
                           onClick={() => {
-  setEditPurchase(p);
-  setEditModalOpen(true);
-}}
-
+                            setEditPurchase(p);
+                            setEditModalOpen(true);
+                          }}
                           className="text-blue-600 hover:underline text-sm mr-2"
                         >
                           Edit

@@ -69,9 +69,9 @@ const reports = [
   },
   {
     title: "FSA Planting Date Report",
-    path: "/reports/planting-dates",
+    path: "/reports/fsa-planting-date",
     description:
-      "Placeholder for generating FSA-compliant planting date reports.",
+      "FSA-compliant planting date and rent share summary by farm and tract.",
     icon: "🗓️",
   },
 ];

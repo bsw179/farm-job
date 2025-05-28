@@ -1281,19 +1281,21 @@ console.log("🔍 jobType", jobType);
                         {(() => {
                           const type = product.type?.toLowerCase() || "";
 
-                  if (type === "chemical") {
-                    return [
-                      "fl oz/acre",
-                      "pt/acre",
-                      "qt/acre",
-                      "gal/acre",
-                      "%v/v",
-                    ].map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ));
-                  }
+             if (type === "chemical") {
+               return [
+                 "oz dry/acre", // ✅ add this
+                 "fl oz/acre",
+                 "pt/acre",
+                 "qt/acre",
+                 "gal/acre",
+                 "%v/v",
+               ].map((u) => (
+                 <option key={u} value={u}>
+                   {u}
+                 </option>
+               ));
+             }
+
 
 
                           if (type === "fertilizer") {

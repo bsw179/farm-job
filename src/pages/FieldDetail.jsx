@@ -234,6 +234,7 @@ waitForMapElement();
 
   const handleUpdate = async () => {
     const clean = JSON.parse(JSON.stringify(updatedField)); // Deep clone to retain nested values
+
     // ✅ Auto-default to completed + planted if planting job exists
     if (clean.crops?.[cropYear]) {
       const cropEntry = clean.crops[cropYear];
@@ -268,6 +269,11 @@ waitForMapElement();
     // 🚫 Prevent sending geojson if not editing boundary
     if (clean.boundary?.geojson && typeof clean.boundary.geojson === "object") {
       delete clean.boundary;
+    }
+
+    // ✅ Preserve old fields for compatibility, but allow saving landowners[]
+    if (Array.isArray(clean.landowners) && clean.landowners.length > 0) {
+      // Nothing else needed yet
     }
 
     if (isNew) {
@@ -309,6 +315,7 @@ waitForMapElement();
     setUpdatedField(updatedData);
     setEditMode(false);
   };
+
 
 
   const handleCancel = () => {
@@ -466,6 +473,95 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
               )}
             </div>
           ))}
+        {/* ➕ Multi-landowner support */}
+        {editMode && (
+          <div className="bg-white p-3 rounded shadow col-span-2">
+            <label className="block text-xs text-gray-500 mb-2 font-semibold">
+              Landowners & Rent Shares
+            </label>
+
+            {(updatedField.landowners || []).map((entry, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  className="border p-2 rounded w-1/2"
+                  placeholder="Landowner Name"
+                  value={entry.name}
+                  onChange={(e) => {
+                    const copy = [...updatedField.landowners];
+                    copy[index].name = e.target.value;
+                    setUpdatedField({ ...updatedField, landowners: copy });
+                  }}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  className="border p-2 rounded w-1/3"
+                  placeholder="% Share"
+                  value={entry.rentShare}
+                  onChange={(e) => {
+                    const copy = [...updatedField.landowners];
+                    copy[index].rentShare = parseFloat(e.target.value) || 0;
+                    setUpdatedField({ ...updatedField, landowners: copy });
+                  }}
+                />
+                <button
+                  className="text-red-500 font-bold"
+                  onClick={() => {
+                    const copy = [...updatedField.landowners];
+                    copy.splice(index, 1);
+                    setUpdatedField({ ...updatedField, landowners: copy });
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            <button
+              onClick={() => {
+                const current = updatedField.landowners || [];
+                setUpdatedField({
+                  ...updatedField,
+                  landowners: [...current, { name: "", rentShare: 0 }],
+                });
+              }}
+              className="text-sm text-blue-600 underline"
+            >
+              ➕ Add Landowner
+            </button>
+
+            {updatedField.landowners?.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                Total:{" "}
+                {(
+                  (updatedField.operatorRentShare || 0) +
+                  updatedField.landowners.reduce(
+                    (sum, l) => sum + (l.rentShare || 0),
+                    0
+                  )
+                ).toFixed(2)}
+                % (operator + landowners)
+              </p>
+            )}
+          </div>
+        )}
+        {!editMode &&
+          Array.isArray(field.landowners) &&
+          field.landowners.length > 0 && (
+            <div className="bg-white p-3 rounded shadow col-span-2 text-sm">
+              <label className="block text-xs text-gray-500 mb-2 font-semibold">
+                Landowners & Rent Shares
+              </label>
+              <ul className="space-y-1">
+                {field.landowners.map((l, idx) => (
+                  <li key={idx} className="flex justify-between">
+                    <span className="text-gray-800 font-medium">{l.name}</span>
+                    <span className="text-gray-600">{l.rentShare}%</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
       </div>
       {/* Crop Info */}
       <div className="bg-white p-4 rounded shadow col-span-2 mb-6">

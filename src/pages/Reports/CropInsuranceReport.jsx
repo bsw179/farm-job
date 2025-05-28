@@ -7,9 +7,19 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
 import { CropYearContext } from "@/context/CropYearContext";
 import { useContext } from "react";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+
+// tailwind-preserve
+const __pdfExportHack = [
+  "pdf-export",
+  "pdf-export .operator-summary",
+  "pdf-export .farm-block",
+  "pdf-export .font-mono",
+  "pdf-export .text-sm",
+  "pdf-export .text-xs",
+];
 
 const resolveCropKey = (crop = "") => {
   const lower = crop.toLowerCase();
@@ -51,7 +61,7 @@ const [exportType, setExportType] = useState("operator"); // or "farm"
 const [selectedValue, setSelectedValue] = useState("");
 
 
-const updateFarmInput = (
+const updateFarmInput = async (
   farmNumber,
   county,
   operator,
@@ -59,47 +69,36 @@ const updateFarmInput = (
   field,
   value
 ) => {
- setFarmInputs((prev) => {
-   const groupKey = `${farmNumber}_${county}_${operator}`;
+  const groupKey = `${farmNumber}_${county}_${operator}`;
+  const docRef = doc(db, "farmInsuranceSettings", `${cropYear}_${groupKey}`);
 
-   const updated = {
-     ...prev,
-     [groupKey]: {
-       ...prev[groupKey],
-       [cropKey]: {
-         ...prev[groupKey]?.[cropKey],
-         [field]: value,
-       },
-     },
-   };
+  // Get existing data from Firestore
+  const docSnap = await getDoc(docRef);
+  const existingData = docSnap.exists() ? docSnap.data() : {};
 
-   const docRef = doc(db, "farmInsuranceSettings", `${cropYear}_${groupKey}`);
-   setDoc(docRef, {
-     cropYear,
-     groupKey,
-     crops: updated[groupKey],
-   });
+  const previousCrops = existingData.crops || {};
 
-   return updated;
- });
+  const updatedCrops = {
+    ...previousCrops,
+    [cropKey]: {
+      ...previousCrops[cropKey],
+      [field]: value,
+    },
+  };
 
+  await setDoc(docRef, {
+    cropYear,
+    groupKey,
+    crops: updatedCrops,
+  });
+
+  // Update local state too
+  setFarmInputs((prev) => ({
+    ...prev,
+    [groupKey]: updatedCrops,
+  }));
 };
 
-
-  const saveFarmInputs = async (farmNumber) => {
- const docRef = doc(
-   db,
-   "farmInsuranceSettings",
-   `${cropYear}_${farmNumber}_${county}_${operator}`
- );
-
-    const data = {
-      cropYear,
-      farmNumber,
-      crops: farmInputs[farmNumber] || {},
-    };
-    await setDoc(docRef, data);
-  };
   useEffect(() => {
     const fetchSavedFarmInputs = async () => {
       const snap = await getDocs(collection(db, "farmInsuranceSettings"));
@@ -286,6 +285,7 @@ const updateFarmInput = (
 
 const farmOptions = Object.keys(groupedByFarm).sort();
 const operatorOptions = ["TCF", "PCF"];
+
 const handleExportPDF = async () => {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
 
@@ -304,23 +304,28 @@ const handleExportPDF = async () => {
     return false;
   });
 
-  for (let i = 0; i < blocksToExport.length; i++) {
-    const block = blocksToExport[i];
+ document.body.classList.add("pdf-export");
 
-    // ✅ Force open <details> blocks so they are rendered
-    if (block.tagName === "DETAILS") {
-      block.open = true;
-    }
+ for (let i = 0; i < blocksToExport.length; i++) {
+   const block = blocksToExport[i];
 
-    const canvas = await html2canvas(block);
-    const imgData = canvas.toDataURL("image/png");
+   // ✅ Force open <details> blocks so they are rendered
+   if (block.tagName === "DETAILS") {
+     block.open = true;
+   }
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+   const canvas = await html2canvas(block);
+   const imgData = canvas.toDataURL("image/png");
 
-    if (i > 0) pdf.addPage();
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-  }
+   const pdfWidth = pdf.internal.pageSize.getWidth();
+   const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+   if (i > 0) pdf.addPage();
+   pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+ }
+
+ document.body.classList.remove("pdf-export");
+
 
 
   pdf.save(
@@ -754,31 +759,43 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                       const ppFactor = inputs.ppFactor || "";
                       const premium = inputs.premium || "";
 
-                      return (
-                        <div
-                          key={cropKey}
-                          className="border rounded p-3 bg-gray-50"
-                        >
-                          <div className="text-sm font-semibold mb-2">
-                            {cropDisplayName[cropKey]}
-                          </div>
+                    return (
+                      <div
+                        key={cropKey}
+                        className="border rounded p-3 bg-gray-50"
+                      >
+                        <div className="text-sm font-semibold mb-2">
+                          {cropDisplayName[cropKey]}
+                        </div>
 
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm items-end">
-                            {/* APH */}
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                APH
-                              </label>
-                              {editingFarmCell?.groupKey === groupKey &&
-                              editingFarmCell?.cropKey === cropKey &&
-                              editingFarmCell?.field === "aph" ? (
-                                <input
-                                  type="number"
-                                  autoFocus
-                                  className="w-full border rounded px-2 py-1"
-                                  defaultValue={aph}
-                                  onBlur={(e) => {
-                                    updateFarmInput(
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm items-end">
+                          {/* APH */}
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                              APH
+                            </label>
+                            {editingFarmCell?.groupKey === groupKey &&
+                            editingFarmCell?.cropKey === cropKey &&
+                            editingFarmCell?.field === "aph" ? (
+                              <input
+                                type="number"
+                                autoFocus
+                                className="w-full border rounded px-2 py-1"
+                                defaultValue={aph}
+                                onBlur={async (e) => {
+                                  await updateFarmInput(
+                                    group.farmNumber,
+                                    group.county,
+                                    group.operator,
+                                    cropKey,
+                                    "aph",
+                                    parseFloat(e.target.value)
+                                  );
+                                  setEditingFarmCell(null);
+                                }}
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter") {
+                                    await updateFarmInput(
                                       group.farmNumber,
                                       group.county,
                                       group.operator,
@@ -787,57 +804,55 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                       parseFloat(e.target.value)
                                     );
                                     setEditingFarmCell(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      updateFarmInput(
-                                        group.farmNumber,
-                                        group.county,
-                                        group.operator,
-                                        cropKey,
-                                        "aph",
-                                        parseFloat(e.target.value)
-                                      );
-                                      setEditingFarmCell(null);
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1 text-sm text-gray-800">
-                                  <span className="font-mono">
-                                    {aph || "—"}
-                                  </span>
-                                  <button
-                                    className="text-blue-500 hover:underline text-xs"
-                                    onClick={() =>
-                                      setEditingFarmCell({
-                                        groupKey,
-                                        cropKey,
-                                        field: "aph",
-                                      })
-                                    }
-                                  >
-                                    edit
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 text-sm text-gray-800">
+                                <span className="font-mono">{aph || "—"}</span>
+                                <button
+                                  className="text-blue-500 hover:underline text-xs"
+                                  onClick={() =>
+                                    setEditingFarmCell({
+                                      groupKey,
+                                      cropKey,
+                                      field: "aph",
+                                    })
+                                  }
+                                >
+                                  edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
 
-                            {/* Coverage */}
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                % Coverage
-                              </label>
-                              {editingFarmCell?.groupKey === groupKey &&
-                              editingFarmCell?.cropKey === cropKey &&
-                              editingFarmCell?.field === "coverage" ? (
-                                <input
-                                  type="number"
-                                  autoFocus
-                                  className="w-full border rounded px-2 py-1"
-                                  defaultValue={coverage}
-                                  onBlur={(e) => {
-                                    updateFarmInput(
+                          {/* Coverage */}
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                              % Coverage
+                            </label>
+                            {editingFarmCell?.groupKey === groupKey &&
+                            editingFarmCell?.cropKey === cropKey &&
+                            editingFarmCell?.field === "coverage" ? (
+                              <input
+                                type="number"
+                                autoFocus
+                                className="w-full border rounded px-2 py-1"
+                                defaultValue={coverage}
+                                onBlur={async (e) => {
+                                  await updateFarmInput(
+                                    group.farmNumber,
+                                    group.county,
+                                    group.operator,
+                                    cropKey,
+                                    "coverage",
+                                    parseFloat(e.target.value)
+                                  );
+                                  setEditingFarmCell(null);
+                                }}
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter") {
+                                    await updateFarmInput(
                                       group.farmNumber,
                                       group.county,
                                       group.operator,
@@ -846,58 +861,57 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                       parseFloat(e.target.value)
                                     );
                                     setEditingFarmCell(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      updateFarmInput(
-                                        group.farmNumber,
-                                        group.county,
-                                        group.operator,
-                                        cropKey,
-                                        "coverage",
-                                        parseFloat(e.target.value)
-                                      );
-                                      setEditingFarmCell(null);
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1 text-sm text-gray-800">
-                                  <span className="font-mono">
-                                    {coverage || "—"}
-                                  </span>
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 text-sm text-gray-800">
+                                <span className="font-mono">
+                                  {coverage || "—"}
+                                </span>
+                                <button
+                                  className="text-blue-500 hover:underline text-xs"
+                                  onClick={() =>
+                                    setEditingFarmCell({
+                                      groupKey,
+                                      cropKey,
+                                      field: "coverage",
+                                    })
+                                  }
+                                >
+                                  edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
 
-                                  <button
-                                    className="text-blue-500 hover:underline text-xs"
-                                    onClick={() =>
-                                      setEditingFarmCell({
-                                        groupKey,
-                                        cropKey,
-                                        field: "coverage",
-                                      })
-                                    }
-                                  >
-                                    edit
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Price */}
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                Price ($/lb)
-                              </label>
-                              {editingFarmCell?.groupKey === groupKey &&
-                              editingFarmCell?.cropKey === cropKey &&
-                              editingFarmCell?.field === "price" ? (
-                                <input
-                                  type="number"
-                                  autoFocus
-                                  className="w-full border rounded px-2 py-1"
-                                  defaultValue={price}
-                                  onBlur={(e) => {
-                                    updateFarmInput(
+                          {/* Price */}
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Price ($/lb)
+                            </label>
+                            {editingFarmCell?.groupKey === groupKey &&
+                            editingFarmCell?.cropKey === cropKey &&
+                            editingFarmCell?.field === "price" ? (
+                              <input
+                                type="number"
+                                autoFocus
+                                className="w-full border rounded px-2 py-1"
+                                defaultValue={price}
+                                onBlur={async (e) => {
+                                  await updateFarmInput(
+                                    group.farmNumber,
+                                    group.county,
+                                    group.operator,
+                                    cropKey,
+                                    "price",
+                                    parseFloat(e.target.value)
+                                  );
+                                  setEditingFarmCell(null);
+                                }}
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter") {
+                                    await updateFarmInput(
                                       group.farmNumber,
                                       group.county,
                                       group.operator,
@@ -906,57 +920,57 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                       parseFloat(e.target.value)
                                     );
                                     setEditingFarmCell(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      updateFarmInput(
-                                        group.farmNumber,
-                                        group.county,
-                                        group.operator,
-                                        cropKey,
-                                        "price",
-                                        parseFloat(e.target.value)
-                                      );
-                                      setEditingFarmCell(null);
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1 text-sm text-gray-800">
-                                  <span className="font-mono">
-                                    {price || "—"}
-                                  </span>
-                                  <button
-                                    className="text-blue-500 hover:underline text-xs"
-                                    onClick={() =>
-                                      setEditingFarmCell({
-                                        groupKey,
-                                        cropKey,
-                                        field: "price",
-                                      })
-                                    }
-                                  >
-                                    edit
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 text-sm text-gray-800">
+                                <span className="font-mono">
+                                  {price || "—"}
+                                </span>
+                                <button
+                                  className="text-blue-500 hover:underline text-xs"
+                                  onClick={() =>
+                                    setEditingFarmCell({
+                                      groupKey,
+                                      cropKey,
+                                      field: "price",
+                                    })
+                                  }
+                                >
+                                  edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
 
-                            {/* PP Factor */}
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                PP Factor (%)
-                              </label>
-                              {editingFarmCell?.groupKey === groupKey &&
-                              editingFarmCell?.cropKey === cropKey &&
-                              editingFarmCell?.field === "ppFactor" ? (
-                                <input
-                                  type="number"
-                                  autoFocus
-                                  className="w-full border rounded px-2 py-1"
-                                  defaultValue={ppFactor}
-                                  onBlur={(e) => {
-                                    updateFarmInput(
+                          {/* PP Factor */}
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                              PP Factor (%)
+                            </label>
+                            {editingFarmCell?.groupKey === groupKey &&
+                            editingFarmCell?.cropKey === cropKey &&
+                            editingFarmCell?.field === "ppFactor" ? (
+                              <input
+                                type="number"
+                                autoFocus
+                                className="w-full border rounded px-2 py-1"
+                                defaultValue={ppFactor}
+                                onBlur={async (e) => {
+                                  await updateFarmInput(
+                                    group.farmNumber,
+                                    group.county,
+                                    group.operator,
+                                    cropKey,
+                                    "ppFactor",
+                                    parseFloat(e.target.value)
+                                  );
+                                  setEditingFarmCell(null);
+                                }}
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter") {
+                                    await updateFarmInput(
                                       group.farmNumber,
                                       group.county,
                                       group.operator,
@@ -965,77 +979,77 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                       parseFloat(e.target.value)
                                     );
                                     setEditingFarmCell(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      updateFarmInput(
-                                        group.farmNumber,
-                                        group.county,
-                                        group.operator,
-                                        cropKey,
-                                        "ppFactor",
-                                        parseFloat(e.target.value)
-                                      );
-                                      setEditingFarmCell(null);
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1 text-sm text-gray-800">
-                                  <span className="font-mono">
-                                    {ppFactor || "—"}
-                                  </span>
-                                  <button
-                                    className="text-blue-500 hover:underline text-xs"
-                                    onClick={() =>
-                                      setEditingFarmCell({
-                                        groupKey,
-                                        cropKey,
-                                        field: "ppFactor",
-                                      })
-                                    }
-                                  >
-                                    edit
-                                  </button>
-                                </div>
-                              )}
-                              <div className="text-xs text-gray-500 mt-1">
-                                PP $/ac:{" "}
-                                {(() => {
-                                  const covNum = parseFloat(coverage);
-                                  const priceNum = parseFloat(price);
-                                  const factorNum = parseFloat(ppFactor);
-                                  if (
-                                    isNaN(covNum) ||
-                                    isNaN(priceNum) ||
-                                    isNaN(factorNum)
-                                  )
-                                    return "—";
-                                  const coveragePerAc =
-                                    aph *
-                                    (covNum / 100) *
-                                    priceNum *
-                                    (factorNum / 100);
-                                  return `$${coveragePerAc.toFixed(2)}`;
-                                })()}
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 text-sm text-gray-800">
+                                <span className="font-mono">
+                                  {ppFactor || "—"}
+                                </span>
+                                <button
+                                  className="text-blue-500 hover:underline text-xs"
+                                  onClick={() =>
+                                    setEditingFarmCell({
+                                      groupKey,
+                                      cropKey,
+                                      field: "ppFactor",
+                                    })
+                                  }
+                                >
+                                  edit
+                                </button>
                               </div>
+                            )}
+                            <div className="text-xs text-gray-500 mt-1">
+                              PP $/ac:{" "}
+                              {(() => {
+                                const covNum = parseFloat(coverage);
+                                const priceNum = parseFloat(price);
+                                const factorNum = parseFloat(ppFactor);
+                                if (
+                                  isNaN(covNum) ||
+                                  isNaN(priceNum) ||
+                                  isNaN(factorNum)
+                                )
+                                  return "—";
+                                const coveragePerAc =
+                                  aph *
+                                  (covNum / 100) *
+                                  priceNum *
+                                  (factorNum / 100);
+                                return `$${coveragePerAc.toFixed(2)}`;
+                              })()}
                             </div>
+                          </div>
 
-                            {/* Premium per Acre */}
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                Premium per Acre
-                              </label>
-                              {editingFarmCell?.groupKey === groupKey &&
-                              editingFarmCell?.cropKey === cropKey &&
-                              editingFarmCell?.field === "premium" ? (
-                                <input
-                                  type="number"
-                                  autoFocus
-                                  className="w-full border rounded px-2 py-1"
-                                  defaultValue={premium}
-                                  onBlur={(e) => {
-                                    updateFarmInput(
+                          {/* Premium per Acre */}
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                              Premium per Acre
+                            </label>
+                            {editingFarmCell?.groupKey === groupKey &&
+                            editingFarmCell?.cropKey === cropKey &&
+                            editingFarmCell?.field === "premium" ? (
+                              <input
+                                type="number"
+                                autoFocus
+                                className="w-full border rounded px-2 py-1"
+                                defaultValue={premium}
+                                onBlur={async (e) => {
+                                  await updateFarmInput(
+                                    group.farmNumber,
+                                    group.county,
+                                    group.operator,
+                                    cropKey,
+                                    "premium",
+                                    parseFloat(e.target.value)
+                                  );
+                                  setEditingFarmCell(null);
+                                }}
+                                onKeyDown={async (e) => {
+                                  if (e.key === "Enter") {
+                                    await updateFarmInput(
                                       group.farmNumber,
                                       group.county,
                                       group.operator,
@@ -1044,44 +1058,33 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                                       parseFloat(e.target.value)
                                     );
                                     setEditingFarmCell(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      updateFarmInput(
-                                        group.farmNumber,
-                                        group.county,
-                                        group.operator,
-                                        cropKey,
-                                        "premium",
-                                        parseFloat(e.target.value)
-                                      );
-                                      setEditingFarmCell(null);
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1 text-sm text-gray-800">
-                                  <span className="font-mono">
-                                    {premium || "—"}
-                                  </span>
-                                  <button
-                                    className="text-blue-500 hover:underline text-xs"
-                                    onClick={() =>
-                                      setEditingFarmCell({
-                                        groupKey,
-                                        cropKey,
-                                        field: "premium",
-                                      })
-                                    }
-                                  >
-                                    edit
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1 text-sm text-gray-800">
+                                <span className="font-mono">
+                                  {premium || "—"}
+                                </span>
+                                <button
+                                  className="text-blue-500 hover:underline text-xs"
+                                  onClick={() =>
+                                    setEditingFarmCell({
+                                      groupKey,
+                                      cropKey,
+                                      field: "premium",
+                                    })
+                                  }
+                                >
+                                  edit
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      );
+                      </div>
+                    );
+
                     })}
                 </div>
 
