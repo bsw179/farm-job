@@ -47,7 +47,7 @@ import AppHeader from '@/components/AppHeader';
 import ProductUsageReport from "../pages/Reports/ProductUsageReport";
 import JobSummaryReport from "../pages/Reports/JobSummaryReport";
 import CropInsuranceReport from "../pages/Reports/CropInsuranceReport";
-import FsaPlantingDateReport from "@/pages/Reports/FsaPlantingDateReport";
+import FSAPlantingDateReport from "@/pages/Reports/FSAPlantingDateReport";
 
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
@@ -166,7 +166,7 @@ export default function AppLayout() {
                         />
                         <Route
                           path="/reports/fsa-planting-date"
-                          element={<FsaPlantingDateReport />}
+                          element={<FSAPlantingDateReport />}
                         />
                         <Route path="/crop-maps" element={<CropMaps />} />
                         <Route path="/rainfall" element={<RainfallPage />} />
