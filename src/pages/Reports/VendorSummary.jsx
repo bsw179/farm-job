@@ -1,229 +1,345 @@
-// ✅ Final version – product cards per entry
-// ✅ Correct applied units (seeds for population seed)
-// ✅ Correct difference line unit display (e.g., fl oz + gal)
-// ✅ One card per product (mobile-friendly), with purchase table removed
-// ✅ Purchase + normalized amount + unit size shown clearly
-
-import React, { useEffect, useState, useContext } from "react";
-import { collection, getDocs } from "firebase/firestore";
+// VendorSummary.jsx
+import React, { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from "../../firebase";
-import ReportControls from "../../components/reports/ReportControls";
-import { CropYearContext } from "../../context/CropYearContext";
-import { saveAs } from "file-saver";
-import { generatePDFfromElement } from "../../utils/exportPDF";
+import { useCropYear } from "../../context/CropYearContext";
 
 export default function VendorSummary() {
+  const { cropYear } = useCropYear();
+
+  // 🔹 Firestore data
   const [purchases, setPurchases] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [filterState, setFilterState] = useState({});
-  const [sort, setSort] = useState("az");
-  const { cropYear } = useContext(CropYearContext);
+  const [products, setProducts] = useState([]);
+  const [vendors, setVendors] = useState([]);
 
-  const unitConversionMap = {
-    lbs: { to: "tons", factor: 1 / 2000 },
-    tons: { to: "lbs", factor: 2000 },
-    "fl oz": { to: "gal", factor: 1 / 128 },
-    gal: { to: "fl oz", factor: 128 },
-    qt: { to: "fl oz", factor: 32 },
-    pt: { to: "fl oz", factor: 16 },
-    oz: { to: "lbs", factor: 1 / 16 },
-    units: { to: "lbs", factor: 1 },
-  };
+  // 🔹 Final grouped data
+  const [groupedData, setGroupedData] = useState({});
+  useEffect(() => {
+    const loadData = async () => {
+      const [purchaseSnap, jobSnap, productSnap, vendorSnap] =
+        await Promise.all([
+          getDocs(collection(db, "inputPurchases")),
+          getDocs(collection(db, "jobsByField")),
+          getDocs(collection(db, "products")),
+          getDocs(collection(db, "vendors")),
+        ]);
 
-  const getNormalizedUnit = (unit, type, rateType) => {
-    const u = unit?.toLowerCase();
-    if (type === "Seed" && rateType === "Population") return "seeds";
+      const allPurchases = purchaseSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      const allJobs = jobSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const allProducts = productSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      const allVendors = vendorSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      setPurchases(
+        allPurchases.filter((p) => String(p.cropYear) === String(cropYear))
+      );
+      setJobs(allJobs.filter((j) => String(j.cropYear) === String(cropYear)));
+      setProducts(allProducts);
+      setVendors(allVendors);
+    };
+
+    loadData();
+  }, [cropYear]);
+  const getProductById = (id) => products.find((p) => p.id === id);
+  const getVendorById = (id) => vendors.find((v) => v.id === id);
+
+  const getNormalizedUnit = (unit, type) => {
+    const u = (unit || "").toLowerCase();
     if (type === "Seed" && u === "units") return "lbs";
+    if (type === "Seed" && u === "seeds") return "seeds";
     if (["gal", "qt", "pt"].includes(u)) return "fl oz";
     if (u === "tons") return "lbs";
     if (u === "oz") return type === "Chemical" ? "oz" : "lbs";
     return u;
   };
+const getDefaultUnitSize = (unit, productType, rateType, crop) => {
+  if (productType === "Chemical") {
+    switch (unit) {
+      case "gal":
+        return 128;
+      case "qt":
+        return 32;
+      case "pt":
+        return 16;
+      case "fl oz":
+        return 1;
+      case "oz":
+        return 1;
+      case "lbs":
+        return 16;
+      case "%v/v":
+        return 128;
+      default:
+        return 1;
+    }
+  }
+  if (productType === "Fertilizer") {
+    if (unit === "tons") return 2000;
+    if (unit === "lbs") return 1;
+  }
+  if (productType === "Seed") {
+    if (rateType === "Population") {
+      if (crop?.toLowerCase().includes("rice")) return 900000;
+      if (crop?.toLowerCase().includes("soy")) return 140000;
+    }
+  }
+  if (productType === "Seed Treatment") return 1;
+  return 1;
+};
 
+const formatAmount = (amount, unit, unitSize, type) => {
+  return `${amount.toFixed(2)} ${unit}`;
+};
+
+
+
+  const formatCurrency = (value) =>
+    `$${(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
   useEffect(() => {
-    const fetchData = async () => {
-      const [purchaseSnap, jobSnap] = await Promise.all([
-        getDocs(collection(db, "inputPurchases")),
-        getDocs(collection(db, "jobsByField")),
-      ]);
-      const allPurchases = purchaseSnap.docs
-        .map((d) => d.data())
-        .filter((p) => String(p.cropYear) === String(cropYear));
-      const allJobs = jobSnap.docs
-        .map((d) => d.data())
-        .filter((j) => String(j.cropYear) === String(cropYear));
-      setPurchases(allPurchases);
-      setJobs(allJobs);
-    };
-    fetchData();
-  }, [cropYear]);
+    if (!jobs.length || !products.length || !vendors.length) return;
 
-  const avgCostMap = {};
-  purchases.forEach((p) => {
-    const key = p.productId;
-    const unitSize = parseFloat(p.unitSize) || 1;
-    const normalized = (parseFloat(p.amount) || 0) * unitSize;
-    if (!avgCostMap[key])
-      avgCostMap[key] = {
-        total: 0,
-        cost: 0,
-        unit: p.unit,
-        type: p.type,
-        rateType: p.rateType,
-      };
-    avgCostMap[key].total += normalized;
-    avgCostMap[key].cost += parseFloat(p.cost) || 0;
-  });
-  Object.entries(avgCostMap).forEach(([key, val]) => {
-    val.avg = val.total > 0 ? val.cost / val.total : 0;
-    val.normUnit = getNormalizedUnit(val.unit, val.type, val.rateType);
-  });
+    const result = {};
 
-  const appliedMap = {};
-  jobs.forEach((job) => {
-    const acres =
-      job.riceLeveeAcres ??
-      job.beanLeveeAcres ??
-      job.drawnAcres ??
-      job.acres ??
-      0;
-    (job.products || []).forEach((p) => {
-      const key = p.productId;
-      const rate = parseFloat(p.rate) || 0;
-      const u = p.unit?.toLowerCase();
-      const normalized = unitConversionMap[u]
-        ? rate * acres * unitConversionMap[u].factor
-        : rate * acres;
-      if (!appliedMap[key]) appliedMap[key] = { amount: 0 };
-      appliedMap[key].amount += normalized;
-    });
-  });
-  Object.entries(appliedMap).forEach(([key, val]) => {
-    val.cost = val.amount * (avgCostMap[key]?.avg || 0);
-  });
+    // 🟢 PHASE 1: Seed structure with job usage
+    jobs.forEach((j) => {
+      const acres =
+        j.riceLeveeAcres ?? j.beanLeveeAcres ?? j.drawnAcres ?? j.acres ?? 0;
 
-  const groupedByVendor = {};
-  purchases.forEach((p) => {
-    const vendor = p.vendorName || "Unknown";
-    if (!groupedByVendor[vendor]) groupedByVendor[vendor] = [];
-    groupedByVendor[vendor].push(p);
-  });
+      (j.products || []).forEach((p) => {
+        const rate = parseFloat(p.rate || 0);
+        if (!isFinite(acres) || !isFinite(rate)) return;
+        const applied = rate * acres;
+        if (!isFinite(applied)) return;
 
-  const vendorTotals = Object.entries(groupedByVendor).map(
-    ([vendor, entries]) => {
-      const total = entries.reduce(
-        (sum, p) => sum + (parseFloat(p.cost) || 0),
-        0
+const vendorNameRaw =
+  p.vendorName?.trim() ||
+  p.vendor?.trim() ||
+  j.vendorName?.trim() ||
+  j.vendor?.trim() ||
+  "Unknown Vendor";
+
+
+      // Match vendor name exactly to vendor from Firestore if available
+      const vendorMatch = vendors.find(
+        (v) => v.name?.trim().toLowerCase() === vendorNameRaw.toLowerCase()
       );
-      return { vendor, total };
-    }
-  );
-  const totalAll = vendorTotals.reduce((sum, v) => sum + v.total, 0);
+      const vendorName = vendorMatch?.name || vendorNameRaw;
 
-  const handleExport = (format) => {
-    if (format === "csv") {
-      let csv = "Vendor,Product,Amount,Unit,Cost,Date\n";
-      purchases.forEach((p) => {
-        csv += `${p.vendorName},${p.productName},${p.amount},${p.unit},${p.cost},${p.date}\n`;
+
+        const productId = p.productId;
+        if (!productId || !vendorName) {
+          console.warn("❌ Missing key info", {
+            jobId: j.id,
+            productName: p.productName,
+            productId,
+            vendorName,
+            pVendor: p.vendorName,
+            jVendor: j.vendorName,
+          });
+        }
+
+        const product = getProductById(productId);
+        if (!product) return;
+console.log("🧩 GROUPING JOB PRODUCT", {
+  jobId: j.id,
+  field: j.fieldName || j.fieldId,
+  productId,
+  productName: p.productName,
+  vendorName,
+  applied,
+});
+
+        if (!result[vendorName]) result[vendorName] = {};
+        if (!result[vendorName][productId]) {
+          result[vendorName][productId] = {
+            product,
+            purchases: [],
+            applied: 0,
+            appliedJobs: [],
+            purchaseTotal: 0,
+            normalizedTotal: 0,
+          };
+        }
+
+        result[vendorName][productId].applied += applied;
+        result[vendorName][productId].appliedJobs.push({
+          ...j,
+          rate,
+          acres,
+          applied,
+          unit: p.unit || "",
+        });
       });
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      saveAs(blob, `VendorSummary_${cropYear}.csv`);
-    }
-    if (format === "pdf") {
-      const el = document.getElementById("report-container");
-      generatePDFfromElement(el, `VendorSummary_${cropYear}.pdf`);
-    }
-  };
+    });
 
+    // 🟡 PHASE 2: Fill in purchase data
+    purchases.forEach((p) => {
+      const vendor = getVendorById(p.vendorId);
+      const product = getProductById(p.productId);
+      if (!product || !vendor) return;
+
+      const vendorName = vendor.name;
+      const normAmount =
+        parseFloat(p.amount || 0) * parseFloat(p.unitSize || 1);
+
+      if (!result[vendorName]) result[vendorName] = {};
+      if (!result[vendorName][p.productId]) {
+        result[vendorName][p.productId] = {
+          product,
+          purchases: [],
+          applied: 0,
+          appliedJobs: [],
+          purchaseTotal: 0,
+          normalizedTotal: 0,
+        };
+      }
+
+      result[vendorName][p.productId].purchases.push(p);
+      result[vendorName][p.productId].purchaseTotal += parseFloat(p.cost || 0);
+      result[vendorName][p.productId].normalizedTotal += normAmount;
+    });
+
+    setGroupedData(result);
+  }, [purchases, jobs, products, vendors]);
+
+  
   return (
-    <div id="report-container" className="p-6 max-w-5xl mx-auto">
-      <div className="no-print">
-        <ReportControls
-          title="Vendor Summary"
-          sortOptions={[
-            { label: "Vendor A–Z", value: "az" },
-            { label: "Vendor Z–A", value: "za" },
-          ]}
-          filters={[
-            {
-              label: "Operator",
-              type: "select",
-              key: "operator",
-              options: ["PCF", "TCF"],
-            },
-          ]}
-          onFilterChange={setFilterState}
-          selectedSort={sort}
-          onSortChange={setSort}
-          onExport={handleExport}
-        />
-      </div>
-
+    <div className="p-4 max-w-6xl mx-auto">
+      <h1 className="text-xl font-semibold mb-6">
+        Vendor Summary – {cropYear}
+      </h1>
       <div className="bg-gray-100 border rounded p-4 mb-6 shadow-sm">
-        <h4 className="text-lg font-semibold mb-2">{cropYear} Vendor Totals</h4>
+        <h4 className="text-lg font-semibold mb-2">Vendor Totals</h4>
         <ul className="text-sm text-gray-800 space-y-1">
-          {vendorTotals.map(({ vendor, total }) => (
-            <li key={vendor} className="flex justify-between">
-              <span>{vendor}</span>
-              <span className="font-mono">
-                ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </span>
-            </li>
-          ))}
+          {Object.entries(groupedData).map(([vendor, products]) => {
+            const total = Object.values(products).reduce(
+              (sum, entry) => sum + (entry.purchaseTotal || 0),
+              0
+            );
+            return (
+              <li key={vendor} className="flex justify-between">
+                <span>{vendor}</span>
+                <span className="font-mono">
+                  $
+                  {total.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </li>
+            );
+          })}
         </ul>
-        <hr className="my-2" />
-        <p className="text-sm font-medium flex justify-between">
-          <span>Total Purchases</span>
-          <span className="font-mono text-right">
-            ${totalAll.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </span>
-        </p>
       </div>
 
-      {Object.entries(groupedByVendor).map(([vendor, entries]) => (
-        <div key={vendor} className="mb-8">
-          <h2 className="text-xl font-bold mb-2">{vendor}</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Total Purchased: $
-            {entries
-              .reduce((sum, p) => sum + (parseFloat(p.cost) || 0), 0)
-              .toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </p>
+      {Object.entries(groupedData).map(([vendorName, productsById]) => (
+        <div key={vendorName} className="mb-10">
+          <h2 className="text-lg font-bold text-blue-700 mb-4">{vendorName}</h2>
 
-          {entries.map((p, idx) => {
-            const key = p.productId;
-            const applied = appliedMap[key] || { amount: 0, cost: 0 };
-            const avg = avgCostMap[key]?.avg || 0;
-            const normUnit = avgCostMap[key]?.normUnit || p.unit;
-            const unitSize = parseFloat(p.unitSize) || 1;
-            const normAmount = (parseFloat(p.amount) || 0) * unitSize;
-            const converted = unitConversionMap[normUnit];
-            const convertedAmount = converted
-              ? normAmount * (1 / converted.factor)
-              : null;
-            const diffAmount = normAmount - applied.amount;
-            const diffCost = (parseFloat(p.cost) || 0) - applied.cost;
+          {Object.values(productsById).map((entry) => {
+            const {
+              product,
+              purchases,
+              applied,
+              normalizedTotal,
+              purchaseTotal,
+              appliedJobs,
+            } = entry;
+            const unit = purchases[0]?.unit || "";
+            const unitSize = parseFloat(purchases[0]?.unitSize || 1);
+            const normUnit = getNormalizedUnit(unit, product.type);
+            const avgUnitCost =
+              normalizedTotal > 0 ? purchaseTotal / normalizedTotal : 0;
+            const appliedCost = applied * avgUnitCost;
+            const diffAmount = normalizedTotal - applied;
+            const diffCost = diffAmount * avgUnitCost;
 
             return (
-              <div key={idx} className="bg-white p-4 mb-4 rounded shadow">
-                <h3 className="font-semibold text-md mb-1">{p.productName}</h3>
-                <div className="text-xs text-gray-500 mb-1">
-                  Avg Cost: ${avg.toFixed(2)} per {normUnit}
+              <div
+                key={product.id}
+                className="mb-6 border rounded-lg shadow-sm bg-white p-4"
+              >
+                <div className="text-md font-semibold mb-1">
+                  {product.name}{" "}
+                  <span className="text-gray-500 text-sm">
+                    ({product.type})
+                  </span>
                 </div>
-                <div className="text-sm">
-                  Applied: {applied.amount.toFixed(2)} {normUnit} • $
-                  {applied.cost.toFixed(2)}
-                </div>
-                <div className="text-sm">
-                  Purchased: {normAmount.toFixed(2)} {normUnit} ({p.amount}{" "}
-                  {p.unit}) • ${parseFloat(p.cost).toFixed(2)}
-                </div>
-                <div className="text-sm">
-                  Difference: {diffAmount.toFixed(2)} {normUnit}
-                  {convertedAmount
-                    ? ` (${convertedAmount.toFixed(2)} ${converted.to})`
-                    : ""}{" "}
-                  • ${diffCost.toFixed(2)}
+
+                <div className="text-sm text-gray-700">
+                  <div>
+                    Applied: {applied.toFixed(2)}{" "}
+                    {appliedJobs[0]?.unit === "%v/v"
+                      ? "fl oz"
+                      : appliedJobs[0]?.unit || ""}
+                    • {formatCurrency(appliedCost)}
+                  </div>
+                  <div>
+                    Purchased:{" "}
+                    {formatAmount(
+                      normalizedTotal / unitSize,
+                      unit,
+                      unitSize,
+                      product.type
+                    )}{" "}
+                    • {formatCurrency(purchaseTotal)}
+                  </div>
+                  <div className="font-semibold">
+                    Difference:{" "}
+                    {formatAmount(
+                      diffAmount / unitSize,
+                      unit,
+                      unitSize,
+                      product.type
+                    )}{" "}
+                    • {formatCurrency(diffCost)}
+                  </div>
+                  <div className="mt-4 text-sm text-gray-700 space-y-1">
+                    <div className="font-semibold">Expense Split:</div>
+
+                    {/* Operator Splits */}
+                    {Object.entries(
+                      appliedJobs.reduce((acc, job) => {
+                        const share = job.operatorExpenseShare ?? 100;
+                        const name = job.operator ?? "Unknown Operator";
+                        acc[name] =
+                          (acc[name] || 0) + job.applied * (share / 100);
+                        return acc;
+                      }, {})
+                    ).map(([name, amt]) => (
+                      <div key={`op-${name}`} className="ml-4">
+                        {name}: {amt.toFixed(2)} {appliedJobs[0]?.unit || ""}
+                      </div>
+                    ))}
+
+                    {/* Landowner Splits */}
+                    {Object.entries(
+                      appliedJobs.reduce((acc, job) => {
+                        const share = job.landownerExpenseShare ?? 0;
+                        const name = job.landowner ?? "Unknown Landowner";
+                        if (share > 0) {
+                          acc[name] =
+                            (acc[name] || 0) + job.applied * (share / 100);
+                        }
+                        return acc;
+                      }, {})
+                    ).map(([name, amt]) => (
+                      <div
+                        key={`lo-${name}`}
+                        className="ml-4 italic text-gray-600"
+                      >
+                        {name}: {amt.toFixed(2)} {appliedJobs[0]?.unit || ""}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             );

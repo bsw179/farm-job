@@ -41,29 +41,53 @@ const getNormalizedUnit = (purchaseUnit, productType) => {
 
   if (!isOpen || !product) return null;
 
-  const jobUsage = jobs.flatMap(job => {
-  return (job.products || []).filter(p => p.productId === productId).map(p => {
-    const rate = parseFloat(p.rate || 0);
-    const acres = parseFloat(job.acres || 0);
-    const applied = rate * acres;
-    const unit = (p.unit || '').split('/')[0];
-    return {
-      field: job.fieldName || job.fieldId,
-      operator: job.operator || '',
-      date: job.jobDate || '',
-      rate,
-      acres,
-      applied,
-      unit,
-      crop: job.crop || '',
-      jobType: job.jobType?.name || '',
-      operatorShare: job.operatorExpenseShare || 0,
-      landowner: job.landowner || '',
-      landownerShare: job.landownerExpenseShare || 0,
-      jobId: job.id
-    };
-  });
-}).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const jobUsage = jobs
+    .flatMap((job) => {
+      return (job.products || [])
+        .filter((p) => p.productId === productId)
+        .map((p) => {
+          const rate = parseFloat(p.rate || 0);
+          const acres = parseFloat(job.acres || 0);
+          const rawUnit = (p.unit || "").toLowerCase();
+
+          const waterVolume = job.waterVolume || 0;
+
+          let applied = rate * acres;
+          let unit = rawUnit;
+
+       if (rawUnit.includes("%")) {
+         applied = (rate / 100) * waterVolume * acres * 128;
+         unit = "fl oz";
+         if (rawUnit === "%v/v") {
+           console.log("🧪 Detected %v/v job:", {
+             field: job.fieldName,
+             rate,
+             acres,
+             waterVolume,
+             applied,
+           });
+         }
+       }
+
+          return {
+            field: job.fieldName || job.fieldId,
+            operator: job.operator || "",
+            date: job.jobDate || "",
+            rate,
+            acres,
+            applied,
+            unit,
+            crop: job.crop || "",
+            jobType: job.jobType?.name || "",
+            operatorShare: job.operatorExpenseShare || 0,
+            landowner: job.landowner || "",
+            landownerShare: job.landownerExpenseShare || 0,
+            jobId: job.id,
+          };
+        });
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
 
 
   const productPurchases = purchases.filter(p => p.productId === productId);
@@ -332,11 +356,15 @@ productPurchases.forEach(p => {
                 </td>
                 <td className="border px-2 py-1">{u.operator}</td>
                 <td className="border px-2 py-1 text-right">
-                  {u.rate} {u.unit}/ac
+                  {u.unit.startsWith("%")
+                    ? `${u.rate}% v/v`
+                    : `${u.rate} ${u.unit}/ac`}
                 </td>
+
                 <td className="border px-2 py-1 text-right">{u.acres}</td>
                 <td className="border px-2 py-1 text-right">
-                  {u.applied.toFixed(2)} {u.unit}
+                  {u.applied.toFixed(2)}{" "}
+                  {u.unit.includes("%") ? "fl oz" : u.unit}
                 </td>
 
                 <td className="border px-2 py-1 text-right">

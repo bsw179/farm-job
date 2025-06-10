@@ -11,7 +11,7 @@ import { getFieldMetrics } from '@/utils/fieldMetrics';
 import { getDisplayCrop } from '@/lib/utils';
 import { collection, getDocs } from 'firebase/firestore';
 import { query, where } from 'firebase/firestore';
-import { format, subDays } from 'date-fns';
+import { format, subDays, parseISO } from "date-fns";
 import { CloudRain } from 'lucide-react';
 
 export default function Fields() {
@@ -370,12 +370,7 @@ useEffect(() => {
 
   const plantingDates = [
     ...new Set(
-      plantingJobs.map((job) =>
-        new Date(job.jobDate).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })
-      )
+      plantingJobs.map((job) => format(parseISO(job.jobDate), "MMM d"))
     ),
   ];
 

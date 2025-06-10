@@ -452,7 +452,6 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                   <th className="py-1 pr-4">County</th>
                   <th className="py-1 pr-4">Max Eligible</th>
                   <th className="py-1 text-right">Intended Acres</th>
-                  <th className="py-1 text-right">Over / Under (Intent)</th>
                   <th className="py-1 text-right">Planted</th>
 
                   <th className="py-1 text-right">Prevented</th>
@@ -571,26 +570,7 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                             <td className="py-1 text-right font-mono">
                               {assignedAcres?.toFixed(2) || "0.00"}
                             </td>
-                            {/* Intended Over/Under */}
-                            <td className="py-1 text-right font-mono">
-                              {(() => {
-                                const max =
-                                  eligibleByCounty[operator]?.[county]?.[type];
-                                if (max == null || isNaN(max)) return "—";
-                                const diff = max - assignedAcres;
-                                const color =
-                                  diff > 0
-                                    ? "text-green-600"
-                                    : diff < 0
-                                    ? "text-red-600"
-                                    : "text-gray-500";
-                                return (
-                                  <span className={color}>
-                                    {diff.toFixed(2)}
-                                  </span>
-                                );
-                              })()}
-                            </td>
+                        
 
                             {/* Planted */}
                             <td className="py-1 text-right font-mono">
@@ -661,11 +641,7 @@ console.log("📦 sortedFarmGroups", sortedFarmGroups);
                           })()}
                         </td>
 
-                        {/* Intent Over/Under column (intentionally blank) */}
-                        <td className="py-1 text-right text-gray-400 italic">
-                          —
-                        </td>
-
+                     
                         {/* Planted total */}
                         <td className="py-1 text-right font-mono">
                           {(() => {

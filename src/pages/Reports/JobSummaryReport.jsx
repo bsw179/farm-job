@@ -29,8 +29,10 @@ const columnOptions = [
   "Job Type",
   "Input",
   "Rate",
-  "Total Applied",
+  "Applied Amount",
+  "Applied Unit",
   "Vendor",
+  "Applicator",
   "Operator",
   "Landowner",
 ];
@@ -149,8 +151,56 @@ const exportPDF = async () => {
           "Job Type": job.jobType?.name || "",
           Product: product.productName || "",
           Rate: `${product.rate ?? ""} ${product.unit || ""}`.trim(),
-          "Total Applied": ((product.rate ?? 0) * (job.acres || 0)).toFixed(2),
+          "Applied Amount": (() => {
+            const acres = job.acres || 0;
+            const rate = product.rate ?? 0;
+            const unit = product.unit || "";
+            const waterVolume = job.waterVolume ?? 0;
+
+            let total = rate * acres;
+
+            if (unit.toLowerCase().includes("%") && waterVolume) {
+              total = (rate / 100) * waterVolume * acres * 128;
+            }
+
+            if (
+              unit.toLowerCase().includes("seeds") ||
+              unit.toLowerCase().includes("population")
+            ) {
+              const crop =
+                product.crop?.toLowerCase?.() ||
+                job.crop?.toLowerCase?.() ||
+                "";
+              const seedsPerUnit = crop.includes("rice")
+                ? 900000
+                : crop.includes("soy")
+                ? 140000
+                : null;
+
+              if (seedsPerUnit) {
+                total = (rate * acres) / seedsPerUnit;
+              }
+            }
+
+            return total.toFixed(2);
+          })(),
+
+          "Applied Unit": (() => {
+            const unit = product.unit || "";
+            const crop = (product.crop || job.crop || "").toLowerCase();
+
+            if (unit.toLowerCase().includes("%")) return "fl oz";
+            if (
+              unit.toLowerCase().includes("seeds") ||
+              unit.toLowerCase().includes("population")
+            )
+              return "units";
+
+            return unit.split("/")[0] || "";
+          })(),
+
           Vendor: product.vendor || "",
+          Applicator: job.applicator || "",
           Operator: job.operator || "",
           Landowner: job.landowner || "",
         };
@@ -263,98 +313,113 @@ const exportPDF = async () => {
                         if (sortOrder === "desc") return valA < valB ? 1 : -1;
                         return 0;
                       })
-                      .map((job) => (
-                        <tr key={job.id} className="border-t">
-                          {selectedColumns.map((col) => (
-                            <td key={col} className="p-2">
-                              {(() => {
-                                switch (col) {
-                                  case "Field":
-                                    return job.fieldName;
-                                  case "Farm":
-                                    return job.farmName;
-                                  case "Crop":
-                                    return job.crop;
-                                  case "Date":
-                                    return job.jobDate;
-                                  case "Acres":
-                                    return job.acres;
-                                  case "Job Type":
-                                    return job.jobType?.name;
-                                  case "Input":
-                                    return (
-                                      <div className="whitespace-pre-line">
-                                        {(job.products || [])
-                                          .map((p) => `${p.productName || "—"}`)
-                                          .join("\n")}
-                                      </div>
-                                    );
-                                  case "Rate":
-                                    return (
-                                      <div className="whitespace-pre-line">
-                                        {(job.products || [])
-                                          .map(
-                                            (p) =>
-                                              `${p.rate ?? "—"} ${p.unit || ""}`
-                                          )
-                                          .join("\n")}
-                                      </div>
-                                    );
-                                  case "Total Applied":
-                                    return (
-                                      <div className="whitespace-pre-line">
-                                        {(job.products || [])
-                                          .map((p) => {
-                                            const rawTotal =
-                                              (p.rate ?? 0) * (job.acres || 0);
-                                            const isSeed =
-                                              p.unit?.includes("seeds") ||
-                                              p.unit?.includes("population");
-                                            let final = rawTotal;
-                                            let suffix =
-                                              p.unit?.split("/")?.[0] || "";
+                      .flatMap((job) =>
+                        (job.products || []).map((product, index) => (
+                          <tr key={`${job.id}-${index}`} className="border-t">
+                            {selectedColumns.map((col) => (
+                              <td key={col} className="p-2">
+                                {(() => {
+                                  switch (col) {
+                                    case "Field":
+                                      return job.fieldName;
+                                    case "Farm":
+                                      return job.farmName;
+                                    case "Crop":
+                                      return job.crop;
+                                    case "Date":
+                                      return job.jobDate;
+                                    case "Acres":
+                                      return job.acres;
+                                    case "Job Type":
+                                      return job.jobType?.name;
+                                    case "Input":
+                                      return product.productName || "—";
+                                    case "Rate":
+                                      return `${product.rate ?? "—"} ${
+                                        product.unit || ""
+                                      }`;
+                                    case "Applied Amount": {
+                                      const acres = job.acres || 0;
+                                      const rate = product.rate ?? 0;
+                                      const unit = product.unit || "";
+                                      const waterVolume = job.waterVolume ?? 0;
 
-                                            if (isSeed) {
-                                              const crop =
-                                                p.crop?.toLowerCase?.() ||
-                                                job.crop?.toLowerCase?.() ||
-                                                "";
-                                              const seedsPerUnit =
-                                                crop.includes("rice")
-                                                  ? 900000
-                                                  : crop.includes("soy")
-                                                  ? 140000
-                                                  : null;
+                                      let total = rate * acres;
 
-                                              if (seedsPerUnit) {
-                                                final = rawTotal / seedsPerUnit;
-                                                suffix = "units";
-                                              }
-                                            }
+                                      if (
+                                        unit.toLowerCase().includes("%") &&
+                                        waterVolume
+                                      ) {
+                                        total =
+                                          (rate / 100) *
+                                          waterVolume *
+                                          acres *
+                                          128;
+                                      }
 
-                                            return `${final.toFixed(
-                                              2
-                                            )} ${suffix}`;
-                                          })
-                                          .join("\n")}
-                                      </div>
-                                    );
-                                  case "Vendor":
-                                    return (job.products || [])
-                                      .map((p) => p.vendor)
-                                      .join(", ");
-                                  case "Operator":
-                                    return job.operator;
-                                  case "Landowner":
-                                    return job.landowner;
-                                  default:
-                                    return "";
-                                }
-                              })()}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
+                                      if (
+                                        unit.toLowerCase().includes("seeds") ||
+                                        unit
+                                          .toLowerCase()
+                                          .includes("population")
+                                      ) {
+                                        const crop =
+                                          product.crop?.toLowerCase?.() ||
+                                          job.crop?.toLowerCase?.() ||
+                                          "";
+                                        const seedsPerUnit = crop.includes(
+                                          "rice"
+                                        )
+                                          ? 900000
+                                          : crop.includes("soy")
+                                          ? 140000
+                                          : null;
+
+                                        if (seedsPerUnit) {
+                                          total = (rate * acres) / seedsPerUnit;
+                                        }
+                                      }
+
+                                      return total.toFixed(2);
+                                    }
+                                    case "Applied Unit": {
+                                      const unit = product.unit || "";
+                                      const crop = (
+                                        product.crop ||
+                                        job.crop ||
+                                        ""
+                                      ).toLowerCase();
+
+                                      if (unit.toLowerCase().includes("%"))
+                                        return "fl oz";
+                                      if (
+                                        unit.toLowerCase().includes("seeds") ||
+                                        unit
+                                          .toLowerCase()
+                                          .includes("population")
+                                      )
+                                        return "units";
+
+                                      return unit.split("/")[0] || "";
+                                    }
+
+                                    case "Vendor":
+                                      return product.vendor || "—";
+                                    case "Applicator":
+                                      return job.applicator || "—";
+                                    case "Operator":
+                                      return job.operator;
+                                    case "Landowner":
+                                      return job.landowner;
+                                    default:
+                                      return "";
+                                  }
+                                })()}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      )}
                   </tbody>
                 </table>
               </div>
