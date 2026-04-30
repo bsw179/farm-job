@@ -74,7 +74,7 @@ export default function FieldDetail() {
 if (loading || !role) return null;
 
   const [field, setField] = useState(null);
-  const [updatedField, setUpdatedField] = useState({});
+  const [updatedField, setUpdatedField] = useState({ landowners: [] });
   const [editMode, setEditMode] = useState(false);
   const [fieldJobs, setFieldJobs] = useState([]);
   const [cropOptions, setCropOptions] = useState([]);
@@ -95,6 +95,7 @@ if (loading || !role) return null;
       fsaFieldNumber: "",
       operator: "",
       landowner: "",
+      landowners: [],
       crops: {},
       riceLeveeAcres: "",
       beanLeveeAcres: "",
@@ -109,7 +110,13 @@ if (loading || !role) return null;
     const ref = doc(db, 'fields', fieldId);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      const data = { id: snap.id, ...snap.data() };
+      const raw = snap.data();
+
+      const data = {
+        id: snap.id,
+        ...raw,
+        landowners: raw.landowners || [],
+      };
       if (typeof data.boundary?.geojson === 'string') {
         try {
           data.boundary.geojson = JSON.parse(data.boundary.geojson);
@@ -118,6 +125,7 @@ if (loading || !role) return null;
         }
       }
       setField(data);
+      console.log("FIELD DATA:", data);
    setUpdatedField(prev => ({
   ...data,
   riceLeveeAcres: data.riceLeveeAcres ?? '',
@@ -319,7 +327,10 @@ waitForMapElement();
 
 
   const handleCancel = () => {
-    setUpdatedField(field);
+    setUpdatedField({
+      ...(field || {}),
+      landowners: field?.landowners || [],
+    });
     setEditMode(false);
   };
 
@@ -391,7 +402,7 @@ return (
     );
   };
 
-if (!field && !isNew) return <div className="p-6">Loading field...</div>;
+if (!field) return <div className="p-6">Loading field...</div>;
 
   return (
     <div className="p-6">
@@ -474,12 +485,12 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
             </div>
           ))}
         {/* ➕ Multi-landowner support */}
-        {editMode && (
+        {false && (
           <div className="bg-white p-3 rounded shadow col-span-2">
             <label className="block text-xs text-gray-500 mb-2 font-semibold">
               Landowners & Rent Shares
             </label>
-
+            console.log("DEBUG updatedField:", updatedField);
             {(updatedField.landowners || []).map((entry, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input
@@ -487,7 +498,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                   placeholder="Landowner Name"
                   value={entry.name}
                   onChange={(e) => {
-                    const copy = [...updatedField.landowners];
+                    const copy = [...(updatedField?.landowners || [])];
                     copy[index].name = e.target.value;
                     setUpdatedField({ ...updatedField, landowners: copy });
                   }}
@@ -499,7 +510,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                   placeholder="% Share"
                   value={entry.rentShare}
                   onChange={(e) => {
-                    const copy = [...updatedField.landowners];
+                    const copy = [...(updatedField?.landowners || [])];
                     copy[index].rentShare = parseFloat(e.target.value) || 0;
                     setUpdatedField({ ...updatedField, landowners: copy });
                   }}
@@ -507,7 +518,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                 <button
                   className="text-red-500 font-bold"
                   onClick={() => {
-                    const copy = [...updatedField.landowners];
+                    const copy = [...(updatedField?.landowners || [])];
                     copy.splice(index, 1);
                     setUpdatedField({ ...updatedField, landowners: copy });
                   }}
@@ -516,7 +527,6 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                 </button>
               </div>
             ))}
-
             <button
               onClick={() => {
                 const current = updatedField.landowners || [];
@@ -529,15 +539,14 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
             >
               ➕ Add Landowner
             </button>
-
             {updatedField.landowners?.length > 0 && (
               <p className="text-xs text-gray-500 mt-2">
                 Total:{" "}
                 {(
                   (updatedField.operatorRentShare || 0) +
-                  updatedField.landowners.reduce(
+                  (updatedField.landowners || []).reduce(
                     (sum, l) => sum + (l.rentShare || 0),
-                    0
+                    0,
                   )
                 ).toFixed(2)}
                 % (operator + landowners)
@@ -546,7 +555,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
           </div>
         )}
         {!editMode &&
-          Array.isArray(field.landowners) &&
+          Array.isArray(field?.landowners) &&
           field.landowners.length > 0 && (
             <div className="bg-white p-3 rounded shadow col-span-2 text-sm">
               <label className="block text-xs text-gray-500 mb-2 font-semibold">
@@ -600,7 +609,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
               {/* Subtype dropdown if crop has riceTypes */}
               {updatedField.crops?.[cropYear]?.crop &&
                 cropOptions.find(
-                  (c) => c.name === updatedField.crops?.[cropYear]?.crop
+                  (c) => c.name === updatedField.crops?.[cropYear]?.crop,
                 )?.riceTypes?.length > 0 && (
                   <select
                     value={updatedField.crops?.[cropYear]?.riceType || ""}
@@ -621,7 +630,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                     <option value="">Select Rice Type</option>
                     {cropOptions
                       .find(
-                        (c) => c.name === updatedField.crops?.[cropYear]?.crop
+                        (c) => c.name === updatedField.crops?.[cropYear]?.crop,
                       )
                       ?.riceTypes?.map((type) => (
                         <option key={type} value={type}>
@@ -687,7 +696,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
           ) : (
             <div className="col-span-2 space-y-1">
               {(() => {
-                const cropData = field.crops?.[cropYear] || {};
+                const cropData = field?.crops?.[cropYear] || {};
                 const outcome = cropData.outcome;
                 const isCompleted = cropData.isCompleted;
 
@@ -696,7 +705,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                     (job) =>
                       job.cropYear === cropYear &&
                       job.jobType?.parentName === "Seeding" &&
-                      job.jobDate
+                      job.jobDate,
                   )
                   .sort((a, b) => new Date(a.jobDate) - new Date(b.jobDate));
 
@@ -706,8 +715,8 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                       new Date(job.jobDate).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
-                      })
-                    )
+                      }),
+                    ),
                   ),
                 ];
 
@@ -903,9 +912,8 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                         </button>
                         <button
                           onClick={async () => {
-                            const { generatePDFBlob } = await import(
-                              "../utils/generatePDF"
-                            );
+                            const { generatePDFBlob } =
+                              await import("../utils/generatePDF");
                             const blob = await generatePDFBlob(job);
                             const url = URL.createObjectURL(blob);
                             const link = document.createElement("a");
@@ -951,7 +959,7 @@ if (!field && !isNew) return <div className="p-6">Loading field...</div>;
                 onClick={async () => {
                   await deleteDoc(doc(db, "jobsByField", confirmDeleteId));
                   setFieldJobs((prev) =>
-                    prev.filter((j) => j.id !== confirmDeleteId)
+                    prev.filter((j) => j.id !== confirmDeleteId),
                   );
                   setConfirmDeleteId(null);
                 }}

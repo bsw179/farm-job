@@ -44,7 +44,8 @@ const reports = [
   {
     title: "Crop Rotation History",
     path: "/reports/crop-rotation",
-    description: "Multi-year crop history and spending per field.",
+    description:
+      "Shows each field’s completed crop outcome across the last 2 or more crop years.",
     icon: "🌾",
   },
   {
@@ -60,6 +61,21 @@ const reports = [
       "Detailed breakdown of seeding jobs by field, variety, operator, and vendor.",
     icon: "🌱",
   },
+  {
+    title: "Crop Plan Report",
+    path: "/reports/crop-plan",
+    description:
+      "Shows each field, assigned crop, and seeding details like variety, rate, and vendor when a seeding job exists.",
+    icon: "🗂️",
+  },
+  {
+    title: "Riceland Delivery Report",
+    path: "/reports/riceland-delivery",
+    description:
+      "Planned grain delivery by operator and farm, including crop, variety, planting date, and rent splits.",
+    icon: "🚚",
+  },
+
   {
     title: "Crop Insurance Report",
     path: "/reports/crop-insurance",

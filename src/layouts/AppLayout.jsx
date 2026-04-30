@@ -30,6 +30,7 @@ import ManageJobTypes from "@/pages/Setup/ManageJobTypes";
 import EditJobPolygonForCreate from "../archived/EditJobPolygonForCreate";
 import EditJobPolygonForFieldJob from "../archived/EditJobPolygonForFieldJob";
 import SeedingReport from "../pages/Reports/SeedingReport";
+import CropPlanReport from "../pages/Reports/CropPlanReport";
 import AdminCleanupTools from "../pages/AdminCleanupTools";
 import RequireRole from "@/components/RequireRole"; // add this at the top
 import RequireLogin from "@/components/RequireLogin";
@@ -48,7 +49,8 @@ import ProductUsageReport from "../pages/Reports/ProductUsageReport";
 import JobSummaryReport from "../pages/Reports/JobSummaryReport";
 import CropInsuranceReport from "../pages/Reports/CropInsuranceReport";
 import FSAPlantingDateReport from "@/pages/Reports/FSAPlantingDateReport";
-
+import RicelandDeliveryReport from "@/pages/Reports/RicelandDeliveryReport";
+import CropRotationReport from "../pages/Reports/CropRotationReport";
 // Then inside <Routes>
 <Route path="/inputs" element={<InputsPage />} />
 
@@ -157,6 +159,14 @@ export default function AppLayout() {
                           path="/reports/seeding"
                           element={<SeedingReport />}
                         />
+                        <Route
+                          path="/reports/crop-rotation"
+                          element={<CropRotationReport />}
+                        />
+                        <Route
+                          path="/reports/crop-plan"
+                          element={<CropPlanReport />}
+                        />
                         <Route path="/metrics" element={<FieldMetrics />} />
                         <Route path="/jobs" element={<Jobs />} />
                         <Route path="/calendar" element={<JobsCalendar />} />
@@ -177,6 +187,10 @@ export default function AppLayout() {
                         <Route
                           path="/reports/vendor-summary"
                           element={<VendorSummary />}
+                        />
+                        <Route
+                          path="/reports/riceland-delivery"
+                          element={<RicelandDeliveryReport />}
                         />
                         <Route
                           path="/reports/product-usage"

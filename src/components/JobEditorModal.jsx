@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Dialog } from "@headlessui/react";
 import { X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,20 +19,18 @@ import ProductComboBox from "../components/ProductComboBox";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import html2canvas from "html2canvas";
+import { CropYearContext } from "@/context/CropYearContext";
 
-  const allProducts = [
-    { id: "rdup", name: "Roundup", type: "chemical" },
-    { id: "cmd", name: "Command", type: "chemical" },
-    { id: "urea", name: "Urea", type: "fertilizer" },
-    { id: "seedA", name: "Rice Seed A", type: "seed" },
-    { id: "seedB", name: "Soybean Seed B", type: "seed" },
-  ];
+const allProducts = [
+  { id: "rdup", name: "Roundup", type: "chemical" },
+  { id: "cmd", name: "Command", type: "chemical" },
+  { id: "urea", name: "Urea", type: "fertilizer" },
+  { id: "seedA", name: "Rice Seed A", type: "seed" },
+  { id: "seedB", name: "Soybean Seed B", type: "seed" },
+];
 export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
   const isEditing = initialJobs.length > 0;
-const [jobType, setJobType] = useState("");
-
-
-
+  const [jobType, setJobType] = useState("");
 
   const [applicator, setApplicator] = useState("");
   const [vendor, setVendor] = useState("");
@@ -54,15 +52,13 @@ const [jobType, setJobType] = useState("");
   const [seedTreatments, setSeedTreatments] = useState([]);
   const [seedTreatmentStatus, setSeedTreatmentStatus] = useState("none");
   const [shouldGeneratePDF, setShouldGeneratePDF] = useState(false);
-const [jobDate, setJobDate] = useState(() => {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  const iso = now.toISOString().split("T")[0];
-  console.log("📆 Default job date:", iso);
-  return iso;
-});
-
-
+  const [jobDate, setJobDate] = useState(() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const iso = now.toISOString().split("T")[0];
+    console.log("📆 Default job date:", iso);
+    return iso;
+  });
 
   useEffect(() => {
     if (initialJobs.length === 0) return;
@@ -189,7 +185,7 @@ const [jobDate, setJobDate] = useState(() => {
 
   const [allFields, setAllFields] = useState([]);
   const [selectedFields, setSelectedFields] = useState([]);
-  const cropYear = 2025; // Will wire to context later
+  const cropYear = 2026; // Will wire to context later
 
   useEffect(() => {
     const fetchFields = async () => {
@@ -328,20 +324,20 @@ const [jobDate, setJobDate] = useState(() => {
 
     const a = normalize(current);
     const b = normalize(original);
-console.log("🧪 Normalized products comparison:", { a, b });
-console.log("🧪 DIFF CHECK", {
-  current: a,
-  original: b,
-  diffs: a.map((p, i) => ({
-    index: i,
-    diff: {
-      productId: p.productId !== b[i].productId,
-      rate: p.rate !== b[i].rate,
-      unit: p.unit !== b[i].unit,
-      vendor: p.vendor !== b[i].vendor,
-    },
-  })),
-});
+    console.log("🧪 Normalized products comparison:", { a, b });
+    console.log("🧪 DIFF CHECK", {
+      current: a,
+      original: b,
+      diffs: a.map((p, i) => ({
+        index: i,
+        diff: {
+          productId: p.productId !== b[i].productId,
+          rate: p.rate !== b[i].rate,
+          unit: p.unit !== b[i].unit,
+          vendor: p.vendor !== b[i].vendor,
+        },
+      })),
+    });
 
     return a.some((p, i) => {
       const q = b[i];
@@ -354,31 +350,29 @@ console.log("🧪 DIFF CHECK", {
     });
   };
 
+  const shouldUnbatchSingleFieldEdit = (originalJob, modalState) => {
+    console.log("🧪 jobType.name check", {
+      original: originalJob.jobType?.name,
+      modal: modalState.jobType?.name,
+    });
 
-const shouldUnbatchSingleFieldEdit = (originalJob, modalState) => {
+    const { jobProducts } = modalState;
 
-console.log("🧪 jobType.name check", {
-  original: originalJob.jobType?.name,
-  modal: modalState.jobType?.name,
-});
+    if (!originalJob || !modalState || !Array.isArray(originalJob.products))
+      return false;
 
-  const { jobProducts } = modalState;
-
-  if (!originalJob || !modalState || !Array.isArray(originalJob.products))
-    return false;
-
-  return (
-    (modalState.jobType?.name || "") !== (originalJob.jobType?.name || "") ||
-    modalState.jobDate !== originalJob.jobDate ||
-    modalState.status !== originalJob.status ||
-    modalState.vendor !== originalJob.vendor ||
-    modalState.applicator !== originalJob.applicator ||
-    modalState.notes !== originalJob.notes ||
-    modalState.passes !== (originalJob.passes ?? "") ||
-    modalState.waterVolume !== (originalJob.waterVolume ?? "") ||
-    jobProductsAreDifferent(jobProducts, originalJob.products || [])
-  );
-};
+    return (
+      (modalState.jobType?.name || "") !== (originalJob.jobType?.name || "") ||
+      modalState.jobDate !== originalJob.jobDate ||
+      modalState.status !== originalJob.status ||
+      modalState.vendor !== originalJob.vendor ||
+      modalState.applicator !== originalJob.applicator ||
+      modalState.notes !== originalJob.notes ||
+      modalState.passes !== (originalJob.passes ?? "") ||
+      modalState.waterVolume !== (originalJob.waterVolume ?? "") ||
+      jobProductsAreDifferent(jobProducts, originalJob.products || [])
+    );
+  };
 
   async function handleSaveJob() {
     console.log("🧪 Save triggered");
@@ -399,7 +393,7 @@ console.log("🧪 jobType.name check", {
     const existingBatchTag = initialJobs[0]?.batchTag || null;
     const batchId = existingBatchTag || `batch_${Date.now()}`;
 
-    const cropYear = 2025; // swap if dynamic later
+    const cropYear = 2026; // swap if dynamic later
 
     const sharedData = {
       jobDate,
@@ -563,7 +557,6 @@ console.log("🧪 jobType.name check", {
 
     console.log("🎉 All jobs attempted to save");
     alert("Job(s) saved.");
- 
 
     // 🧹 Unlink this job if it's now the last one in the group
     if (
@@ -587,19 +580,18 @@ console.log("🧪 jobType.name check", {
       }
     }
 
-    
     console.log("📄 Starting PDF generation...");
 
     if (shouldGeneratePDF) {
       console.log("🧪 Field preview check BEFORE SNAPSHOT:");
-selectedFields.forEach((f) => {
-  const el = document.getElementById(`field-canvas-${f.id}`);
-  console.log(`🔍 fieldId=${f.id}`, {
-    exists: !!el,
-    width: el?.offsetWidth,
-    height: el?.offsetHeight,
-  });
-});
+      selectedFields.forEach((f) => {
+        const el = document.getElementById(`field-canvas-${f.id}`);
+        console.log(`🔍 fieldId=${f.id}`, {
+          exists: !!el,
+          width: el?.offsetWidth,
+          height: el?.offsetHeight,
+        });
+      });
 
       const fieldSnapshots = await Promise.all(
         selectedFields.map(async (field) => {
@@ -656,15 +648,16 @@ selectedFields.forEach((f) => {
       const a = document.createElement("a");
       a.href = url;
       a.download = `Job_Batch_${Date.now()}.pdf`;
-      a.click(); }
-          onClose();
-          resetJobForm();
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-          window.__SAVE_RUNNING__ = false;
+      a.click();
+    }
+    onClose();
+    resetJobForm();
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+    window.__SAVE_RUNNING__ = false;
   }
-console.log("🔍 jobType", jobType);
+  console.log("🔍 jobType", jobType);
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50">
@@ -1281,22 +1274,20 @@ console.log("🔍 jobType", jobType);
                         {(() => {
                           const type = product.type?.toLowerCase() || "";
 
-             if (type === "chemical") {
-               return [
-                 "oz dry/acre", // ✅ add this
-                 "fl oz/acre",
-                 "pt/acre",
-                 "qt/acre",
-                 "gal/acre",
-                 "%v/v",
-               ].map((u) => (
-                 <option key={u} value={u}>
-                   {u}
-                 </option>
-               ));
-             }
-
-
+                          if (type === "chemical") {
+                            return [
+                              "oz dry/acre", // ✅ add this
+                              "fl oz/acre",
+                              "pt/acre",
+                              "qt/acre",
+                              "gal/acre",
+                              "%v/v",
+                            ].map((u) => (
+                              <option key={u} value={u}>
+                                {u}
+                              </option>
+                            ));
+                          }
 
                           if (type === "fertilizer") {
                             return ["lbs/acre", "tons/acre"].map((u) => (
@@ -1546,39 +1537,39 @@ console.log("🔍 jobType", jobType);
               const unit = p.unit?.toLowerCase() || "";
               const crop = p.crop?.toLowerCase?.() || "";
 
-        const totalAcres = selectedFields.reduce((sum, f) => {
-          const cropName = f.crop?.toLowerCase?.() || "";
+              const totalAcres = selectedFields.reduce((sum, f) => {
+                const cropName = f.crop?.toLowerCase?.() || "";
 
-          // ✅ If this is a levee job, use levee acres
-          if (
-            jobType?.name?.toLowerCase().includes("levee") ||
-            jobType?.name?.toLowerCase().includes("pack")
-          ) {
-            if (cropName.includes("rice") && f.riceLeveeAcres) {
-              return sum + parseFloat(f.riceLeveeAcres) || 0;
-            }
-            if (cropName.includes("soybean") && f.beanLeveeAcres) {
-              return sum + parseFloat(f.beanLeveeAcres) || 0;
-            }
-            return sum;
-          }
+                // ✅ If this is a levee job, use levee acres
+                if (
+                  jobType?.name?.toLowerCase().includes("levee") ||
+                  jobType?.name?.toLowerCase().includes("pack")
+                ) {
+                  if (cropName.includes("rice") && f.riceLeveeAcres) {
+                    return sum + parseFloat(f.riceLeveeAcres) || 0;
+                  }
+                  if (cropName.includes("soybean") && f.beanLeveeAcres) {
+                    return sum + parseFloat(f.beanLeveeAcres) || 0;
+                  }
+                  return sum;
+                }
 
-          // ✅ Otherwise, use drawnAcres or gpsAcres
-          const raw =
-            f.drawnAcres !== undefined && f.drawnAcres !== null
-              ? f.drawnAcres
-              : f.gpsAcres;
+                // ✅ Otherwise, use drawnAcres or gpsAcres
+                const raw =
+                  f.drawnAcres !== undefined && f.drawnAcres !== null
+                    ? f.drawnAcres
+                    : f.gpsAcres;
 
-          const parsed = parseFloat(raw);
-          console.log("🌾 FINAL ACRE DEBUG", { raw, parsed });
-          return sum + (isNaN(parsed) ? 0 : parsed);
-        }, 0);
+                const parsed = parseFloat(raw);
+                console.log("🌾 FINAL ACRE DEBUG", { raw, parsed });
+                return sum + (isNaN(parsed) ? 0 : parsed);
+              }, 0);
 
-console.log("🔍 RATE DEBUG", {
-  rateRaw: p.rate,
-  rateParsed: parseFloat(p.rate),
-  acres: totalAcres,
-});
+              console.log("🔍 RATE DEBUG", {
+                rateRaw: p.rate,
+                rateParsed: parseFloat(p.rate),
+                acres: totalAcres,
+              });
 
               const totalAmount = parseFloat(rate) * totalAcres;
 

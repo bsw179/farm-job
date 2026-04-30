@@ -13,11 +13,12 @@ import { db } from '../firebase';
 export default function FieldBoundaryEditor() {
   const { fieldId } = useParams();
   const navigate = useNavigate();
-  const mapRef = useRef(null);
-  const drawnLayerRef = useRef(null);
-  const [field, setField] = useState(null);
-  const [acres, setAcres] = useState(0);
-  const fileInputRef = useRef(null);
+ const mapRef = useRef(null);
+ const mapContainerRef = useRef(null);
+ const drawnLayerRef = useRef(null);
+ const [field, setField] = useState(null);
+ const [acres, setAcres] = useState(0);
+ const fileInputRef = useRef(null);
 
   const initMap = async (fieldData) => {
   if (mapRef.current) {
@@ -33,7 +34,9 @@ export default function FieldBoundaryEditor() {
     console.warn('Failed to parse geojson:', err);
   }
 
-  const map = L.map('map', {
+  if (!mapContainerRef.current) return;
+
+  const map = L.map(mapContainerRef.current, {
     center: [35, -91],
     zoom: 17,
     zoomControl: true,
@@ -136,22 +139,41 @@ export default function FieldBoundaryEditor() {
 
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadFieldAndMap = async () => {
-      const docRef = doc(db, 'fields', fieldId);
+      const docRef = doc(db, "fields", fieldId);
       const docSnap = await getDoc(docRef);
+
       if (!docSnap.exists()) {
-        alert('Field not found.');
+        alert("Field not found.");
         return;
       }
+
+      if (!isMounted) return;
+
       const fieldData = docSnap.data();
       setField(fieldData);
-
-      setTimeout(() => initMap(fieldData), 0);
     };
 
     loadFieldAndMap();
-  }, [fieldId]);
 
+    return () => {
+      isMounted = false;
+
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+
+      drawnLayerRef.current = null;
+    };
+  }, [fieldId]);
+useEffect(() => {
+  if (!field || !mapContainerRef.current) return;
+
+  initMap(field);
+}, [field]);
   const handleSave = async () => {
     if (!drawnLayerRef.current) return alert('Draw or import a boundary first.');
     const geo = drawnLayerRef.current.toGeoJSON();
@@ -230,7 +252,9 @@ export default function FieldBoundaryEditor() {
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Edit Boundary – {field.fieldName}</h2>
+      <h2 className="text-xl font-bold mb-4">
+        Edit Boundary – {field.fieldName}
+      </h2>
 
       <input
         ref={fileInputRef}
@@ -240,22 +264,34 @@ export default function FieldBoundaryEditor() {
         className="mb-4 block"
       />
 
-      <div id="map" className="w-full h-[500px] rounded border mb-4" />
+      <div
+        ref={mapContainerRef}
+        id="map"
+        className="w-full h-[500px] rounded border mb-4"
+      />
 
       <div className="flex justify-between items-center mb-4">
         <span className="text-sm text-gray-700">Acres: {acres}</span>
         <div className="flex gap-2">
-          <button onClick={handleClear} className="px-4 py-2 bg-red-600 text-white rounded">
+          <button
+            onClick={handleClear}
+            className="px-4 py-2 bg-red-600 text-white rounded"
+          >
             Clear Map
           </button>
-          <button onClick={() => navigate(-1)} className="px-4 py-2 bg-gray-500 text-white rounded">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 bg-gray-500 text-white rounded"
+          >
             Cancel
           </button>
-          <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded">
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
             Save Boundary
           </button>
         </div>
-      
       </div>
     </div>
   );

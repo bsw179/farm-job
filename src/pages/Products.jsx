@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+// Add this below: import { db } from '../firebase';
+const autoPopulateUnit = (crop, rateType) => {
+  const rt = (rateType || "").toLowerCase();
+  if (rt === "population") return "seeds/acre";
+  if (rt === "weight") return "lbs/acre";
+  // safe fallback so the onChange never throws
+  return "";
+};
 
 export default function Products() {
   const [products, setProducts] = useState([]);

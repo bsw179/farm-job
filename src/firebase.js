@@ -30,7 +30,6 @@ setPersistence(auth, browserLocalPersistence)
   });
 
 // ✅ FORCE USE OF THE BUCKET YOU SET CORS ON
-const storage = getStorage(app, 'gs://farm-job.firebasestorage.app');
-
+const storage = getStorage(app);
 export { db, auth, storage };
 
