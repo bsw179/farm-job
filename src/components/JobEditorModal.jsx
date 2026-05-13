@@ -147,6 +147,12 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
       })
     ).then((enriched) => {
       setSelectedFields(enriched.filter(Boolean));
+      // Load field comments from jobs
+const commentsMap = {};
+initialJobs.forEach((job) => {
+  commentsMap[job.fieldId] = job.fieldComment || "";
+});
+setFieldComments(commentsMap);
     });
 
     // temporary — will fix field fetch next
@@ -185,6 +191,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
 
   const [allFields, setAllFields] = useState([]);
   const [selectedFields, setSelectedFields] = useState([]);
+  const [fieldComments, setFieldComments] = useState({});
   const cropYear = 2026; // Will wire to context later
 
   useEffect(() => {
@@ -395,18 +402,18 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
 
     const cropYear = 2026; // swap if dynamic later
 
-    const sharedData = {
-      jobDate,
-      status,
-      vendor,
-      applicator,
-      notes,
-      passes,
-      waterVolume,
-      seedTreatmentStatus,
-      cropYear,
-      batchTag: batchId,
-    };
+const sharedData = {
+  jobDate,
+  status,
+  vendor,
+  applicator,
+  notes, // ✅ PUT THIS BACK
+  passes,
+  waterVolume,
+  seedTreatmentStatus,
+  cropYear,
+  batchTag: batchId,
+};
 
     const enrichedProducts = jobProducts.map((p) => ({
       ...p,
@@ -498,6 +505,8 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
         id: jobId,
         timestamp: new Date(),
         jobType,
+
+        fieldComment: fieldComments[field.id] || "",
 
         ...(shouldUnbatch
           ? {
@@ -626,6 +635,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
           vendor,
           applicator,
           notes,
+          fieldComment: fieldComments[field.id] || "",
           passes,
           waterVolume,
           jobType,
@@ -706,7 +716,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
               value={jobType?.name || ""}
               onChange={(e) => {
                 const selected = jobTypeOptions.find(
-                  (jt) => jt.name === e.target.value
+                  (jt) => jt.name === e.target.value,
                 );
                 setJobType(selected || "");
               }}
@@ -753,7 +763,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedFields((prev) =>
-                            prev.filter((f) => f.id !== field.id)
+                            prev.filter((f) => f.id !== field.id),
                           );
                         }}
                         role="button"
@@ -817,7 +827,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                         ...new Set(
                           allFields
                             .filter((f) => f.operator === operator)
-                            .map((f) => f.farmName)
+                            .map((f) => f.farmName),
                         ),
                       ]
                         .sort()
@@ -831,14 +841,14 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                                 .filter(
                                   (f) =>
                                     f.operator === operator &&
-                                    f.farmName === farm
+                                    f.farmName === farm,
                                 )
                                 .sort((a, b) =>
-                                  a.fieldName.localeCompare(b.fieldName)
+                                  a.fieldName.localeCompare(b.fieldName),
                                 )
                                 .map((field) => {
                                   const isSelected = selectedFields.some(
-                                    (f) => f.id === field.id
+                                    (f) => f.id === field.id,
                                   );
 
                                   return (
@@ -862,7 +872,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                                             const ref = doc(
                                               db,
                                               "fields",
-                                              field.id
+                                              field.id,
                                             );
                                             const snap = await getDoc(ref);
                                             const full = snap.exists()
@@ -906,7 +916,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                       className="absolute top-2 left-2 text-sm text-red-500"
                       onClick={() =>
                         setSelectedFields((prev) =>
-                          prev.filter((f) => f.id !== field.id)
+                          prev.filter((f) => f.id !== field.id),
                         )
                       }
                     >
@@ -921,7 +931,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                     {field.geojson && (
                       <div
                         id={`field-canvas-${field.id}`}
-                        className="absolute top-1/2 right-4 -translate-y-1/2 w-[80px] h-[80px] border rounded bg-white flex items-center justify-center"
+                        className="absolute top-4 right-4 w-[80px] h-[80px] border rounded bg-white flex items-center justify-center"
                       >
                         <svg viewBox="0 0 100 100" className="w-full h-full">
                           {(() => {
@@ -1022,7 +1032,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                                     const overlayCoords =
                                       overlay?.coordinates?.[0] || [];
                                     const overlayPoints = normalize(
-                                      overlayCoords
+                                      overlayCoords,
                                     )
                                       .map(([x, y]) => `${x},${y}`)
                                       .join(" ");
@@ -1046,14 +1056,46 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                     <div className="text-sm text-gray-600">
                       {field.farmName} / {field.operator}
                     </div>
+                    {/* Field Comment */}
+                    <div className="mt-3">
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Comment
+                      </label>
+                      <textarea
+                        rows={2}
+                        className="w-full border rounded p-2 text-sm"
+                        value={fieldComments[field.id] || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFieldComments((prev) => ({
+                            ...prev,
+                            [field.id]: value,
+                          }));
+                        }}
+                        placeholder="Add comment for this field"
+                      />
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const value = fieldComments[field.id] || "";
+                          const updated = {};
+                          selectedFields.forEach((f) => {
+                            updated[f.id] = value;
+                          });
+                          setFieldComments(updated);
+                        }}
+                        className="mt-1 text-xs text-blue-600 hover:underline"
+                      >
+                        Apply to All Fields
+                      </button>
+                    </div>
                     <button
                       onClick={() => {
                         console.log("🧲 Field passed to polygon modal:", field);
                         setPolygonEditField(field);
                       }}
-                      className="absolute right-[120px] top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-600"
-                      title="Edit Area"
+                      className="absolute right-[120px] top-4 text-gray-600 hover:text-blue-600"
                     >
                       <Pencil size={18} />
                     </button>
@@ -1067,13 +1109,13 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                 {isLeveeJob
                   ? "levee acres"
                   : selectedFields.some(
-                      (f) =>
-                        !!f.drawnPolygon &&
-                        !!f.drawnAcres &&
-                        parseFloat(f.drawnAcres) > 0
-                    )
-                  ? "partial"
-                  : "full"}
+                        (f) =>
+                          !!f.drawnPolygon &&
+                          !!f.drawnAcres &&
+                          parseFloat(f.drawnAcres) > 0,
+                      )
+                    ? "partial"
+                    : "full"}
                 )
               </div>
             </div>
@@ -1142,7 +1184,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                           prev.map((p) => ({
                             ...p,
                             vendor: vendor,
-                          }))
+                          })),
                         );
                       }}
                       className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition"
@@ -1185,7 +1227,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                       <button
                         onClick={() =>
                           setJobProducts((prev) =>
-                            prev.filter((_, i) => i !== index)
+                            prev.filter((_, i) => i !== index),
                           )
                         }
                         className="text-red-600 text-sm hover:underline"
@@ -1214,10 +1256,10 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                         jobParent === "seeding"
                           ? "Seeding"
                           : jobParent === "spraying"
-                          ? "Spraying"
-                          : jobParent === "fertilizing"
-                          ? "Fertilizing"
-                          : ""
+                            ? "Spraying"
+                            : jobParent === "fertilizing"
+                              ? "Fertilizing"
+                              : ""
                       }
                       allProducts={allProducts}
                       usedProductIds={usedProductIds}
@@ -1251,14 +1293,14 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
 
                           if (newUnit !== oldUnit && product.productId) {
                             const confirmUpdate = window.confirm(
-                              "Update Product's Unit in Database?"
+                              "Update Product's Unit in Database?",
                             );
                             if (confirmUpdate) {
                               try {
                                 const ref = doc(
                                   db,
                                   "products",
-                                  product.productId
+                                  product.productId,
                                 );
                                 await updateDoc(ref, { unit: newUnit });
                                 alert("Product unit updated successfully.");
@@ -1303,7 +1345,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                                 <option key={u} value={u}>
                                   {u}
                                 </option>
-                              )
+                              ),
                             );
                           }
 
@@ -1412,7 +1454,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                       <ProductComboBox
                         productType="Seed Treatment"
                         allProducts={allProducts.filter(
-                          (p) => p.type === "Seed Treatment"
+                          (p) => p.type === "Seed Treatment",
                         )}
                         usedProductIds={usedProductIds}
                         value={{ id: t.productId, name: t.productName }}
@@ -1461,7 +1503,7 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                         className="text-xs text-red-600 hover:text-red-800"
                         onClick={() =>
                           setSeedTreatments((prev) =>
-                            prev.filter((_, idx) => idx !== i)
+                            prev.filter((_, idx) => idx !== i),
                           )
                         }
                       >
@@ -1579,8 +1621,8 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                 const seedsPerUnit = crop.includes("rice")
                   ? 900000
                   : crop.includes("soybean")
-                  ? 140000
-                  : 1000000;
+                    ? 140000
+                    : 1000000;
                 const totalSeeds = rate * totalAcres;
                 const units = totalSeeds / seedsPerUnit;
                 display = `${units.toFixed(1)} units`;
@@ -1589,22 +1631,22 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
                   const lbsPerBushel = crop.includes("rice")
                     ? 45
                     : crop.includes("soybean")
-                    ? 60
-                    : 50;
+                      ? 60
+                      : 50;
                   const bushels = totalAmount / lbsPerBushel;
                   display = `${totalAmount.toFixed(1)} lbs (${bushels.toFixed(
-                    1
+                    1,
                   )} bu)`;
                 } else {
                   const tons = totalAmount / 2000;
                   display = `${totalAmount.toFixed(1)} lbs (${tons.toFixed(
-                    2
+                    2,
                   )} tons)`;
                 }
               } else if (unit === "fl oz/acre") {
                 const gal = totalAmount / 128;
                 display = `${totalAmount.toFixed(1)} fl oz (${gal.toFixed(
-                  2
+                  2,
                 )} gal)`;
               } else if (unit === "%v/v") {
                 const water = parseFloat(waterVolume) || 0;
@@ -1615,17 +1657,17 @@ export default function JobEditorModal({ isOpen, onClose, initialJobs = [] }) {
               } else if (unit === "pt/acre") {
                 const gal = totalAmount / 8;
                 display = `${totalAmount.toFixed(1)} pt (${gal.toFixed(
-                  2
+                  2,
                 )} gal)`;
               } else if (unit === "qt/acre") {
                 const gal = totalAmount / 4;
                 display = `${totalAmount.toFixed(1)} qt (${gal.toFixed(
-                  2
+                  2,
                 )} gal)`;
               } else if (unit === "oz dry/acre") {
                 const lbs = totalAmount / 16;
                 display = `${totalAmount.toFixed(1)} oz dry (${lbs.toFixed(
-                  2
+                  2,
                 )} lbs)`;
               } else if (unit === "tons/acre") {
                 display = `${totalAmount.toFixed(2)} tons`;

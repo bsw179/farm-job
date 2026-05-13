@@ -485,12 +485,12 @@ if (!field) return <div className="p-6">Loading field...</div>;
             </div>
           ))}
         {/* ➕ Multi-landowner support */}
-        {false && (
+        {editMode && updatedField && (
           <div className="bg-white p-3 rounded shadow col-span-2">
             <label className="block text-xs text-gray-500 mb-2 font-semibold">
               Landowners & Rent Shares
             </label>
-            console.log("DEBUG updatedField:", updatedField);
+
             {(updatedField.landowners || []).map((entry, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <input

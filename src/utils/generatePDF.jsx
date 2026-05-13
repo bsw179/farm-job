@@ -202,12 +202,14 @@ if (!split) split = `${op}:`; // Fallback if nothing valid
 export const generateBatchPDF = async (jobsArray) => {
   const mergedJob = {
     ...jobsArray[0], // Use first job's base info (date, vendor, applicator)
-    fields: jobsArray.flatMap((j) => j.fields || []),
+    fields: jobsArray.flatMap((j) =>
+      (j.fields || []).map((f) => ({
+        ...f,
+        fieldComment: j.fieldComment || "",
+      })),
+    ),
     products: jobsArray.flatMap((j) => j.products || []),
-    notes: jobsArray
-      .map((j) => j.notes)
-      .filter(Boolean)
-      .join("\n"),
+    notes: jobsArray[0]?.notes || "",
   };
 
   const totalAcres = mergedJob.fields?.reduce(
@@ -292,9 +294,7 @@ const uniqueProducts = Array.from(
         {/* Notes */}
         {mergedJob.notes && (
           <View style={[styles.section, { marginTop: 6 }]}>
-            <Text style={[styles.bold, { marginBottom: 2 }]}>
-              Comments/Instructions:
-            </Text>
+            <Text style={[styles.bold, { marginBottom: 2 }]}>Notes:</Text>
             <Text>{mergedJob.notes}</Text>
           </View>
         )}
@@ -339,6 +339,21 @@ const uniqueProducts = Array.from(
                   {f.fieldName} ({Number(f.acres).toFixed(1)} ac)
                 </Text>
                 <Text style={styles.thumbLabel}>{split}</Text>
+
+                {f.fieldComment && (
+                  <>
+                    <Text
+                      style={[
+                        styles.thumbLabel,
+                        { marginTop: 4, fontWeight: "bold" },
+                      ]}
+                    >
+                      Comments:
+                    </Text>
+                    <Text style={styles.thumbLabel}>{f.fieldComment}</Text>
+                  </>
+                )}
+             
               </View>
             );
           })}
